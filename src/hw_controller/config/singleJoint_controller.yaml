@@ -1,0 +1,3 @@
+singleJoint_controller:
+  joint: link1
+  type: hw_controller/singleJoint_controller
