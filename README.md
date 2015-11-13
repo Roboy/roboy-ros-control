@@ -28,7 +28,7 @@ source devel/setup.bash
 roscore &
 rosrun hw_interface singleJoint &
 ```
-The controller_manager now runs in main(), you can query his services with:
+The controller_manager now runs in the asyncronous thread, you can query his services with:
 ```
 #!bash
 
