@@ -10,5 +10,6 @@ ros-indigo
 
 cd path/to/ros_hierarchy
 catkin_init_workspace
+rm CMakeList.txt
 catkin_make
 ```
