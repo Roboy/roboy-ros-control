@@ -4,12 +4,12 @@
 
 namespace position_controllers_ns{
 
-class PositionController : public controller_interface::Controller<hardware_interface::EffortJointInterface>
+class PositionController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
 {
 public:
 	PositionController(){};
 
-    bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &n)
+    bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle &n)
     {
 	// get joint name from the parameter server
 	std::string joint_name;
@@ -17,9 +17,10 @@ public:
 	    ROS_ERROR("Could not find joint name");
 	    return false;
 	}
-	
+	printf("here\n");
 	// get the joint object to use in the realtime loop
 	joint_ = hw->getHandle(joint_name);  // throws on failure
+	printf("here\n");
 	return true;
     }
     
