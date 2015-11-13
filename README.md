@@ -68,10 +68,4 @@ Loading this controller via the respective ros service call:
 #!bash
 rosservice call /controller_manager/load_controller test_controller
 ```
-Unfortunately so far this causes an error:
-```
-#!bash
-[ERROR] [1447431875.426379240, 4192.754000000]: This controller requires a hardware interface of type 'hardware_interface::EffortJointInterface'. Make sure this is registered in the hardware_interface::RobotHW class.
-[ERROR] [1447431875.426459258, 4192.754000000]: Initializing controller 'test_controller' failed
-ok: False
-```
+Unfortunately the controller_manager seems to crash here
