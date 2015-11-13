@@ -2,11 +2,13 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
 
-namespace singleJoint_controller_ns{
+namespace position_controllers_ns{
 
 class PositionController : public controller_interface::Controller<hardware_interface::EffortJointInterface>
 {
 public:
+	PositionController(){};
+
     bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &n)
     {
 	// get joint name from the parameter server
@@ -35,5 +37,5 @@ private:
     static const double gain_ = 1.25;
     static const double setpoint_ = 3.00;
 };
-PLUGINLIB_EXPORT_CLASS(singleJoint_controller_ns::PositionController, controller_interface::ControllerBase);
+PLUGINLIB_EXPORT_CLASS(position_controllers_ns::PositionController, controller_interface::ControllerBase);
 }//namespace

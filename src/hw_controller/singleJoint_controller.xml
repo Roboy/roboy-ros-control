@@ -1,6 +1,0 @@
-<library path="lib/libsingleJoint_controller">
-  <class type="singleJoint_controller_ns::PositionController" 
-	base_class_type="controller_interface::ControllerBase">
-    <description>This is a position controller plugin.</description>
-  </class>
-</library>
