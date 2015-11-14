@@ -61,7 +61,7 @@ If you want to use our custom controller, you need to set up the ros parameter s
 ```
 #!bash
 rosparam set test_controller/type hw_controller/singleJointController
-rosparam set test_controller/joint A
+rosparam set test_controller/joint_name A
 ```
 Loading this controller via the respective ros service call:
 ```
