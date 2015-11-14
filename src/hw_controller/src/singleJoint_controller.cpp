@@ -26,12 +26,12 @@ public:
     void update(const ros::Time& time, const ros::Duration& period)
     {
 	float pos = joint_.getPosition();
-	printf("update, pos: %f\n",pos);
+//	printf("update, pos: %f\n",pos);
 	double error = setpoint_ - joint_.getPosition();
 	joint_.setCommand(error*gain_);
     }
     
-    void starting(const ros::Time& time) { printf("starting controller\n");}
+    void starting(const ros::Time& time) { printf("starting controller, gain: %f, setpoint: %f\n",gain_,setpoint_);}
     void stopping(const ros::Time& time) { printf("stopping controller\n");}
     
 private:
