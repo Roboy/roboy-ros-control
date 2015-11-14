@@ -63,9 +63,20 @@ If you want to use our custom controller, you need to set up the ros parameter s
 rosparam set test_controller/type hw_controller/singleJointController
 rosparam set test_controller/joint_name A
 ```
-Loading this controller via the respective ros service call:
+Loading and starting this controller via spawn:
 ```
 #!bash
-rosservice call /controller_manager/load_controller test_controller
+rosrun controller_manager controller_manager spawn test_controller
 ```
-Unfortunately the controller_manager seems to crash here
+The status of the controller can be queried via:
+```
+#!bash
+rosservice call /controller_manager/list_controllers
+controller: 
+  - 
+    name: test_controller
+    state: running
+    type: hw_controller/singleJointController
+    hardware_interface: hardware_interface::PositionJointInterface
+    resources: ['A']
+```
