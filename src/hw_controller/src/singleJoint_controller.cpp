@@ -17,21 +17,22 @@ public:
 	    ROS_ERROR("Could not find joint name");
 	    return false;
 	}
-	printf("here\n");
 	// get the joint object to use in the realtime loop
 	joint_ = hw->getHandle(joint_name);  // throws on failure
-	printf("here\n");
+	printf("PositionController initialized\n");
 	return true;
     }
     
     void update(const ros::Time& time, const ros::Duration& period)
     {
+	float pos = joint_.getPosition();
+	printf("update, pos: %f\n",pos);
 	double error = setpoint_ - joint_.getPosition();
 	joint_.setCommand(error*gain_);
     }
     
-    void starting(const ros::Time& time) { }
-    void stopping(const ros::Time& time) { }
+    void starting(const ros::Time& time) { printf("starting controller\n");}
+    void stopping(const ros::Time& time) { printf("stopping controller\n");}
     
 private:
     hardware_interface::JointHandle joint_;

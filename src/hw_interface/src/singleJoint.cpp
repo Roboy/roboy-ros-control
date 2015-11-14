@@ -18,16 +18,24 @@ class MyRobot : public hardware_interface::RobotHW
 	    jnt_pos_interface.registerHandle(pos_handle_a);
 	    
 	    registerInterface(&jnt_pos_interface);
+	    
+	    std::vector<std::string> resources = jnt_pos_interface.getNames();
+	    printf("------------------------------------------------\n");
+	    printf("Hardware interface initialized\n");
+	    printf("------------------------------------------------\n");
+	    printf("Resources registered to this hardware interface:\n");
+	    for(uint i=0; i<resources.size();i++){
+		printf("%s\n",resources[i].c_str());
+	    }
+	    printf("------------------------------------------------\n");
 	};
 	
 	void read(){
-	    // Read actuator state from hardware...
-	    //	    printf("read actuator state\n");
+//	    printf("read actuator state);
 	};
 	
 	void write(){
-	    // Send actuator command to hardware...
-	    //	    printf("write actuator state\n");
+//	    printf("write actuator state, cmd: %f\n",cmd);
 	};
 	
 	private:
@@ -54,7 +62,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(10.0);
+    ros::Rate rate(1.0);
     
     while (ros::ok())
     {
