@@ -31,7 +31,7 @@ public:
 	joint_.setCommand(error*gain_);
     }
     
-    void starting(const ros::Time& time) { printf("starting controller\n");}
+    void starting(const ros::Time& time) { printf("starting controller, gain: %f, setpoint: %f\n");}
     void stopping(const ros::Time& time) { printf("stopping controller\n");}
     
 private:
