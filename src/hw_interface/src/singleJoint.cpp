@@ -2,8 +2,10 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 #include <controller_manager/controller_manager.h>
+#include "FlexRayHardwareInterface.hpp"
+INITIALIZE_EASYLOGGINGPP
 
-class MyRobot : public hardware_interface::RobotHW
+class MyRobot : public hardware_interface::RobotHW ,public FlexRayHardwareInterface 
 {
     public:
 	MyRobot(){ 
@@ -18,29 +20,25 @@ class MyRobot : public hardware_interface::RobotHW
 	    jnt_pos_interface.registerHandle(pos_handle_a);
 	    
 	    registerInterface(&jnt_pos_interface);
-	    
-	    std::vector<std::string> resources = jnt_pos_interface.getNames();
-	    printf("------------------------------------------------\n");
-	    printf("Hardware interface initialized\n");
-	    printf("------------------------------------------------\n");
-	    printf("Resources registered to this hardware interface:\n");
-	    for(uint i=0; i<resources.size();i++){
-		printf("%s\n",resources[i].c_str());
-	    }
-	    printf("------------------------------------------------\n");
 	};
 	
 	void read(){
-//	    printf("read actuator state);
-	};
-	
+            readFromFlexray();
+            
+            pos = GanglionData[0].muscleState[0].actuatorPos;
+            vel = GanglionData[0].muscleState[0].actuatorVel;
+            eff = GanglionData[0].muscleState[0].tendonDisplacement; // dummy TODO: use polynomial approx
+        };
 	void write(){
-//	    printf("write actuator state, cmd: %f\n",cmd);
-	};
+            commandframe[0].sp[0] = cmd;
+            changeCommandFrame(commandframe,&controlparams);
+            writeToFlexray();
+        };
 	
 	private:
 	    hardware_interface::JointStateInterface jnt_state_interface;
 	    hardware_interface::PositionJointInterface jnt_pos_interface;
+	    hardware_interface::EffortJointInterface jnt_eff_interface;
 	    double cmd;
 	    double pos;
 	    double vel;
@@ -51,6 +49,12 @@ class MyRobot : public hardware_interface::RobotHW
 
 int main(int argc, char* argv[])
 {
+    START_EASYLOGGINGPP(argc, argv);
+    // Load configuration from file
+    el::Configurations conf("/home/letrend/catkin_ws/logging.conf");
+    // Actually reconfigure all loggers instead
+    el::Loggers::reconfigureAllLoggers(conf);
+    
     ros::init(argc, argv, "singleJoint");
     
     MyRobot robot;
@@ -62,7 +66,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(1.0);
+    ros::Rate rate(10.0);
     
     while (ros::ok())
     {
