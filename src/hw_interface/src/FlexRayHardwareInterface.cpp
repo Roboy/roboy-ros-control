@@ -1,52 +1,5 @@
 #include "FlexRayHardwareInterface.hpp"
 
-int FlexRayHardwareInterface::exchangeData()
-{
-    DWORD dwNumInputBuffer=0;
-    DWORD dwNumBytesRead;
-    
-    if (m_FTDIReady)
-    {
-	// SEND DATA
-	m_ftStatus = SPI_WriteBuffer(m_ftHandle, &dataset[0], DATASETSIZE);		// send data
-	if (m_ftStatus != FT_OK)
-	{
-	    LOG(ERROR) << "Failed to Send a byte through SPI, Error Code: " << m_ftStatus;
-	    //FT_SetBitMode(ftHandle, 0x0, 0x00); 			// Reset the port to disable MPSSE
-	    //FT_Close(ftHandle);					// Close the USB port
-	}
-	else
-	{
-            //std::cout<<"Data successfully sent via USB!"<<std::endl;
-	    // WAIT FOR DATA TO ARRIVE
-	    while(dwNumInputBuffer!=DATASETSIZE*2)
-	    {
-		m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
-		//std::cout << t << ": " << dwNumInputBuffer << std::endl;
-	    }
-	    
-	    // RECEIVE DATA
-	    if(dwNumInputBuffer > DATASETSIZE*2)					// to prevent segfaults
-		dwNumInputBuffer = DATASETSIZE*2;
-	    FT_Read(m_ftHandle, &InputBuffer[0], dwNumInputBuffer, &dwNumBytesRead); 	// read bytes into word locations
-	    
-            dwNumInputBuffer = 0;							// reset the byte counter
-	    //	std::cout<<"Data read!"<<std::endl;
-	    
-	    //now make a copy of relevant signal and emit signal with data
-	    memcpy( GanglionData, InputBuffer, sizeof(GanglionData)); //ganglion data
-	    
-	    activeGanglionsMask=InputBuffer[sizeof(GanglionData)>>1];   //active ganglions, generated from usbFlexRay interface
-	}
-	return 1;
-    }
-    else
-    {
-	LOG(ERROR) << "FTDI USB interface not ready.";
-	return -1;
-    }
-}
-
 FT_STATUS FlexRayHardwareInterface::SPI_WriteBuffer(FT_HANDLE ftHandle, WORD* buffer, DWORD numwords)
 {
     DWORD dwNumBytesSent=0;
@@ -69,6 +22,7 @@ FT_STATUS FlexRayHardwareInterface::SPI_WriteBuffer(FT_HANDLE ftHandle, WORD* bu
     }
     //dwNumBytesToSend = SPI_CSDisable(&OutputBuffer[0], &dwNumBytesToSend, true);
     //printf("%i NumBytesToSend", sizeof(OutputBuffer));
+#ifdef HARDWARE
     do
     {
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);	//send out MPSSE command to MPSSE engine
@@ -77,7 +31,9 @@ FT_STATUS FlexRayHardwareInterface::SPI_WriteBuffer(FT_HANDLE ftHandle, WORD* bu
 	//else
 	//	std::cout << dwNumBytesSent <<" bytes sent through SPI" << std::endl;
     }while(ftStatus!=FT_OK);
-    
+#else
+    LOG(INFO) << "No Hardware mode enabled, not trying to send anything" ;
+#endif
     dwNumBytesToSend = 0;								//Clear output buffer
     return ftStatus;
 }

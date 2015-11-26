@@ -7,6 +7,9 @@
 
 #pragma once
 
+// comment if no hardware available
+//#define HARDWARE
+
 #include <ftd2xx.h>
 #include <iostream>
 #include <unistd.h>
@@ -35,6 +38,7 @@ public:
      */
     FlexRayHardwareInterface(){        
         std::cout << "----------------------------" << std::endl;
+#ifdef HARDWARE
         LOG(INFO) << "Trying to connect to FlexRay" ;
         while(!connect()){
             LOG(INFO) << "retry? [y/n]";
@@ -48,6 +52,11 @@ public:
             }
         }
         initializeMotors();
+#else
+        LOG(INFO) << "No Hardware mode enabled" ;
+        activeGanglionsMask = 0b111111;
+        numberOfGanglionsConnected = 6;
+#endif
     };
     /**
      * connect to flexray
@@ -124,29 +133,32 @@ public:
         for(uint i=0;i<3;i++){
             for(uint j=0;j<4;j++)
             {
-                commandframe[i].ControlMode[j] = Position;
-                commandframe[i].OperationMode[j] = Initialise;
-                commandframe[i].sp[j] = 3.0; 
+                commandframe0[i].ControlMode[j] = Position;
+                commandframe0[i].OperationMode[j] = Initialise;
+                commandframe0[i].sp[j] = 3.0; 
+                commandframe1[i].ControlMode[j] = Position;
+                commandframe1[i].OperationMode[j] = Initialise;
+                commandframe1[i].sp[j] = 3.0; 
             }
         }
-        sendCommandFrame(commandframe,commandframe,&controlparams);
+        updateCommandFrame();
+        writeToFlexray();
         for(uint i=0;i<3;i++){
             for(uint j=0;j<4;j++)
             {
-                commandframe[i].ControlMode[j] = Position;
-                commandframe[i].OperationMode[j] = Run;
-                commandframe[i].sp[j] = 3;
+                commandframe0[i].ControlMode[j] = Position;
+                commandframe0[i].OperationMode[j] = Run;
+                commandframe0[i].sp[j] = 3;
+                commandframe1[i].ControlMode[j] = Position;
+                commandframe1[i].OperationMode[j] = Run;
+                commandframe1[i].sp[j] = 3;
             }
         }
-        sendCommandFrame(commandframe,commandframe,&controlparams);
+        updateCommandFrame();
+        writeToFlexray();
+        // check how many ganglions are connected via the activeGanglionsMask
+        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
     };
-    void sendCommandFrame(comsCommandFrame *CommandFrame1, comsCommandFrame *CommandFrame2, 
-                            control_Parameters_t *ControlParams){
-        memcpy((void *)&dataset[0], CommandFrame1, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
-        memcpy((void *)&dataset[sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME / 2], CommandFrame2, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
-        memcpy((void *)&dataset[72], ControlParams, sizeof(control_Parameters_t));
-        exchangeData();
-    }
     
     void readFromFlexray(){
         DWORD dwNumInputBuffer=0;
@@ -179,18 +191,25 @@ public:
         }
     };
     
-    void changeCommandFrame(comsCommandFrame *CommandFrame,control_Parameters_t *ControlParams){
-        memcpy((void *)&dataset[0], CommandFrame, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
-        memcpy((void *)&dataset[sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME / 2], CommandFrame, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
-        memcpy((void *)&dataset[72], ControlParams, sizeof(control_Parameters_t));
+    void updateCommandFrame(){
+        memcpy((void *)&dataset[0], commandframe0, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
+        memcpy((void *)&dataset[sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME / 2], commandframe1, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );
+        memcpy((void *)&dataset[72], &controlparams, sizeof(control_Parameters_t));
     };
+    
+    uint32_t NumberOfSetBits(uint32_t i){
+        i = i - ((i >> 1) & 0x55555555);
+        i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+        return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+    }
 
-protected:
     //! upstream from ganglions to PC
     ganglionData_t GanglionData[NUMBER_OF_GANGLIONS]; 
     unsigned short activeGanglionsMask;
-    //! command frame containing motor control parameters for 3 Ganglia
-    comsCommandFrame commandframe[3];
+    uint numberOfGanglionsConnected;
+    //! command frames containing motor control parameters for 3 ganglia, respectively
+    comsCommandFrame commandframe0[3];
+    comsCommandFrame commandframe1[3];
     //! control parameters for motor initialization run disable
     control_Parameters_t controlparams;
 private:
@@ -274,10 +293,6 @@ private:
      * @return FT_STATUS
      */
     FT_STATUS SPI_WriteBuffer(FT_HANDLE ftHandle, WORD* buffer, DWORD numwords);
-    /**
-     * send the current dataset frame on flexray
-     * */
-    int exchangeData();
     
     // necessary for MPSSE command
     const BYTE MSB_RISING_EDGE_CLOCK_BYTE_OUT = '\x10';             

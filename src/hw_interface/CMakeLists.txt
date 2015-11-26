@@ -11,5 +11,8 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(singleJoint src/singleJoint.cpp src/FlexRayHardwareInterface.cpp)
-target_link_libraries(singleJoint ${catkin_LIBRARIES} -lftd2xx)
+add_executable(singleJoint src/singleJoint.cpp)
+target_link_libraries(singleJoint ${catkin_LIBRARIES})
+
+add_executable(multiJoint src/multiJoint.cpp src/FlexRayHardwareInterface.cpp)
+target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx)

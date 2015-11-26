@@ -2,43 +2,45 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 #include <controller_manager/controller_manager.h>
-#include "FlexRayHardwareInterface.hpp"
-INITIALIZE_EASYLOGGINGPP
 
-class MyRobot : public hardware_interface::RobotHW ,public FlexRayHardwareInterface 
+class MyRobot : public hardware_interface::RobotHW
 {
     public:
 	MyRobot(){ 
 	    // connect and register the joint state interface
-	    hardware_interface::JointStateHandle state_handle_a("A", &pos, &vel, &eff);
+	    hardware_interface::JointStateHandle state_handle_a("A", &pos, &vel, &eff); // A handle used to read the state of a single joint.
 	    jnt_state_interface.registerHandle(state_handle_a);
 	    
 	    registerInterface(&jnt_state_interface);
 	    
 	    // connect and register the joint position interface
-	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd);
+	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd); // A handle used to read and command a single joint.
 	    jnt_pos_interface.registerHandle(pos_handle_a);
 	    
 	    registerInterface(&jnt_pos_interface);
+	    
+	    std::vector<std::string> resources = jnt_pos_interface.getNames();
+	    printf("------------------------------------------------\n");
+	    printf("Hardware interface initialized\n");
+	    printf("------------------------------------------------\n");
+	    printf("Resources registered to this hardware interface:\n");
+	    for(uint i=0; i<resources.size();i++){
+		printf("%s\n",resources[i].c_str());
+	    }
+	    printf("------------------------------------------------\n");
 	};
 	
 	void read(){
-            readFromFlexray();
-            
-            pos = GanglionData[0].muscleState[0].actuatorPos;
-            vel = GanglionData[0].muscleState[0].actuatorVel;
-            eff = GanglionData[0].muscleState[0].tendonDisplacement; // dummy TODO: use polynomial approx
-        };
+//	    printf("read actuator state);
+	};
+	
 	void write(){
-            commandframe[0].sp[0] = cmd;
-            changeCommandFrame(commandframe,&controlparams);
-            writeToFlexray();
-        };
+//	    printf("write actuator state, cmd: %f\n",cmd);
+	};
 	
 	private:
-	    hardware_interface::JointStateInterface jnt_state_interface;
-	    hardware_interface::PositionJointInterface jnt_pos_interface;
-	    hardware_interface::EffortJointInterface jnt_eff_interface;
+	    hardware_interface::JointStateInterface jnt_state_interface;  // Hardware interface to support reading the state of an array of joints
+	    hardware_interface::PositionJointInterface jnt_pos_interface; // JointCommandInterface for commanding position-based joints.
 	    double cmd;
 	    double pos;
 	    double vel;
@@ -49,12 +51,6 @@ class MyRobot : public hardware_interface::RobotHW ,public FlexRayHardwareInterf
 
 int main(int argc, char* argv[])
 {
-    START_EASYLOGGINGPP(argc, argv);
-    // Load configuration from file
-    el::Configurations conf("/home/letrend/catkin_ws/logging.conf");
-    // Actually reconfigure all loggers instead
-    el::Loggers::reconfigureAllLoggers(conf);
-    
     ros::init(argc, argv, "singleJoint");
     
     MyRobot robot;
@@ -66,7 +62,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(10.0);
+    ros::Rate rate(1.0);
     
     while (ros::ok())
     {

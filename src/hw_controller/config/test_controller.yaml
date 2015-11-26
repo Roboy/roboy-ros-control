@@ -1,0 +1,17 @@
+# This file contains parameter for several test controllers, which will be uploaded to the ros parameter server via
+# the roslaunch file
+test_controller0:
+  joint_name: motor0
+  type: hw_controller/singleJoint_controller
+
+test_controller1:
+  joint_name: motor1
+  type: hw_controller/singleJoint_controller
+
+test_controller2:
+  joint_name: motor2
+  type: hw_controller/singleJoint_controller
+
+test_controller3:
+  joint_name: motor0
+  type: hw_controller/singleJoint_controller
