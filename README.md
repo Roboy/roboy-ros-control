@@ -70,10 +70,12 @@ Loading and starting this controller via spawn:
 rosrun controller_manager controller_manager spawn test_controller
 ```
 ### Using ros launch file for more convenient controller startup ###
+In the path/to/ros_hierarchy/src/hw_controller/config folder is a launch file, this can be executed via:
 ```
 #!bash
 roslaunch hw_controller test_controller.launch
 ```
+
 ### Status of the controller ###
 The status of the controller can be queried via:
 ```
