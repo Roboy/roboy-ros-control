@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "CommunicationData.h"
-#include "easylogging++.h"
+#include <ros/console.h>
 
 #define NUM_SPI_FRAMES 310
 /*! \def DATASETSIZE 
@@ -39,21 +39,21 @@ public:
     FlexRayHardwareInterface(){        
         std::cout << "----------------------------" << std::endl;
 #ifdef HARDWARE
-        LOG(INFO) << "Trying to connect to FlexRay" ;
+        ROS_INFO("Trying to connect to FlexRay");
         while(!connect()){
-            LOG(INFO) << "retry? [y/n]";
+            ROS_INFO("retry? [y/n]");
             std::string s;
             std::cin >> s;
             if(strcmp("y",s.c_str())==0){
-                LOG(INFO) << "retrying...";
+                ROS_INFO("retrying...");
             }else if(strcmp("n",s.c_str())==0){
-                LOG(FATAL) <<  "abort";
+                ROS_FATAL("abort");
                 break;
             }
         }
         initializeMotors();
 #else
-        LOG(INFO) << "No Hardware mode enabled" ;
+        ROS_INFO( "No Hardware mode enabled");
         activeGanglionsMask = 0b111111;
         numberOfGanglionsConnected = 6;
 #endif
@@ -73,31 +73,29 @@ public:
                     {
                         if(ConfigureSPI(&m_ftHandle, m_clockDivisor)==true)
                         {
-                            LOG(INFO) << "Configuration OK";
+                            ROS_INFO("Configuration OK");
                             m_FTDIReady = true;
                             return true;
                         }
                     }//TestMPSSE
                     else
                     {
-                        LOG(ERROR) << "device test failed";
+                        ROS_ERROR("device test failed");
                     }
                 }//OpenPortAndConfigureMPSSE
                 else
                 {
-                    LOG(ERROR) << "open port failed";
-                    LOG(INFO) << "--Perhaps the kernel automatically loaded another driver for the   FTDI USB device, from command line try: "
-                            <<std::endl<<"sudo rmmod ftdi_sio"<<std::endl<<"sudo rmmod usbserial"<<std::endl;
+                    ROS_ERROR("open port failed\n--Perhaps the kernel automatically loaded another driver for the FTDI USB device, from command line try: \nsudo rmmod ftdi_sio \n sudo rmmod usbserial\n or maybe run with sudo");
                 }
             }//GetDeviceInfo
             else
             {
-                LOG(ERROR) << "device info failed";
+                ROS_ERROR("device info failed");
             }
         } //CheckDeviceConnected
         else
         {
-            LOG(ERROR) << "device not connected";
+            ROS_ERROR("device not connected");
         }
         return false;
     };
@@ -183,11 +181,11 @@ public:
     void writeToFlexray(){
         m_ftStatus = SPI_WriteBuffer(m_ftHandle, &dataset[0], DATASETSIZE);		// send data
 	if (m_ftStatus != FT_OK){
-	    LOG(ERROR) << "Failed to Send a byte through SPI, Error Code: " << m_ftStatus;
+	    ROS_ERROR_STREAM("Failed to Send a byte through SPI, Error Code: " << m_ftStatus);
 	    //FT_SetBitMode(ftHandle, 0x0, 0x00); 			// Reset the port to disable MPSSE
 	    //FT_Close(ftHandle);					// Close the USB port
 	}else{
-            LOG(DEBUG) << "Data successfully sent via USB!";
+            ROS_DEBUG("Data successfully sent via USB!");
         }
     };
     

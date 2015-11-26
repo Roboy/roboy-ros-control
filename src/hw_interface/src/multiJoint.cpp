@@ -3,7 +3,6 @@
 #include <hardware_interface/robot_hw.h>
 #include <controller_manager/controller_manager.h>
 #include "FlexRayHardwareInterface.hpp"
-INITIALIZE_EASYLOGGINGPP
 
 class MyRobot : public hardware_interface::RobotHW
 {
@@ -36,15 +35,14 @@ class MyRobot : public hardware_interface::RobotHW
             registerInterface(&jnt_state_interface);
             registerInterface(&jnt_pos_interface);
             
-	    printf("------------------------------------------------\n");
-	    printf("Hardware interface initialized\n");
-	    printf("------------------------------------------------\n");
-	    printf("Resources registered to this hardware interface:\n");
+	    ROS_INFO("Hardware interface initialized");
+            std::string str;
             std::vector<std::string> resources = jnt_pos_interface.getNames();
 	    for(uint i=0; i<resources.size();i++){
-		printf("%s\n",resources[i].c_str());
+                str.append(resources[i]);
+                str.append(" ");
 	    }
-	    printf("------------------------------------------------\n");
+	    ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
 	};
         
         ~MyRobot(){
@@ -101,13 +99,7 @@ class MyRobot : public hardware_interface::RobotHW
 
 int main(int argc, char* argv[])
 {
-    START_EASYLOGGINGPP(argc, argv);
-    // Load configuration from file
-    el::Configurations conf("/home/letrend/catkin_ws/logging.conf");
-    // Actually reconfigure all loggers instead
-    el::Loggers::reconfigureAllLoggers(conf);
-    
-    ros::init(argc, argv, "singleJoint");
+    ros::init(argc, argv, "multiJoint");
     
     MyRobot robot;
     controller_manager::ControllerManager cm(&robot);
@@ -118,7 +110,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(1.0);
+    ros::Rate rate(0.5);
     
     while (ros::ok())
     {

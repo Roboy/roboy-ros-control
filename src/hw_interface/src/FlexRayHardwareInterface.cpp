@@ -27,12 +27,12 @@ FT_STATUS FlexRayHardwareInterface::SPI_WriteBuffer(FT_HANDLE ftHandle, WORD* bu
     {
 	ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);	//send out MPSSE command to MPSSE engine
 	if(ftStatus != FT_OK)
-	    LOG(ERROR) << " something wrong with FT_Write call, Error code " << ftStatus;
+	    ROS_ERROR_STREAM(" something wrong with FT_Write call, Error code " << ftStatus);
 	//else
 	//	std::cout << dwNumBytesSent <<" bytes sent through SPI" << std::endl;
     }while(ftStatus!=FT_OK);
 #else
-    LOG(INFO) << "No Hardware mode enabled, not trying to send anything" ;
+    ROS_INFO("No Hardware mode enabled, not trying to send anything");
 #endif
     dwNumBytesToSend = 0;								//Clear output buffer
     return ftStatus;
@@ -83,20 +83,20 @@ bool FlexRayHardwareInterface::CheckDeviceConnected(DWORD* NumDevs)
     // -----------------------------------------------------------
     // Does an FTDI device exist?
     // -----------------------------------------------------------
-    LOG(INFO) << "Checking for FTDI devices...";
+    ROS_INFO("Checking for FTDI devices...");
     
     ftStatus = FT_CreateDeviceInfoList(NumDevs);				// Get the number of FTDI devices
     if (ftStatus != FT_OK)							// Did the command execute OK?
     {
-	LOG(ERROR) << "Error in getting the number of devices, Error code: " << ftStatus;
+	ROS_ERROR_STREAM("Error in getting the number of devices, Error code: " << ftStatus);
 	return false;								// Exit with error
     }
     if (*NumDevs < 1)								// Exit if we don't see any
     {
-	LOG(WARNING) << "There are no FTDI devices installed";
+	ROS_WARN("There are no FTDI devices installed");
 	return false;								// Exit with error
     }
-    LOG(INFO) << *NumDevs << " FTDI devices found-the count includes individual ports on a single chip";
+    ROS_INFO_STREAM(*NumDevs << " FTDI devices found-the count includes individual ports on a single chip");
     return true;
 }
 
@@ -114,20 +114,20 @@ bool FlexRayHardwareInterface::GetDeviceInfo(DWORD* NumDevs)
     {
 	for (unsigned int i = 0; i < *NumDevs; i++)
 	{
-	    LOG(INFO) << " Dev: " << i;
-	    LOG(INFO) << " Flags=0x" << devInfo[i].Flags;
-	    LOG(INFO) << " Type=0x" << devInfo[i].Type;
-	    LOG(INFO) << " ID=0x" << devInfo[i].ID;
-	    LOG(INFO) << " LocId=0x" << devInfo[i].LocId;
-	    LOG(INFO) << " SerialNumber=" << devInfo[i].SerialNumber;
-	    LOG(INFO) << " Description=" << devInfo[i].Description;
-	    LOG(INFO) << " ftHandle=0x" << devInfo[i].ftHandle;
+	    ROS_INFO_STREAM(" Dev: " << i);
+	    ROS_INFO_STREAM(" Flags=0x" << devInfo[i].Flags);
+	    ROS_INFO_STREAM(" Type=0x" << devInfo[i].Type);
+	    ROS_INFO_STREAM(" ID=0x" << devInfo[i].ID);
+	    ROS_INFO_STREAM(" LocId=0x" << devInfo[i].LocId);
+	    ROS_INFO_STREAM(" SerialNumber=" << devInfo[i].SerialNumber);
+	    ROS_INFO_STREAM(" Description=" << devInfo[i].Description);
+	    ROS_INFO_STREAM(" ftHandle=0x" << devInfo[i].ftHandle);
 	}
 	return true;
     }
     else
     {
-	LOG(WARNING) << "Could not find info for devices";
+	ROS_WARN( "Could not find info for devices");
 	return false;								// return with error
     }
 }
@@ -144,25 +144,25 @@ bool FlexRayHardwareInterface::OpenPortAndConfigureMPSSE(FT_HANDLE* ftHandle, DW
     ftStatus = FT_Open(0, ftHandle);
     if (ftStatus != FT_OK)
     {
-	LOG(ERROR) << "Open Failed with error " << ftStatus;
+	ROS_ERROR_STREAM("Open Failed with error " << ftStatus);
 	return false;								// Exit with error
     }
     else
-	LOG(INFO) << "Port opened";
+	ROS_INFO("Port opened");
     
     // ------------------------------------------------------------
     // Configure MPSSE and test for synchronisation
     // ------------------------------------------------------------
     
     // Configure port parameters
-    LOG(INFO) << "Configuring port for MPSSE use";
+    ROS_INFO("Configuring port for MPSSE use");
     ftStatus |= FT_ResetDevice(*ftHandle);				//Reset USB device
     ftStatus |= FT_GetQueueStatus(*ftHandle, &dwNumBytesToRead); 	// Purge USB receive buffer first by reading out all old data from FT2232H receive buffer
     // Get the number of bytes in the FT2232H receive buffer
     if ((ftStatus == FT_OK) && (dwNumBytesToRead > 0))		//Read out the data from FT2232H receive buffer if not empty
 	FT_Read(*ftHandle, &byInputBuffer, dwNumBytesToRead, &dwNumBytesRead);
     else
-	LOG(WARNING) << "Buffer empty";
+	ROS_WARN("Buffer empty");
     
     //ftStatus |= FT_SetUSBParameters(ftHandle, 65536, 65535); 	// Set USB request transfer sizes to 64K
     ftStatus |= FT_SetUSBParameters(*ftHandle, InTransferSize, OutTransferSize); 	// Set USB request transfer sizes...page 73 d2XX programmer guide (only dwInTransferSize has been implemented)
@@ -207,13 +207,13 @@ bool FlexRayHardwareInterface::OpenPortAndConfigureMPSSE(FT_HANDLE* ftHandle, DW
     ftStatus |= FT_SetBitMode(*ftHandle, 0x0, 0x02);				//Enable MPSSE mode
     if (ftStatus != FT_OK)
     {
-	LOG(ERROR) << "Error in initializing the MPSSE on device. Error: " << ftStatus;
+	ROS_ERROR_STREAM("Error in initializing the MPSSE on device. Error: " << ftStatus);
 	FT_Close(ftHandle);
 	return false;											// Exit with error
     }
     usleep(1); 													// Wait for all the USB stuff to complete and work
     
-    LOG(INFO) << "MPSSE ready for commands";
+    ROS_INFO("MPSSE ready for commands");
     return true;
 }
 
@@ -240,13 +240,13 @@ bool FlexRayHardwareInterface::TestMPSSE(FT_HANDLE* ftHandle)
     ftStatus = FT_GetQueueStatus(*ftHandle, &dwNumBytesToRead); 				// Get the number of bytes in the FT2232H receive buffer
     if (dwNumBytesToRead != 0)
     {
-	LOG(ERROR) << "Error - MPSSE receive buffer should be empty, Error Code: " << ftStatus;
+	ROS_ERROR_STREAM("Error - MPSSE receive buffer should be empty, Error Code: " << ftStatus);
 	FT_SetBitMode(*ftHandle, 0x0, 0x00); 					// Reset the port to disable MPSSE
 	FT_Close(*ftHandle);							// Close the USB port
 	return false;								// Exit with error
     }
     else
-	LOG(DEBUG) <<  "Internal loop-back configured and receive buffer is empty";
+	ROS_DEBUG("Internal loop-back configured and receive buffer is empty");
     
     // send bad op-code to check every thing is working correctly
     byOutputBuffer[dwNumBytesToSend++] = 0xAB;						//Add bogus command ‘0xAB’ to the queue
@@ -270,14 +270,14 @@ bool FlexRayHardwareInterface::TestMPSSE(FT_HANDLE* ftHandle)
     
     if (bCommandEchod == false)
     {
-	LOG(ERROR) << "Error in synchronizing the MPSSE";
+	ROS_ERROR("Error in synchronizing the MPSSE");
 	FT_SetBitMode(*ftHandle, 0x0, 0x00); 					// Reset the port to disable MPSSE
 	FT_Close(*ftHandle);							// Close the USB port
 	return false;								// Exit with error
     }
     else
     {
-	LOG(DEBUG) << "MPSSE synchronised.";
+	ROS_DEBUG("MPSSE synchronised.");
 	byOutputBuffer[dwNumBytesToSend++] = '\x85';  						// Command to turn off loop back of TDI/TDO connection
 	ftStatus = FT_Write(*ftHandle, byOutputBuffer, dwNumBytesToSend, &dwNumBytesSent); 	// Send off the loopback command
 	dwNumBytesToSend = 0; 									// Reset output buffer pointer
@@ -304,7 +304,7 @@ bool FlexRayHardwareInterface::ConfigureSPI(FT_HANDLE* ftHandle, DWORD dwClockDi
     ftStatus = FT_Write(*ftHandle, byOutputBuffer, dwNumBytesToSend, &dwNumBytesSent); 	// Send out the commands
     if(ftStatus!=FT_OK)
     {
-	LOG(ERROR) << "Error configuring SPI, Error code " << ftStatus;
+	ROS_ERROR_STREAM("Error configuring SPI, Error code " << ftStatus);
 	FT_SetBitMode(*ftHandle, 0x0, 0x00); 						// Reset the port to disable MPSSE
 	FT_Close(*ftHandle);										// Close the USB port
 	return false;
@@ -321,14 +321,14 @@ bool FlexRayHardwareInterface::ConfigureSPI(FT_HANDLE* ftHandle, DWORD dwClockDi
     ftStatus = FT_Write(*ftHandle, byOutputBuffer, dwNumBytesToSend, &dwNumBytesSent);	// Send out the commands
     if(ftStatus!=FT_OK)
     {
-	LOG(ERROR) << "Error configuring SPI" << ftStatus;
+	ROS_ERROR_STREAM("Error configuring SPI" << ftStatus);
 	FT_SetBitMode(*ftHandle, 0x0, 0x00); 					// Reset the port to disable MPSSE
 	FT_Close(*ftHandle);							// Close the USB port
 	return false;
     }
     dwNumBytesToSend = 0;									// Clear output buffer
     usleep(100);										// Delay for 100us
-    LOG(INFO) <<  "SPI initialisation successful";
+    ROS_INFO( "SPI initialisation successful");
     return true;
 }
 
@@ -348,6 +348,6 @@ BOOL FlexRayHardwareInterface::SPI_WriteByte(FT_HANDLE ftHandle, WORD bdata)
     dwNumBytesToSend = SPI_CSDisable(&OutputBuffer[0], &dwNumBytesToSend, true);
     ftStatus = FT_Write(ftHandle, OutputBuffer, dwNumBytesToSend, &dwNumBytesSent);
     //send out MPSSE command to MPSSE engine
-    LOG(DEBUG) << dwNumBytesSent << " bytes sent through SPI";
+    ROS_DEBUG_STREAM(dwNumBytesSent << " bytes sent through SPI");
     return ftStatus;
 }

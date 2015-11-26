@@ -1,6 +1,7 @@
 <launch>
+	<!-- Load the parameters to the parameter server from the yaml file-->
 	<rosparam file="$(find hw_controller)/config/test_controller.yaml" command="load"/>
-	<!-- Load the the test_controllers from the yaml file-->
+	<!-- spawn the test_controllers on the parameter server-->
 	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
 	  output="screen" args="test_controller0
 				test_controller1
