@@ -26,7 +26,7 @@ catkin_make
 cd path/to/ros_hierarchy
 source devel/setup.bash
 roscore &
-rosrun hw_interface singleJoint &
+rosrun hw_interface multiJoint &
 ```
 The controller_manager now runs in the asyncronous thread, you can query his services with:
 ```
@@ -57,17 +57,24 @@ This should show our custom controller plugin:
 types: ['hw_controller/singleJointController']
 base_classes: ['controller_interface::ControllerBase']
 ```
-If you want to use our custom controller, you need to set up the ros parameter server (this can later be simplified in a .yaml file):
+### Running a controller from commandline ###
+If you want to use our custom controller, you need to set up the ros parameter server:
 ```
 #!bash
 rosparam set test_controller/type hw_controller/singleJointController
-rosparam set test_controller/joint_name A
+rosparam set test_controller/joint_name motor0
 ```
 Loading and starting this controller via spawn:
 ```
 #!bash
 rosrun controller_manager controller_manager spawn test_controller
 ```
+### Using ros launch file for more convenient controller startup ###
+```
+#!bash
+roslaunch hw_controller test_controller.launch
+```
+
 The status of the controller can be queried via:
 ```
 #!bash
