@@ -8,13 +8,13 @@ class MyRobot : public hardware_interface::RobotHW
     public:
 	MyRobot(){ 
 	    // connect and register the joint state interface
-	    hardware_interface::JointStateHandle state_handle_a("A", &pos, &vel, &eff);
+	    hardware_interface::JointStateHandle state_handle_a("A", &pos, &vel, &eff); // A handle used to read the state of a single joint.
 	    jnt_state_interface.registerHandle(state_handle_a);
 	    
 	    registerInterface(&jnt_state_interface);
 	    
 	    // connect and register the joint position interface
-	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd);
+	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd); // A handle used to read and command a single joint.
 	    jnt_pos_interface.registerHandle(pos_handle_a);
 	    
 	    registerInterface(&jnt_pos_interface);
@@ -39,8 +39,8 @@ class MyRobot : public hardware_interface::RobotHW
 	};
 	
 	private:
-	    hardware_interface::JointStateInterface jnt_state_interface;
-	    hardware_interface::PositionJointInterface jnt_pos_interface;
+	    hardware_interface::JointStateInterface jnt_state_interface;  // Hardware interface to support reading the state of an array of joints
+	    hardware_interface::PositionJointInterface jnt_pos_interface; // JointCommandInterface for commanding position-based joints.
 	    double cmd;
 	    double pos;
 	    double vel;
