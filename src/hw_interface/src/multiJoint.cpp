@@ -9,6 +9,7 @@ class MyRobot : public hardware_interface::RobotHW
     public:
 	MyRobot(){ 
             // allocate corresponding control arrays (4 motors can be connected to each ganglion)
+            ROS_INFO("%d ganglions are connected via flexray", flexray.numberOfGanglionsConnected);
             cmd = new double[flexray.numberOfGanglionsConnected*4];
             pos = new double[flexray.numberOfGanglionsConnected*4];
             vel = new double[flexray.numberOfGanglionsConnected*4];
@@ -16,6 +17,7 @@ class MyRobot : public hardware_interface::RobotHW
             
             char motorname[10];
             int i = 0;
+            
             for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){ 
                 // four motors can be connected to each ganglion
                 for (uint motor=0;motor<4;motor++){ 
@@ -53,6 +55,7 @@ class MyRobot : public hardware_interface::RobotHW
         }
 	
 	void read(){
+            ROS_INFO("read");
 #ifdef HARDWARE
             flexray.readFromFlexray();
 #endif
@@ -67,6 +70,7 @@ class MyRobot : public hardware_interface::RobotHW
             }
         };
 	void write(){
+            ROS_INFO("write");
             uint i = 0;
             for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){ 
                 // four motors can be connected to each ganglion

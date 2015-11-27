@@ -28,10 +28,10 @@ namespace position_controllers_ns{
         
         void update(const ros::Time& time, const ros::Duration& period)
         {
+            ROS_INFO("update");
             float pos = joint_.getPosition();
             printf("%s update, current pos: %f, setpoint: %f\n", joint_name.c_str(), pos, setpoint_);
-            double error = setpoint_ - joint_.getPosition();
-            joint_.setCommand(error*gain_);
+            joint_.setCommand(setpoint_);
         }
         
         void starting(const ros::Time& time) { ROS_INFO("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}

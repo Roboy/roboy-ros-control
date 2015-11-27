@@ -8,7 +8,7 @@
 #pragma once
 
 // comment if no hardware available
-//#define HARDWARE
+#define HARDWARE
 
 #include <ftd2xx.h>
 #include <iostream>
@@ -155,23 +155,30 @@ public:
         updateCommandFrame();
         writeToFlexray();
         // check how many ganglions are connected via the activeGanglionsMask
-        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
+//        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
+        numberOfGanglionsConnected = 1;
+        ROS_INFO("%d ganglions are connected via flexray, activeGanglionsMask %c", numberOfGanglionsConnected,activeGanglionsMask);
     };
     
     void readFromFlexray(){
         DWORD dwNumInputBuffer=0;
         DWORD dwNumBytesRead;
-        // WAIT FOR DATA TO ARRIVE
-        while(dwNumInputBuffer!=DATASETSIZE*2){
-            m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
-        }
-//        
-//        // RECEIVE DATA
-//        if(dwNumInputBuffer > DATASETSIZE*2)					// to prevent segfaults
-//            dwNumInputBuffer = DATASETSIZE*2;
         
+        // WAIT FOR DATA TO ARRIVE
+//        while(dwNumInputBuffer!=DATASETSIZE*2){
+//            m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
+//        }
+//        for(uint i=0;i<10dwNumInputBuffer!=DATASETSIZE*2){
+//            m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
+//        }
+        //        
+        //        // RECEIVE DATA
+        //        if(dwNumInputBuffer > DATASETSIZE*2)					// to prevent segfaults
+        //            dwNumInputBuffer = DATASETSIZE*2;
+        dwNumInputBuffer = DATASETSIZE*2;
+        ROS_INFO("reading data");
         FT_Read(m_ftHandle, &InputBuffer[0], dwNumInputBuffer, &dwNumBytesRead); 	// read bytes into word locations
-
+        
         // now make a copy of relevant signal
         memcpy( GanglionData, InputBuffer, sizeof(GanglionData)); //ganglion data
         
