@@ -106,3 +106,22 @@ controller:
     resources: ['motor2']
 
 ```
+
+
+# Test with hardware #
+controller_manager needs to be run as root, don't know why yet (otherwise flexray won't connect)
+```
+#!bash
+sudo -s
+rosrun hw_interface multiJoint
+```
+start controller
+```
+#!bash
+roslaunch hw_controller test_single_controller.launch
+```
+start trajectory publisher
+```
+#!bash
+rosrun trajectory_advertiser trajectory_advertiser
+```
