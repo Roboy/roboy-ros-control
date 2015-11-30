@@ -45,6 +45,7 @@ class MyRobot : public hardware_interface::RobotHW
                 str.append(" ");
 	    }
 	    ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
+            ROS_INFO("Waiting for controller");
 	};
         
         ~MyRobot(){
@@ -55,22 +56,23 @@ class MyRobot : public hardware_interface::RobotHW
         }
 	
 	void read(){
-            ROS_INFO("read");
+            ROS_DEBUG("read");
 #ifdef HARDWARE
-            flexray.readFromFlexray();
+            flexray.exchangeData();
 #endif
             uint i = 0;
             for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){ 
                 // four motors can be connected to each ganglion
                 for (uint motor=0;motor<4;motor++){ 
-                    pos[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos;
-                    vel[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel;
+                    pos[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
+                    vel[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
                     eff[i] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement; // dummy TODO: use polynomial approx
+                    i++;
                 }
             }
         };
 	void write(){
-            ROS_INFO("write");
+            ROS_DEBUG("write");
             uint i = 0;
             for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){ 
                 // four motors can be connected to each ganglion
@@ -84,7 +86,7 @@ class MyRobot : public hardware_interface::RobotHW
             }
 #ifdef HARDWARE
             flexray.updateCommandFrame();
-            flexray.writeToFlexray();
+            flexray.exchangeData();
 #endif
         };
 	
@@ -114,7 +116,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(0.5);
+    ros::Rate rate(10);
     
     while (ros::ok())
     {

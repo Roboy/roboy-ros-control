@@ -105,8 +105,8 @@ public:
      */
     void initializeMotors(){
         controlparams.tag = 0;			// sint32
-        controlparams.outputPosMax = 200;	// sint32			// set arbitary max position
-        controlparams.outputNegMax = -200;		// sint32
+        controlparams.outputPosMax = 1000;	// sint32			
+        controlparams.outputNegMax = -1000;		// sint32
         controlparams.spPosMax = 10000.0;		// float32
         controlparams.spNegMax = -10000.0;		// float32
         controlparams.timePeriod = 100;		// float32		//in us	// set time period to avoid error case
@@ -118,9 +118,9 @@ public:
         controlparams.torqueConstant = 1.0;	// float32
 
         controlparams.params.pidParameters.integral = 0;	// float32
-        controlparams.params.pidParameters.pgain = 1000.0;	// float32
-        controlparams.params.pidParameters.igain = 0;		// float32
-        controlparams.params.pidParameters.dgain = 10.0;		// float32
+        controlparams.params.pidParameters.pgain = 10000.0;	// float32
+        controlparams.params.pidParameters.igain = 0.0; 	// float32
+        controlparams.params.pidParameters.dgain = 0.0;	// float32
         controlparams.params.pidParameters.forwardGain = 0;	// float32
         controlparams.params.pidParameters.deadBand = 0;	// float32
         controlparams.params.pidParameters.lastError = 0;	// float32
@@ -133,68 +133,57 @@ public:
             {
                 commandframe0[i].ControlMode[j] = Position;
                 commandframe0[i].OperationMode[j] = Initialise;
-                commandframe0[i].sp[j] = 3.0; 
+                commandframe0[i].sp[j] = 0; 
                 commandframe1[i].ControlMode[j] = Position;
                 commandframe1[i].OperationMode[j] = Initialise;
-                commandframe1[i].sp[j] = 3.0; 
+                commandframe1[i].sp[j] = 0; 
             }
         }
         updateCommandFrame();
-        writeToFlexray();
+        exchangeData();
         for(uint i=0;i<3;i++){
             for(uint j=0;j<4;j++)
             {
                 commandframe0[i].ControlMode[j] = Position;
                 commandframe0[i].OperationMode[j] = Run;
-                commandframe0[i].sp[j] = 3;
+                commandframe0[i].sp[j] = 0;
                 commandframe1[i].ControlMode[j] = Position;
                 commandframe1[i].OperationMode[j] = Run;
-                commandframe1[i].sp[j] = 3;
+                commandframe1[i].sp[j] = 0;
             }
         }
         updateCommandFrame();
-        writeToFlexray();
+        exchangeData();
         // check how many ganglions are connected via the activeGanglionsMask
 //        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
         numberOfGanglionsConnected = 1;
         ROS_INFO("%d ganglions are connected via flexray, activeGanglionsMask %c", numberOfGanglionsConnected,activeGanglionsMask);
     };
     
-    void readFromFlexray(){
-        DWORD dwNumInputBuffer=0;
-        DWORD dwNumBytesRead;
-        
-        // WAIT FOR DATA TO ARRIVE
-//        while(dwNumInputBuffer!=DATASETSIZE*2){
-//            m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
-//        }
-//        for(uint i=0;i<10dwNumInputBuffer!=DATASETSIZE*2){
-//            m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
-//        }
-        //        
-        //        // RECEIVE DATA
-        //        if(dwNumInputBuffer > DATASETSIZE*2)					// to prevent segfaults
-        //            dwNumInputBuffer = DATASETSIZE*2;
-        dwNumInputBuffer = DATASETSIZE*2;
-        ROS_INFO("reading data");
-        FT_Read(m_ftHandle, &InputBuffer[0], dwNumInputBuffer, &dwNumBytesRead); 	// read bytes into word locations
-        
-        // now make a copy of relevant signal
-        memcpy( GanglionData, InputBuffer, sizeof(GanglionData)); //ganglion data
-        
-        activeGanglionsMask=InputBuffer[sizeof(GanglionData)>>1];   //active ganglions, generated from usbFlexRay interface
-    };
-    
-    void writeToFlexray(){
+    void exchangeData(){
         m_ftStatus = SPI_WriteBuffer(m_ftHandle, &dataset[0], DATASETSIZE);		// send data
 	if (m_ftStatus != FT_OK){
 	    ROS_ERROR_STREAM("Failed to Send a byte through SPI, Error Code: " << m_ftStatus);
 	    //FT_SetBitMode(ftHandle, 0x0, 0x00); 			// Reset the port to disable MPSSE
 	    //FT_Close(ftHandle);					// Close the USB port
 	}else{
-            ROS_DEBUG("Data successfully sent via USB!");
+            DWORD dwNumInputBuffer=0;
+            DWORD dwNumBytesRead;
+            
+            // WAIT FOR DATA TO ARRIVE
+            ROS_DEBUG("waiting for data");
+            while(dwNumInputBuffer!=DATASETSIZE*2){
+                m_ftStatus = FT_GetQueueStatus(m_ftHandle, &dwNumInputBuffer); // get the number of bytes in the device receive buffer
+            }
+            ROS_DEBUG("reading data");
+            FT_Read(m_ftHandle, &InputBuffer[0], dwNumInputBuffer, &dwNumBytesRead); 	// read bytes into word locations
+            
+            // now make a copy of relevant signal
+            memcpy( GanglionData, InputBuffer, sizeof(GanglionData)); //ganglion data
+            
+            activeGanglionsMask=InputBuffer[sizeof(GanglionData)>>1];   //active ganglions, generated from usbFlexRay interface
         }
-    };
+    }
     
     void updateCommandFrame(){
         memcpy((void *)&dataset[0], commandframe0, sizeof(comsCommandFrame)*GANGLIONS_PER_CONTROL_FRAME );

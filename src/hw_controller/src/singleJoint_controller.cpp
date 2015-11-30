@@ -28,9 +28,8 @@ namespace position_controllers_ns{
         
         void update(const ros::Time& time, const ros::Duration& period)
         {
-            ROS_INFO("update");
             float pos = joint_.getPosition();
-            printf("%s update, current pos: %f, setpoint: %f\n", joint_name.c_str(), pos, setpoint_);
+            ROS_INFO_THROTTLE(1,"%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos, setpoint_);
             joint_.setCommand(setpoint_);
         }
         
@@ -39,8 +38,8 @@ namespace position_controllers_ns{
         
     private:
         hardware_interface::JointHandle joint_;
-        double gain_ = 1.25;
-        double setpoint_ = 3.00;
+        double gain_ = 1.25; // not used
+        double setpoint_ = 0;
         std::string joint_name;
         ros::NodeHandle n;
         ros::Subscriber sub;
