@@ -1,39 +1,53 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <gazebo_ros_control/robot_hw_sim.h>
+#include <gazebo_msgs/LinkStates.h>
 #include <controller_manager/controller_manager.h>
-#include "easylogging++.h"
-INITIALIZE_EASYLOGGINGPP
 
 class MyRobot : public gazebo_ros_control::RobotHWSim
 {
     public:
 	MyRobot(){ 
 	    // connect and register the joint state interface
-	    hardware_interface::JointStateHandle state_handle_a("A", &pos, &vel, &eff);
+	    hardware_interface::JointStateHandle state_handle_a("link1", &pos, &vel, &eff);
 	    jnt_state_interface.registerHandle(state_handle_a);
 	    
 	    registerInterface(&jnt_state_interface);
 	    
 	    // connect and register the joint position interface
-	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("A"), &cmd);
+	    hardware_interface::JointHandle pos_handle_a(jnt_state_interface.getHandle("link1"), &cmd);
 	    jnt_pos_interface.registerHandle(pos_handle_a);
 	    
 	    registerInterface(&jnt_pos_interface);
+            
+            n.subscribe("/gazebo/link_states", 1, &MyRobot::linkStateCallback, this);
 	};
         
         bool initSim(const std::string& robot_namespace, ros::NodeHandle model_nh,
             gazebo::physics::ModelPtr parent_model, const urdf::Model *const urdf_model,
             std::vector<transmission_interface::TransmissionInfo> transmissions){
+            ROS_INFO("init_sim");
             
         };
+        
+        void linkStateCallback(const gazebo_msgs::LinkStates::ConstPtr& msg){
+            ROS_INFO("link state");
+//            for(uint i=0;i<msg->name.size();i++){
+//                ROS_INFO(msg->name[i].c_str());
+//            }
+        };
         	
-	void readSim(ros::Time time, ros::Duration period){
-            LOG(INFO) << "hehe";
+        void readSim(ros::Time time, ros::Duration period){
+            ROS_INFO("hehe");
         };
-	void writeSim(ros::Time time, ros::Duration period){
-            LOG(INFO) << "hihi";
+        
+        void writeSim(ros::Time time, ros::Duration period){
+            ROS_INFO("hihi");
         };
+        
+        void eStopActive(const bool active){
+            ROS_INFO("THÄHÄ");
+        }
 	
 	private:
 	    hardware_interface::JointStateInterface jnt_state_interface;
@@ -44,18 +58,13 @@ class MyRobot : public gazebo_ros_control::RobotHWSim
 	    double vel;
 	    double eff;
 	    ros::Time prevTime;
+            ros::NodeHandle n;
 };
 
 
 int main(int argc, char* argv[])
 {
-    START_EASYLOGGINGPP(argc, argv);
-    // Load configuration from file
-    el::Configurations conf("/home/letrend/catkin_ws/logging.conf");
-    // Actually reconfigure all loggers instead
-    el::Loggers::reconfigureAllLoggers(conf);
-    
-    ros::init(argc, argv, "singleJoint");
+    ros::init(argc, argv, "singleJoint_gazebo");
     
     MyRobot robot;
     controller_manager::ControllerManager cm(&robot);
@@ -66,7 +75,7 @@ int main(int argc, char* argv[])
     
     // Control loop
     ros::Time prev_time = ros::Time::now();
-    ros::Rate rate(10.0);
+    ros::Rate rate(0.5);
     
     while (ros::ok())
     {
