@@ -3,6 +3,7 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include "std_msgs/Float32MultiArray.h"
+#include <math.h>
 
 namespace position_controllers_ns{
     
@@ -11,6 +12,7 @@ namespace position_controllers_ns{
     public:
 	PositionController(){
             sub = n.subscribe("trajectory_advertiser", 1000, &PositionController::trajectoryCB, this);
+            trajectory.push_back(0);
         };
         
         bool init(hardware_interface::PositionJointInterface* hw, ros::NodeHandle &n)
@@ -29,7 +31,12 @@ namespace position_controllers_ns{
         void update(const ros::Time& time, const ros::Duration& period)
         {
             float pos = joint_.getPosition();
-            ROS_INFO_THROTTLE(1,"%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos, setpoint_);
+            if(fabs(pos-trajectory[trajpos])<0.01 && trajpos < trajectory.size()){
+                ROS_INFO("increment, trajpos %d", trajpos);
+                trajpos++;
+                setpoint_ = trajectory[trajpos];
+            }
+            ROS_INFO_THROTTLE(1,"%s update, current pos: %f, setpoint: %f %d", joint_name.c_str(), pos, setpoint_,trajpos);
             joint_.setCommand(setpoint_);
         }
         
@@ -44,9 +51,15 @@ namespace position_controllers_ns{
         ros::NodeHandle n;
         ros::Subscriber sub;
         std::vector<float> trajectory;
+        uint trajpos=0;
         void trajectoryCB(const std_msgs::Float32MultiArray::ConstPtr& msg){
             ROS_INFO("New trajectory [%d elements]", (int)msg->data.size());
-            setpoint_ = msg->data[0];
+            trajectory.resize(msg->data.size());
+            trajpos=0;
+            for(uint i=0;i<msg->data.size();i++){
+                trajectory[i]=msg->data[i];
+            }
+            setpoint_ = trajectory[0];
         }
     };
     PLUGINLIB_EXPORT_CLASS(position_controllers_ns::PositionController, controller_interface::ControllerBase);
