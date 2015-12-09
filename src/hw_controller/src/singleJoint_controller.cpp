@@ -11,6 +11,7 @@ namespace position_controllers_ns{
     {
     public:
 	PositionController(){
+            ROS_INFO("Subscribing to trajectory_advertiser");
             sub = n.subscribe("trajectory_advertiser", 1000, &PositionController::trajectoryCB, this);
             trajectory.push_back(0);
         };
@@ -31,12 +32,17 @@ namespace position_controllers_ns{
         void update(const ros::Time& time, const ros::Duration& period)
         {
             float pos = joint_.getPosition();
-            if(fabs(pos-trajectory[trajpos])<0.01 && trajpos < trajectory.size()){
-                ROS_INFO("increment, trajpos %d", trajpos);
+            if(fabs(pos-trajectory[trajpos])<0.2 && trajpos < trajectory.size()-1){
                 trajpos++;
                 setpoint_ = trajectory[trajpos];
             }
-            ROS_INFO_THROTTLE(1,"%s update, current pos: %f, setpoint: %f %d", joint_name.c_str(), pos, setpoint_,trajpos);
+            
+            if(trajpos == trajectory.size()-1){
+                ROS_INFO_THROTTLE(1,"%s update, current pos: %f, reached endpoint of trajectory %f", joint_name.c_str(), pos, trajectory[trajpos]);
+                setpoint_ = trajectory[trajpos];
+            }else{
+                ROS_INFO_THROTTLE(1,"%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos, setpoint_);
+            }
             joint_.setCommand(setpoint_);
         }
         
@@ -51,13 +57,16 @@ namespace position_controllers_ns{
         ros::NodeHandle n;
         ros::Subscriber sub;
         std::vector<float> trajectory;
-        uint trajpos=0;
+        uint trajpos = 0;
+        bool reachedEndpoint = false;
         void trajectoryCB(const std_msgs::Float32MultiArray::ConstPtr& msg){
             ROS_INFO("New trajectory [%d elements]", (int)msg->data.size());
             trajectory.resize(msg->data.size());
             trajpos=0;
+            reachedEndpoint = false;
             for(uint i=0;i<msg->data.size();i++){
                 trajectory[i]=msg->data[i];
+                ROS_INFO("%f ",trajectory[i]);
             }
             setpoint_ = trajectory[0];
         }

@@ -155,8 +155,8 @@ public:
         updateCommandFrame();
         exchangeData();
         // check how many ganglions are connected via the activeGanglionsMask
-//        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
-        numberOfGanglionsConnected = 1;
+        numberOfGanglionsConnected = NumberOfSetBits(activeGanglionsMask);
+//        numberOfGanglionsConnected = 1;
         ROS_INFO("%d ganglions are connected via flexray, activeGanglionsMask %c", numberOfGanglionsConnected,activeGanglionsMask);
     };
     
