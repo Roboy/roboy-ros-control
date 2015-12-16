@@ -1,0 +1,17 @@
+<package>
+  <name>roboy_controller</name>
+  <version>0.0.0</version>
+  <description>position_controllers</description>
+  <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>controller_interface</build_depend> 
+  <run_depend>controller_interface</run_depend> 
+  <run_depend>message_runtime</run_depend>
+
+  <export>
+  	<controller_interface plugin="${prefix}/singleJoint_controller_plugin.xml" />
+  </export>
+</package>
