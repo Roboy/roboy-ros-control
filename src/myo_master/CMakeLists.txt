@@ -29,4 +29,8 @@ add_executable(singleJoint src/singleJoint.cpp)
 target_link_libraries(singleJoint ${catkin_LIBRARIES})
 
 add_executable(multiJoint src/multiJoint.cpp src/roboy_hardwareInterface.cpp src/FlexRayHardwareInterface.cpp)
-target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx)
+
+# dont forget this line, otherwise the messages will not be generated properly
+add_dependencies(multiJoint multiJoint_generate_messages_cpp)
+
+target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx -lncurses)

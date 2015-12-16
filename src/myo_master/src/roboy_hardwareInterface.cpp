@@ -1,24 +1,29 @@
 #include "roboy_hardwareInterface.hpp"
 
 Roboy::Roboy(){ 
-    Init = nh.subscribe("/Init",1, &Roboy::initCB, this);
+    init_request_sub = nh.subscribe("/roboy/initRequest",1000, &Roboy::initializeCallback, this);
+    init_response_pub = nh.advertise<myo_master::InitializeResponse>("/roboy/initResponse",1);
+    
+    controller_manager_client = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
 }
 
-void Roboy::initCB(myo_master::InitializeRequest msg){
+void Roboy::initializeCallback(myo_master::InitializeRequest initrequest_msg){
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
-        ROS_WARN("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
+        ROS_WARN("Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
     }
     ROS_INFO("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
     
-    cmd = new double[msg.enable.size()];
-    pos = new double[msg.enable.size()];
-    vel = new double[msg.enable.size()];
-    eff = new double[msg.enable.size()];
+    cmd = new double[initrequest_msg.enable.size()];
+    pos = new double[initrequest_msg.enable.size()];
+    vel = new double[initrequest_msg.enable.size()];
+    eff = new double[initrequest_msg.enable.size()];
     
     char motorname[10];
+    vector<uint8_t> status;
+    status.resize(initrequest_msg.enable.size());
     
-    for (uint i=0; i<msg.enable.size(); i++){
+    for (uint i=0; i<initrequest_msg.enable.size(); i++){
         sprintf(motorname, "motor%d", i);
         // connect and register the joint state interface
         hardware_interface::JointStateHandle state_handle(motorname, &pos[i], &vel[i], &eff[i]);
@@ -27,20 +32,26 @@ void Roboy::initCB(myo_master::InitializeRequest msg){
         // connect and register the joint position interface
         hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
         jnt_pos_interface.registerHandle(pos_handle);
+        
+        status[i] = 1;  //TODO: enum with status codes
     }
     
     registerInterface(&jnt_state_interface);
     registerInterface(&jnt_pos_interface);
     
     ROS_INFO("Hardware interface initialized");
-    std::string str;
-    std::vector<std::string> resources = jnt_pos_interface.getNames();
+    string str;
+    vector<string> resources = jnt_pos_interface.getNames();
     for(uint i=0; i<resources.size();i++){
         str.append(resources[i]);
         str.append(" ");
     }
     ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
     ROS_INFO("Waiting for controller");
+    myo_master::InitializeResponse initresponse_msg;
+    initresponse_msg.status = status;
+    init_response_pub.publish(initresponse_msg);
+    
     ready = true;
 }
 

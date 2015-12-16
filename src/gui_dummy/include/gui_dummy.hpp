@@ -19,8 +19,8 @@ public:
     bool sendTrajectory(uint motor, uint32_t sampleRate, uint8_t controlMode, vector<float> setpoints);
     
     // callback functions
-    void initResponseCB(gui_dummy::InitializeResponse msg);
-    void statusCB(gui_dummy::Status msg);
+    void initResponseCallback(gui_dummy::InitializeResponse msg);
+    void statusCallback(gui_dummy::Status msg);
     
 private:
     ros::Publisher initPublisher;

@@ -7,7 +7,7 @@ int main(int argc, char* argv[])
     
     Roboy robot;
     controller_manager::ControllerManager cm(&robot);
-    
+
     // this is for asyncronous ros callbacks
     ros::AsyncSpinner spinner(1);
     spinner.start();
@@ -27,10 +27,16 @@ int main(int argc, char* argv[])
             robot.write();
             
             rate.sleep();
+            ROS_INFO_THROTTLE(1,"roboy ready");
+//            print(3,0,cols, " ");
+//            printMessage(3,cols/2-strlen(readystring)/2,readystring,GREEN);
         }else{
-            ROS_WARN_THROTTLE(1, "roboy not ready");
+            ROS_INFO_THROTTLE(1,"roboy not ready");
+//            print(3,0,cols, " ");
+//            printMessage(3,cols/2-strlen(notreadystring)/2,notreadystring,RED);
         }
     }
+    
     return 0;
 }
 

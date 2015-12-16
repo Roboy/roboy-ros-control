@@ -1,11 +1,11 @@
 #include "gui_dummy.hpp"
 
 GUI::GUI(){
-    initPublisher = nh.advertise<gui_dummy::InitializeRequest>("init", 1);
+    initPublisher = nh.advertise<gui_dummy::InitializeRequest>("/roboy/initRequest", 1);
     
-    initResponse = nh.subscribe("initResponse", 1, &GUI::initResponseCB, this);
+    initResponse = nh.subscribe("/roboy/initResponse", 1000, &GUI::initResponseCallback, this);
     
-    statusResponse = nh.subscribe("statusResponse", 1, &GUI::initResponseCB, this);
+    statusResponse = nh.subscribe("/roboy/statusResponse", 1000, &GUI::statusCallback, this);
 }
 
 GUI::~GUI(){}
@@ -35,7 +35,7 @@ bool GUI::sendTrajectory(uint motor, uint32_t sampleRate, uint8_t controlMode, v
 }
 
 // callback functions
-void GUI::initResponseCB(gui_dummy::InitializeResponse msg){
+void GUI::initResponseCallback(gui_dummy::InitializeResponse msg){
     char trajectorymotortopic[20];
     trajectoryPublisher.resize(msg.status.size());
     for(uint i=0; i<msg.status.size();i++){
@@ -44,6 +44,6 @@ void GUI::initResponseCB(gui_dummy::InitializeResponse msg){
     }
 }
 
-void GUI::statusCB(gui_dummy::Status msg){
+void GUI::statusCallback(gui_dummy::Status msg){
     
 }

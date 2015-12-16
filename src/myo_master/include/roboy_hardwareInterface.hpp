@@ -4,8 +4,13 @@
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 #include <ros/ros.h>
+#include <vector>
 #include "myo_master/InitializeRequest.h"
+#include "myo_master/InitializeResponse.h"
+#include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
+
+using namespace std;
 
 class Roboy : public hardware_interface::RobotHW
 {
@@ -17,7 +22,7 @@ class Roboy : public hardware_interface::RobotHW
         /**
          * CALLBACK This function initialises the requested motors
          */
-        void initCB(myo_master::InitializeRequest msg);
+        void initializeCallback(myo_master::InitializeRequest msg);
         /**
          * Destructor
          */
@@ -44,9 +49,9 @@ class Roboy : public hardware_interface::RobotHW
         FlexRayHardwareInterface flexray;
         //! ros handler
         ros::NodeHandle nh;
-        // subscriber to head tactile states
-        ros::Subscriber Init;
-        
+        ros::Subscriber init_request_sub;
+        ros::Publisher init_response_pub;
+        ros::ServiceClient controller_manager_client;
         //publisher for nao speech
         ros::Publisher speech_pub;
 };
