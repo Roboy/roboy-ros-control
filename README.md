@@ -26,7 +26,7 @@ catkin_make
 cd path/to/ros_hierarchy
 source devel/setup.bash
 roscore &
-rosrun hw_interface multiJoint &
+rosrun myo_master multiJoint
 ```
 The controller_manager now runs in the asyncronous thread, you can query his services with:
 ```
