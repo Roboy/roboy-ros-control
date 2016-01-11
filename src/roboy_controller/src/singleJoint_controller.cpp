@@ -3,9 +3,9 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include "std_msgs/Float32MultiArray.h"
-#include <roboy_controller/Status.h>  // needs to be packagename/message
-#include <roboy_controller/Steer.h>  // needs to be packagename/message
-#include <roboy_controller/Trajectory.h>  // needs to be packagename/message
+#include <common_utilities/Status.h>
+#include <common_utilities/Steer.h>
+#include <common_utilities/Trajectory.h>
 #include <math.h>
 //#include <ncurses.h>
 

@@ -1,9 +1,9 @@
 #include "ros/ros.h"
-#include "gui_dummy/Trajectory.h"
-#include "gui_dummy/InitializeRequest.h"
-#include "gui_dummy/InitializeResponse.h"
-#include "gui_dummy/Status.h"
-#include "gui_dummy/Steer.h"
+#include "common_utilities/Trajectory.h"
+#include "common_utilities/InitializeRequest.h"
+#include "common_utilities/InitializeResponse.h"
+#include "common_utilities/Status.h"
+#include "common_utilities/Steer.h"
 #include <vector>
 
 using namespace std;

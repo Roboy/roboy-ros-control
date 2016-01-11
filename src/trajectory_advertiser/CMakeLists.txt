@@ -10,4 +10,8 @@ find_package(catkin REQUIRED COMPONENTS roscpp std_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime)
 
 add_executable(trajectory_advertiser src/trajectory_advertiser.cpp)
+
+# dont forget this line, otherwise the messages will not be generated properly
+add_dependencies(trajectory_advertiser common_utilities_generate_messages_cpp)
+
 target_link_libraries(trajectory_advertiser ${catkin_LIBRARIES})

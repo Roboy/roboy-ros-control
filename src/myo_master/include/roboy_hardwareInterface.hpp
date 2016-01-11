@@ -5,8 +5,8 @@
 #include <hardware_interface/robot_hw.h>
 #include <ros/ros.h>
 #include <vector>
-#include "myo_master/InitializeRequest.h"
-#include "myo_master/InitializeResponse.h"
+#include "common_utilities/InitializeRequest.h"
+#include "common_utilities/InitializeResponse.h"
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
 
