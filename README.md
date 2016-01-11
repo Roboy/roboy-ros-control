@@ -1,12 +1,12 @@
-This illustrates ros hierarchy in simple examples
-
+This illustrates ros hierarchy applied to control of a myode muscle via flexray hardware interface
 # Dependencies #
 
 ```
 #!bash
 sudo apt-get install ros-indigo-desktop-full
-sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager
+sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox ros-indigo-gazebo-ros-control
 ```
+project also depends on the [flexrayusbinterface](https://bitbucket.org/rosifyingmyorobotics/flexrayusbinterface)
 
 # Build #
 
