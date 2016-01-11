@@ -1,1 +1,5 @@
+devel/
+build/
 .idea
+*~
+.catkin_workspace

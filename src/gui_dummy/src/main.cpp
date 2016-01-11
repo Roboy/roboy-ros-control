@@ -32,16 +32,28 @@ void clearAll(){
     }
 }
 
-vector<float> parseForFloatValues(char* floatstring){
+vector<float> parseForFloatValues(char* string){
     stringstream ss;
     vector<float> setpoints;
     float sp;
-    ss << floatstring;
+    ss << string;
     while(ss){
         ss >> sp;
         setpoints.push_back(sp);
     }
     return setpoints;
+}
+
+vector<signed char> parseForIntValues(char* string){
+    stringstream ss;
+    vector<signed char> motors;
+    signed char motor;
+    ss << string;
+    while(ss){
+        ss >> motor;
+        motors.push_back(motor);
+    }
+    return motors;
 }
 
 int main(int argc, char **argv)
@@ -89,8 +101,9 @@ int main(int argc, char **argv)
     char cmd;
     float pos;
     uint motor, sampleRate;
-    char floatstring[100], intstring[10];
+    char floatstring[100], intstring[100];
     vector<float> floats;
+    vector<signed char> ints;
     vector<signed char> enable;
     
     do{
@@ -193,12 +206,8 @@ int main(int argc, char **argv)
                 printMessage(4,0,motorsstring,BLUE);
                 refresh();
                 mvgetnstr(5,0,floatstring,100);
-                floats = parseForFloatValues(floatstring);
-                enable.clear();
-                for(uint i=0;i<floats.size();i++){
-                    enable.push_back(1);
-                }
-                gui.initRequest(enable);
+                ints = parseForIntValues(intstring);
+                gui.initRequest(ints);
                 print(4,0,cols," ");
                 print(5,0,cols," ");
                 printMessage(5,0,inititializestring,GREEN);
