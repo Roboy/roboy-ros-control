@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include)
 
 FILE(GLOB srcs "src/*.cpp")
 

@@ -9,6 +9,7 @@
 #include "common_utilities/InitializeResponse.h"
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
+#include "CommonDefinitions.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ class Roboy : public hardware_interface::RobotHW
         /**
          * CALLBACK This function initialises the requested motors
          */
-        void initializeCallback(myo_master::InitializeRequest msg);
+        void initializeCallback(common_utilities::InitializeRequest msg);
         /**
          * Destructor
          */

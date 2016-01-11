@@ -2,29 +2,30 @@
 
 Roboy::Roboy(){ 
     init_request_sub = nh.subscribe("/roboy/initRequest",1000, &Roboy::initializeCallback, this);
-    init_response_pub = nh.advertise<myo_master::InitializeResponse>("/roboy/initResponse",1);
+    init_response_pub = nh.advertise<common_utilities::InitializeResponse>("/roboy/initResponse",1);
     
     controller_manager_client = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
 }
 
-void Roboy::initializeCallback(myo_master::InitializeRequest initrequest_msg){
+void Roboy::initializeCallback(common_utilities::InitializeRequest initrequest_msg){
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
         ROS_WARN("Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
     }
     ROS_INFO("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
     
-    cmd = new double[initrequest_msg.enable.size()];
-    pos = new double[initrequest_msg.enable.size()];
-    vel = new double[initrequest_msg.enable.size()];
-    eff = new double[initrequest_msg.enable.size()];
+    cmd = new double[initrequest_msg.idList.size()];
+    pos = new double[initrequest_msg.idList.size()];
+    vel = new double[initrequest_msg.idList.size()];
+    eff = new double[initrequest_msg.idList.size()];
     
     char motorname[10];
-    vector<uint8_t> status;
-    status.resize(initrequest_msg.enable.size());
+
+    common_utilities::InitializeResponse msg;
+    common_utilities::ControllerState controllerState;
     
-    for (uint i=0; i<initrequest_msg.enable.size(); i++){
-        sprintf(motorname, "motor%d", i);
+    for (uint i=0; i<initrequest_msg.idList.size(); i++){
+        sprintf(motorname, "motor%d", initrequest_msg.idList[i]);
         // connect and register the joint state interface
         hardware_interface::JointStateHandle state_handle(motorname, &pos[i], &vel[i], &eff[i]);
         jnt_state_interface.registerHandle(state_handle);
@@ -32,8 +33,11 @@ void Roboy::initializeCallback(myo_master::InitializeRequest initrequest_msg){
         // connect and register the joint position interface
         hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
         jnt_pos_interface.registerHandle(pos_handle);
-        
-        status[i] = 1;  //TODO: enum with status codes
+
+        controllerState.id = initrequest_msg.idList[i];
+        controllerState.state = ControllerState::INITIALIZED;
+
+        msg.controllers.push_back(controllerState);  //TODO: enum with status codes
     }
     
     registerInterface(&jnt_state_interface);
@@ -48,9 +52,8 @@ void Roboy::initializeCallback(myo_master::InitializeRequest initrequest_msg){
     }
     ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
     ROS_INFO("Waiting for controller");
-    myo_master::InitializeResponse initresponse_msg;
-    initresponse_msg.status = status;
-    init_response_pub.publish(initresponse_msg);
+
+    init_response_pub.publish(msg);
     
     ready = true;
 }

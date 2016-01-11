@@ -15,7 +15,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 	PositionController(){
             ROS_INFO("Subscribing to /roboy/trajectory");
             trajectory_sub = n.subscribe("/roboy/trajectory", 1000, &PositionController::trajectoryCallback, this);
-            status_pub = n.advertise<roboy_controller::Status>("/roboy/statusResponse",1);
+            status_pub = n.advertise<common_utilities::Status>("/roboy/statusResponse",1);
             trajectory.push_back(0);
         };
         
@@ -63,7 +63,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
             std::vector<float> trajectory;
             uint trajpos = 0;
             bool reachedEndpoint = false;
-            void trajectoryCallback(const roboy_controller::Trajectory::ConstPtr& msg){
+            void trajectoryCallback(const common_utilities::Trajectory::ConstPtr& msg){
                 ROS_INFO("New trajectory [%d elements]", (int)msg->waypoints.size());
                 trajectory.resize(msg->waypoints.size());
                 trajpos=0;

@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     uint motor, sampleRate;
     char floatstring[100], intstring[10];
     vector<float> floats;
-    vector<unsigned char> enable;
+    vector<signed char> enable;
     
     do{
         print(4,0,cols," ");

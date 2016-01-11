@@ -15,12 +15,12 @@ public:
     ~GUI();
     
     // publish functions
-    void initRequest(vector<unsigned char> motor);
+    void initRequest(vector<signed char> motor);
     bool sendTrajectory(uint motor, uint32_t sampleRate, uint8_t controlMode, vector<float> setpoints);
     
     // callback functions
-    void initResponseCallback(gui_dummy::InitializeResponse msg);
-    void statusCallback(gui_dummy::Status msg);
+    void initResponseCallback(common_utilities::InitializeResponse msg);
+    void statusCallback(common_utilities::Status msg);
     
 private:
     ros::Publisher initPublisher;
