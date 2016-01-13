@@ -11,16 +11,17 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include)
+include_directories(include 
+${catkin_INCLUDE_DIRS} 
+include/ 
+${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
+${CMAKE_CURRENT_SOURCE_DIR}/../../../flexrayusbinterface/include
+)
 
 FILE(GLOB srcs "src/*.cpp")
 
-add_executable(singleJoint src/singleJoint.cpp)
-target_link_libraries(singleJoint ${catkin_LIBRARIES})
-
-add_executable(multiJoint src/multiJoint.cpp src/roboy_hardwareInterface.cpp src/FlexRayHardwareInterface.cpp)
-
-# dont forget this line, otherwise the messages will not be generated properly
-add_dependencies(multiJoint common_utilities_generate_messages_cpp)
+add_executable(multiJoint src/multiJoint.cpp src/roboy_hardwareInterface.cpp 
+${CMAKE_CURRENT_SOURCE_DIR}/../../../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
+add_dependencies(multiJoint common_utilities_gencpp)
 
 target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx -lncurses)

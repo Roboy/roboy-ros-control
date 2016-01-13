@@ -1,0 +1,9 @@
+<launch>
+	<node name="myo_master" 
+            pkg="myo_master" 
+            type="multiJoint" 
+            respawn="false"
+            output="screen" 
+            launch-prefix="xterm -e gdb --args"/>
+</launch>
+	

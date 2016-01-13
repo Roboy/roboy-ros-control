@@ -1,0 +1,32 @@
+<launch>
+	<!-- Load the parameters to the parameter server from the yaml file-->
+	<rosparam file="$(find roboy_controller)/config/flexray_controller.yaml" command="load"/>
+	<!-- spawn the test_controllers on the parameter server-->
+	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+	  output="screen" args="motor_controller0
+				motor_controller1
+				motor_controller2
+				motor_controller3
+				motor_controller4
+				motor_controller5
+				motor_controller6
+				motor_controller7
+				motor_controller8
+				motor_controller9
+				motor_controller10
+				motor_controller11
+				motor_controller12
+				motor_controller13
+				motor_controller14
+				motor_controller15
+				motor_controller16
+				motor_controller17
+				motor_controller18
+				motor_controller19
+				motor_controller20
+				motor_controller21
+				motor_controller22
+				motor_controller23" />
+
+</launch>
+	

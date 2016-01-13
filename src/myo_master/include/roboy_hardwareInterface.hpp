@@ -5,8 +5,7 @@
 #include <hardware_interface/robot_hw.h>
 #include <ros/ros.h>
 #include <vector>
-#include "common_utilities/InitializeRequest.h"
-#include "common_utilities/InitializeResponse.h"
+#include "common_utilities/Initialize.h"
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
 #include "CommonDefinitions.h"
@@ -21,9 +20,12 @@ class Roboy : public hardware_interface::RobotHW
          */
 	Roboy();
         /**
-         * CALLBACK This function initialises the requested motors
+         * SERVICE This function initialises the requested motors
+         * @param req vector<int8> containing requested motor ids
+         * @param res vector<ControllerStates> cf. CommonDefinitions.h
          */
-        void initializeCallback(common_utilities::InitializeRequest msg);
+		bool initializeService(common_utilities::Initialize::Request  &req,
+									  common_utilities::Initialize::Response &res);
         /**
          * Destructor
          */
@@ -50,9 +52,9 @@ class Roboy : public hardware_interface::RobotHW
         FlexRayHardwareInterface flexray;
         //! ros handler
         ros::NodeHandle nh;
-        ros::Subscriber init_request_sub;
-        ros::Publisher init_response_pub;
         ros::ServiceClient controller_manager_client;
+		ros::ServiceServer init_srv;
+
         //publisher for nao speech
         ros::Publisher speech_pub;
 };

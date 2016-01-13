@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     
     while (ros::ok())
     {
-	if(robot.ready){
+	    if(robot.ready){
             const ros::Time	    time = ros::Time::now();
             const ros::Duration period = time - prev_time;
             

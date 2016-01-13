@@ -11,11 +11,11 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
+include_directories(include ${catkin_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include)
+
 include_directories(include "include/")
 
 add_executable(gui_dummy src/main.cpp src/gui_dummy.cpp)
-
-# dont forget this line, otherwise the messages will not be generated properly
-add_dependencies(gui_dummy common_utilities_generate_messages_cpp)
+add_dependencies(gui_dummy common_utilities_gencpp)
 
 target_link_libraries(gui_dummy ${catkin_LIBRARIES} -lncurses)

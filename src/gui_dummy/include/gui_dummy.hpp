@@ -1,7 +1,6 @@
 #include "ros/ros.h"
 #include "common_utilities/Trajectory.h"
-#include "common_utilities/InitializeRequest.h"
-#include "common_utilities/InitializeResponse.h"
+#include "common_utilities/Initialize.h"
 #include "common_utilities/Status.h"
 #include "common_utilities/Steer.h"
 #include <vector>

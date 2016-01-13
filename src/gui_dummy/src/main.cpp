@@ -31,29 +31,22 @@ void clearAll(){
         print(i,0,cols," ");
     }
 }
-
-vector<float> parseForFloatValues(char* string){
+template <typename T>
+vector<T> parseForValues(char* string){
     stringstream ss;
-    vector<float> setpoints;
-    float sp;
+    vector<T> vals;
+    T f;
     ss << string;
-    while(ss){
-        ss >> sp;
-        setpoints.push_back(sp);
+    while (ss) {
+        ss >> f;
+        vals.push_back(f);
     }
-    return setpoints;
+    return vals;
 }
 
-vector<signed char> parseForIntValues(char* string){
+vector<signed char> parseForValues(char* string){
     stringstream ss;
-    vector<signed char> motors;
-    signed char motor;
-    ss << string;
-    while(ss){
-        ss >> motor;
-        motors.push_back(motor);
-    }
-    return motors;
+
 }
 
 int main(int argc, char **argv)
@@ -133,7 +126,7 @@ int main(int argc, char **argv)
                 print(4,0,cols," ");
                 print(5,0,cols," ");
                 
-                if(gui.sendTrajectory(motor, sampleRate, 0, parseForFloatValues(floatstring))){
+                if(gui.sendTrajectory(motor, sampleRate, 0, parseForValues<float>(floatstring))){
                     printMessage(5,0,messagepublishedstring,GREEN);
                 }else{
                     printMessage(5,0,messagenotpublishedstring,RED);
@@ -163,7 +156,7 @@ int main(int argc, char **argv)
                 print(4,0,cols," ");
                 print(5,0,cols," ");
                 
-                if(gui.sendTrajectory(motor, sampleRate, 0, parseForFloatValues(floatstring))){
+                if(gui.sendTrajectory(motor, sampleRate, 0, parseForValues<float>(floatstring))){
                     printMessage(5,0,messagepublishedstring,GREEN);
                 }else{
                     printMessage(5,0,messagenotpublishedstring,RED);
@@ -193,7 +186,7 @@ int main(int argc, char **argv)
                 print(4,0,cols," ");
                 print(5,0,cols," ");
                 
-                if(gui.sendTrajectory(motor, sampleRate, 0, parseForFloatValues(floatstring))){
+                if(gui.sendTrajectory(motor, sampleRate, 0, parseForValues<float>(floatstring))){
                     printMessage(5,0,messagepublishedstring,GREEN);
                 }else{
                     printMessage(5,0,messagenotpublishedstring,RED);
@@ -205,8 +198,8 @@ int main(int argc, char **argv)
             case '3':
                 printMessage(4,0,motorsstring,BLUE);
                 refresh();
-                mvgetnstr(5,0,floatstring,100);
-                ints = parseForIntValues(intstring);
+                mvgetnstr(5,0,intstring,100);
+                ints = parseForValues(intstring);
                 gui.initRequest(ints);
                 print(4,0,cols," ");
                 print(5,0,cols," ");
