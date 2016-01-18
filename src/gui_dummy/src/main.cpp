@@ -31,6 +31,7 @@ void clearAll(){
         print(i,0,cols," ");
     }
 }
+
 template <typename T>
 vector<T> parseForValues(char* string){
     stringstream ss;
@@ -42,11 +43,6 @@ vector<T> parseForValues(char* string){
         vals.push_back(f);
     }
     return vals;
-}
-
-vector<signed char> parseForValues(char* string){
-    stringstream ss;
-
 }
 
 int main(int argc, char **argv)
@@ -199,7 +195,7 @@ int main(int argc, char **argv)
                 printMessage(4,0,motorsstring,BLUE);
                 refresh();
                 mvgetnstr(5,0,intstring,100);
-                ints = parseForValues(intstring);
+                ints = parseForValues<signed char>(intstring);
                 gui.initRequest(ints);
                 print(4,0,cols," ");
                 print(5,0,cols," ");

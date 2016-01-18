@@ -24,6 +24,7 @@ public:
 private:
     ros::Publisher initPublisher;
     vector<ros::Publisher> trajectoryPublisher;
-    ros::Subscriber initResponse, statusResponse;
+    ros::ServiceClient initializeService;
+    ros::Subscriber statusResponse;
     ros::NodeHandle nh;
 };

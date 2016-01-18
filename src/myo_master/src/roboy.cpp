@@ -1,13 +1,13 @@
-#include "roboy_hardwareInterface.hpp"
+#include "roboy.hpp"
 
-Roboy::Roboy()
+HardwareInterface::HardwareInterface()
 {
-    init_srv = nh.advertiseService("/roboy/initialize", &Roboy::initializeService, this);
+    init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
     
     controller_manager_client = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
 }
 
-bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
+bool HardwareInterface::initializeService(common_utilities::Initialize::Request  &req,
                               common_utilities::Initialize::Response &res)
 {
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
@@ -54,7 +54,7 @@ bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
     return true;
 }
 
-Roboy::~Roboy()
+HardwareInterface::~HardwareInterface()
 {
     delete[] cmd;
     delete[] pos;
@@ -62,7 +62,7 @@ Roboy::~Roboy()
     delete[] eff;
 }
 
-void Roboy::read()
+void HardwareInterface::read()
 {
     ROS_DEBUG("read");
 #ifdef HARDWARE
@@ -79,7 +79,7 @@ void Roboy::read()
         }
     }
 }
-void Roboy::write()
+void HardwareInterface::write()
 {
     ROS_DEBUG("write");
     uint i = 0;
