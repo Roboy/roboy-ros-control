@@ -63,8 +63,6 @@ public:
 	{
 		cm = new controller_manager::ControllerManager(&hardwareInterface);
 		// this is for asyncronous ros callbacks
-		ros::AsyncSpinner spinner(1);
-		spinner.start();
 	}
 
 	void main_loop()
@@ -72,6 +70,9 @@ public:
 		// Control loop
 		ros::Time prev_time = ros::Time::now();
 		ros::Rate rate(10);
+
+		ros::AsyncSpinner spinner(2); // 4 threads
+		spinner.start();
 
 		bool controller_loaded = false;
 
@@ -90,8 +91,10 @@ public:
 					ROS_INFO_THROTTLE(1, "roboy ready");
 				}else{
 					vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
-					for(auto resource : resources)
+					for(auto resource : resources) {
 						cm->loadController(resource);
+						cm->
+					}
 					controller_loaded = true;
 				}
 			}else{

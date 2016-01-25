@@ -23,8 +23,7 @@ public:
     void statusCallback(common_utilities::Status msg);
     
 private:
-    map<uint, ros::ServiceClient> trajectory_srvs;
-    ros::ServiceClient initialize_srv;
-    ros::Subscriber statusResponse;
+    map<int8_t, ros::ServiceClient> trajectory_srvs;
+    ros::ServiceClient initialize_srv, status_srv;
     ros::NodeHandle nh;
 };

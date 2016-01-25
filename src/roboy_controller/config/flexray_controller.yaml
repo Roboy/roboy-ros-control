@@ -1,97 +1,97 @@
 # This file contains parameter for several test controllers, which will be uploaded to the ros parameter server via
 # the roslaunch file
-motor_controller0:
+motor0:
   joint_name: motor0
   type: roboy_controller/singleJoint_controller
 
-motor_controller1:
+motor1:
   joint_name: motor1
   type: roboy_controller/singleJoint_controller
 
-motor_controller2:
+motor2:
   joint_name: motor2
   type: roboy_controller/singleJoint_controller
 
-motor_controller3:
+motor3:
   joint_name: motor3
   type: roboy_controller/singleJoint_controller
 
-motor_controller4:
+motor4:
   joint_name: motor4
   type: roboy_controller/singleJoint_controller
 
-motor_controller5:
+motor5:
   joint_name: motor5
   type: roboy_controller/singleJoint_controller
 
-motor_controller6:
+motor6:
   joint_name: motor6
   type: roboy_controller/singleJoint_controller
 
-motor_controller7:
+motor7:
   joint_name: motor7
   type: roboy_controller/singleJoint_controller
 
-motor_controller8:
+motor8:
   joint_name: motor8
   type: roboy_controller/singleJoint_controller
 
-motor_controller9:
+motor9:
   joint_name: motor9
   type: roboy_controller/singleJoint_controller
 
-motor_controller10:
+motor10:
   joint_name: motor10
   type: roboy_controller/singleJoint_controller
 
-motor_controller11:
+motor11:
   joint_name: motor11
   type: roboy_controller/singleJoint_controller
 
-motor_controller12:
+motor12:
   joint_name: motor12
   type: roboy_controller/singleJoint_controller
 
-motor_controller13:
+motor13:
   joint_name: motor13
   type: roboy_controller/singleJoint_controller
 
-motor_controller14:
+motor14:
   joint_name: motor14
   type: roboy_controller/singleJoint_controller
 
-motor_controller15:
+motor15:
   joint_name: motor15
   type: roboy_controller/singleJoint_controller
 
-motor_controller16:
+motor16:
   joint_name: motor16
   type: roboy_controller/singleJoint_controller
 
-motor_controller17:
+motor17:
   joint_name: motor17
   type: roboy_controller/singleJoint_controller
 
-motor_controller18:
+motor18:
   joint_name: motor18
   type: roboy_controller/singleJoint_controller
 
-motor_controller19:
+motor19:
   joint_name: motor19
   type: roboy_controller/singleJoint_controller
 
-motor_controller20:
+motor20:
   joint_name: motor20
   type: roboy_controller/singleJoint_controller
 
-motor_controller21:
+motor21:
   joint_name: motor21
   type: roboy_controller/singleJoint_controller
 
-motor_controller22:
+motor22:
   joint_name: motor22
   type: roboy_controller/singleJoint_controller
 
-motor_controller23:
+motor23:
   joint_name: motor23
   type: roboy_controller/singleJoint_controller

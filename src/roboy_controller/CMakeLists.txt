@@ -11,7 +11,11 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_int
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(
+include 
+${catkin_INCLUDE_DIRS}
+${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
+)
 
 add_library(singleJoint_controller src/singleJoint_controller.cpp)
 

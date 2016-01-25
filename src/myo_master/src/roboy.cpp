@@ -33,8 +33,10 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
         hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
         jnt_pos_interface.registerHandle(pos_handle);
 
-		ControllerState controllerState = ControllerState::INITIALIZED;
-        res.states.push_back(controllerState);
+		common_utilities::ControllerState msg;
+		msg.id = req.idList[i];
+		msg.state = STATUS::INITIALIZED;
+        res.states.push_back(msg);
     }
     
     registerInterface(&jnt_state_interface);
