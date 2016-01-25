@@ -3,7 +3,6 @@
 HardwareInterface::HardwareInterface()
 {
     init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
-    
     controller_manager_client = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
 }
 
@@ -34,7 +33,8 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
         hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
         jnt_pos_interface.registerHandle(pos_handle);
 
-        res.controllers.push_back(ControllerState::INITIALIZED);
+		ControllerState controllerState = ControllerState::INITIALIZED;
+        res.states.push_back(controllerState);
     }
     
     registerInterface(&jnt_state_interface);

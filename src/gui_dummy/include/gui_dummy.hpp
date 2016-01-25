@@ -4,6 +4,7 @@
 #include "common_utilities/Status.h"
 #include "common_utilities/Steer.h"
 #include <vector>
+#include <map>
 
 using namespace std;
 
@@ -22,9 +23,8 @@ public:
     void statusCallback(common_utilities::Status msg);
     
 private:
-    ros::Publisher initPublisher;
-    vector<ros::Publisher> trajectoryPublisher;
-    ros::ServiceClient initializeService;
+    map<uint, ros::ServiceClient> trajectory_srvs;
+    ros::ServiceClient initialize_srv;
     ros::Subscriber statusResponse;
     ros::NodeHandle nh;
 };

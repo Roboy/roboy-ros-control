@@ -1,8 +1,9 @@
+#include <CommonDefinitions.h>
 #include "gui_dummy.hpp"
 
 GUI::GUI(){
-    initializeService = nh.serviceClient<common_utilities::Initialize>("/roboy/initialize");
-    
+    initialize_srv = nh.serviceClient<common_utilities::Initialize>("/roboy/initialize");
+
     statusResponse = nh.subscribe("/roboy/statusResponse", 1000, &GUI::statusCallback, this);
 }
 
@@ -14,30 +15,26 @@ void GUI::initRequest(vector<signed char> motor){
 
     msg.request.idList = motor;
 
-    initializeService.call(msg);
+    initialize_srv.call(msg);
+
+    for(auto i:msg.response.controllers){
+        if(i.state==ControllerState::INITIALIZED)
+            trajectory_srvs[i.id]=nh.serviceClient<common_utilities::Trajectory>("/roboy/trajectory");
+    }
+
+
 }
 
 bool GUI::sendTrajectory(uint motor, uint32_t sampleRate, uint8_t controlMode, vector<float> setpoints){
     common_utilities::Trajectory msg;
-    msg.samplerate = sampleRate;
-    msg.controlmode = controlMode;
-    msg.waypoints = setpoints;
-    if(trajectoryPublisher.size()<motor){
-        trajectoryPublisher[motor].publish<common_utilities::Trajectory>(msg);
-        ros::spinOnce();
+    msg.request.samplerate = sampleRate;
+    msg.request.controlmode = controlMode;
+    msg.request.waypoints = setpoints;
+    if(trajectory_srvs.size()<motor){
+        trajectory_srvs[motor].call<common_utilities::Trajectory>(msg);
         return true;
     }
     return false;
-}
-
-// callback functions
-void GUI::initResponseCallback(common_utilities::InitializeResponse msg){
-//    char trajectorymotortopic[50];
-//    trajectoryPublisher.resize(trajectoryPublisher.size());
-//    for(uint i=0;i<trajectoryPublisher.size();i++){
-//        sprintf(trajectorymotortopic, "trajectory_motor%d", msg.controllers[i]);
-//        trajectoryPublisher[i] = nh.advertise<common_utilities::Trajectory>(trajectorymotortopic, 1);
-//    }
 }
 
 void GUI::statusCallback(common_utilities::Status msg){

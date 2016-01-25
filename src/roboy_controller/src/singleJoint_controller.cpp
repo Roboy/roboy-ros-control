@@ -14,7 +14,6 @@ class PositionController : public controller_interface::Controller<hardware_inte
     public:
 	PositionController(){
             ROS_INFO("Subscribing to /roboy/trajectory");
-            trajectory_sub = n.subscribe("/roboy/trajectory", 1000, &PositionController::trajectoryCallback, this);
             status_pub = n.advertise<common_utilities::Status>("/roboy/statusResponse",1);
             trajectory.push_back(0);
         };
@@ -28,6 +27,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
             }
             // get the joint object to use in the realtime loop
             joint_ = hw->getHandle(joint_name);  // throws on failure
+            trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &PositionController::trajectoryPreprocess, this);
             ROS_INFO("PositionController for %s initialized", joint_name.c_str());
             return true;
         }
@@ -58,21 +58,16 @@ class PositionController : public controller_interface::Controller<hardware_inte
             double setpoint_ = 0;
             std::string joint_name;
             ros::NodeHandle n;
-            ros::Subscriber trajectory_sub;
+            ros::ServiceServer trajectory_srv;
             ros::Publisher status_pub;
             std::vector<float> trajectory;
             uint trajpos = 0;
-            bool reachedEndpoint = false;
-            void trajectoryCallback(const common_utilities::Trajectory::ConstPtr& msg){
-                ROS_INFO("New trajectory [%d elements]", (int)msg->waypoints.size());
-                trajectory.resize(msg->waypoints.size());
-                trajpos=0;
-                reachedEndpoint = false;
-                for(uint i=0;i<msg->waypoints.size();i++){
-                    trajectory[i]=msg->waypoints[i];
-                    ROS_INFO("%f ",trajectory[i]);
-                }
-                setpoint_ = trajectory[0];
+            bool trajectoryPreprocess(common_utilities::Trajectory::Request& req,
+                                        common_utilities::Trajectory::Response& res){
+                ROS_INFO("New trajectory [%d elements] in controlMode %d at sampleRate %d",
+						 (int)req.waypoints.size(), req.controlmode, req.samplerate);
+                trajectory = req.waypoints;
+                return true;
             }
 };
 PLUGINLIB_EXPORT_CLASS(PositionController, controller_interface::ControllerBase);
