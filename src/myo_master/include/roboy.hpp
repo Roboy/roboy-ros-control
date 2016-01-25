@@ -7,6 +7,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include "common_utilities/Initialize.h"
+#include "common_utilities/EmergencyStop.h"
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
 #include "CommonDefinitions.h"
@@ -62,6 +63,7 @@ public:
 	Roboy()
 	{
 		cm = new controller_manager::ControllerManager(&hardwareInterface);
+		emergencyStop_srv = nh.advertiseService("/roboy/emergencyStop", &Roboy::emergencyStopService, this);
 		// this is for asyncronous ros callbacks
 	}
 
@@ -71,12 +73,12 @@ public:
 		ros::Time prev_time = ros::Time::now();
 		ros::Rate rate(10);
 
-		ros::AsyncSpinner spinner(2); // 4 threads
+		ros::AsyncSpinner spinner(2); // 2 threads
 		spinner.start();
 
 		bool controller_loaded = false;
 
-		while (ros::ok())
+		while (ros::ok() && !emergencyStop)
 		{
 			if(hardwareInterface.ready){
 				if(controller_loaded) {
@@ -88,14 +90,14 @@ public:
 					hardwareInterface.write();
 
 					rate.sleep();
-					ROS_INFO_THROTTLE(1, "roboy ready");
 				}else{
+					ROS_INFO_THROTTLE(1, "loading controller");
 					vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
 					for(auto resource : resources) {
 						cm->loadController(resource);
-						cm->
 					}
 					controller_loaded = true;
+					ROS_INFO_THROTTLE(1, "roboy ready");
 				}
 			}else{
 				ROS_INFO_THROTTLE(1,"roboy not ready");
@@ -103,8 +105,23 @@ public:
 		}
 	}
 
+	bool emergencyStopService(common_utilities::EmergencyStop::Request &req,
+							  common_utilities::EmergencyStop::Response &res){
+		if(req.all){
+			emergencyStop=true;
+		}else{
+			for(auto i:req.idList) {
+				char controllername[50];
+				snprintf(controllername,50,"motor%d",i);
+				cm->unloadController(controllername);
+			}
+		}
+	}
 private:
+	bool emergencyStop = false;
+	ros::NodeHandle nh;
 	controller_manager::ControllerManager* cm;
 	HardwareInterface hardwareInterface;
+	ros::ServiceServer emergencyStop_srv;
 };
 

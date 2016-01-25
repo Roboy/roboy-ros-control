@@ -15,7 +15,6 @@ class PositionController : public controller_interface::Controller<hardware_inte
 {
     public:
 	PositionController(){
-            ROS_INFO("Subscribing to /roboy/trajectory");
             trajectory.push_back(0);
         };
         
@@ -26,7 +25,6 @@ class PositionController : public controller_interface::Controller<hardware_inte
                 ROS_FATAL("Could not find joint name");
                 return false;
             }
-            // get the joint object to use in the realtime loop
             joint_ = hw->getHandle(joint_name);  // throws on failure
             trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &PositionController::trajectoryPreprocess, this);
 			status_srv = n.advertiseService("/roboy/status_"+joint_name, &PositionController::statusService, this);
