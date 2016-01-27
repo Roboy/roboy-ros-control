@@ -1,3 +1,6 @@
 [submodule "src/common_utilities"]
 	path = src/common_utilities
 	url = https://bitbucket.org/letrend/common_utilities
+[submodule "src/flexrayusbinterface"]
+	path = src/flexrayusbinterface
+	url = https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface.git

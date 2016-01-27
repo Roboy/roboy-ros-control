@@ -15,13 +15,13 @@ include_directories(include
 ${catkin_INCLUDE_DIRS} 
 include/ 
 ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
-${CMAKE_CURRENT_SOURCE_DIR}/../../../flexrayusbinterface/include
+${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
 )
 
 FILE(GLOB srcs "src/*.cpp")
 
 add_executable(multiJoint src/multiJoint.cpp src/roboy.cpp
-${CMAKE_CURRENT_SOURCE_DIR}/../../../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
+${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
 add_dependencies(multiJoint common_utilities_gencpp)
 
 target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx -lncurses)
