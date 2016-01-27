@@ -47,6 +47,7 @@ rosservice call /roboy/initialize '['0', '1', '3']'
 ```
 In general, we tried to make the whole system also controllable from the commandline via ROS [services](http://wiki.ros.org/rosservice) 
 and ROS [topics](http://wiki.ros.org/rostopic)
+```
 #!bash
 rosservice list
 ```
