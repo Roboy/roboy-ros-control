@@ -6,7 +6,16 @@ This illustrates ros hierarchy applied to control of a myode muscle via flexray 
 sudo apt-get install ros-indigo-desktop-full
 sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox ros-indigo-gazebo-ros-control
 ```
-project also depends on the [flexrayusbinterface](https://bitbucket.org/rosifyingmyorobotics/flexrayusbinterface)
+project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
+The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
+This will only be successful if the repo has been shared with you. Please contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members to grant access to you.
+```
+#!bash
+git clone https://gitlab.lrz.de/rosifyingmyorobotics/ros_hierarchy.git
+cd ros_hierarchy
+git submodule init
+git submodule update
+```
 
 # Build #
 
@@ -26,12 +35,19 @@ catkin_make
 cd path/to/ros_hierarchy
 source devel/setup.bash
 roscore &
-rosrun myo_master multiJoint
+roslaunch myo_master roboy.launch
 ```
-The controller_manager now runs in the asyncronous thread, you can query his services with:
+The roboy.launch file loads 24 motors with corresponding joint controllers onto the ros parameter server. 
+The commandline will inform you that roboy is not ready. The program is waiting for a motor initialize request.
+This will typically come from the [GUI](https://devanthro.atlassian.net/wiki/display/RGIR/Roboy+GUI+in+ROS+Home), but can also be 
+done from commandline. The followin command will request motors 0, 1 and 3 to be initialized:
 ```
 #!bash
-
+rosservice call /roboy/initialize '['0', '1', '3']'
+```
+In general, we tried to make the whole system also controllable from the commandline via ROS [services](http://wiki.ros.org/rosservice) 
+and ROS [topics](http://wiki.ros.org/rostopic)
+#!bash
 rosservice list
 ```
 This should output these services:
@@ -56,24 +72,6 @@ This should show our custom controller plugin:
 #!bash
 types: ['hw_controller/singleJointController']
 base_classes: ['controller_interface::ControllerBase']
-```
-### Running a controller from commandline ###
-If you want to use our custom controller, you need to set up the ros parameter server:
-```
-#!bash
-rosparam set test_controller/type hw_controller/singleJointController
-rosparam set test_controller/joint_name motor0
-```
-Loading and starting this controller via spawn:
-```
-#!bash
-rosrun controller_manager controller_manager spawn test_controller
-```
-### Using ros launch file for more convenient controller startup ###
-In the path/to/ros_hierarchy/src/hw_controller/config folder is a launch file, this can be executed via:
-```
-#!bash
-roslaunch hw_controller test_controller.launch
 ```
 
 ### Status of the controller ###
@@ -107,21 +105,10 @@ controller:
 
 ```
 
-
 # Test with hardware #
-controller_manager needs to be run as root, don't know why yet (otherwise flexray won't connect)
+please follow instructions in [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface), concerning library installation and udev rule.
+Use initialize service to initilaize a motor X (see above), then use the trajectory service
 ```
 #!bash
-sudo -s
-rosrun hw_interface multiJoint
-```
-start controller
-```
-#!bash
-roslaunch hw_controller test_single_controller.launch
-```
-start trajectory publisher
-```
-#!bash
-rosrun trajectory_advertiser trajectory_advertiser
+rosservice call /roboy/trajectory_motorX
 ```
