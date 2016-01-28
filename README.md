@@ -58,7 +58,7 @@ This should output (among possibly others) these services:
 /controller_manager/reload_controller_libraries
 /controller_manager/switch_controller
 /controller_manager/unload_controller
-
+```
 The following command will request motors 0, 1 and 3 to be initialized via the /robo/initialize service:
 ```
 #!bash
