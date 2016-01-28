@@ -64,8 +64,6 @@ The following command will request motors 0, 1 and 3 to be initialized via the /
 #!bash
 rosservice call /roboy/initialize '['0', '1', '3']'
 ```
-
-```
 All services starting with the trailing /roboy give you access to the full functionality of our control hierarchy.
 You have probably already used the initialize service. Then there is also an emergency stop:
 ```
