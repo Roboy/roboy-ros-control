@@ -73,7 +73,7 @@ public:
 		ros::Time prev_time = ros::Time::now();
 		ros::Rate rate(10);
 
-		ros::AsyncSpinner spinner(2); // 2 threads
+		ros::AsyncSpinner spinner(4); // 4 threads
 		spinner.start();
 
 		bool controller_loaded = false;
@@ -91,16 +91,16 @@ public:
 
 					rate.sleep();
 				}else{
-					ROS_INFO_THROTTLE(1, "loading controller");
+					ROS_DEBUG_THROTTLE(1, "loading controller");
 					vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
 					for(auto resource : resources) {
 						cm->loadController(resource);
 					}
 					controller_loaded = true;
-					ROS_INFO_THROTTLE(1, "roboy ready");
+					ROS_DEBUG_THROTTLE(1, "roboy ready");
 				}
 			}else{
-				ROS_INFO_THROTTLE(1,"roboy not ready");
+				ROS_DEBUG_THROTTLE(1,"roboy not ready");
 			}
 		}
 	}

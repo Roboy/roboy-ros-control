@@ -29,7 +29,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
             trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &PositionController::trajectoryPreprocess, this);
 			status_srv = n.advertiseService("/roboy/status_"+joint_name, &PositionController::statusService, this);
 			myStatus = STATUS::INITIALIZED;
-			ROS_INFO("PositionController for %s initialized", joint_name.c_str());
+			ROS_DEBUG("PositionController for %s initialized", joint_name.c_str());
             return true;
         }
         
@@ -48,8 +48,8 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			return true;
 		}
 
-        void starting(const ros::Time& time) { ROS_INFO("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}
-        void stopping(const ros::Time& time) { ROS_INFO("stopping controller for %s", joint_name.c_str());}
+        void starting(const ros::Time& time) { ROS_DEBUG("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}
+        void stopping(const ros::Time& time) { ROS_DEBUG("stopping controller for %s", joint_name.c_str());}
         
         private:
             hardware_interface::JointHandle joint_;
@@ -64,7 +64,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			int8_t myStatus = 0;
             bool trajectoryPreprocess(common_utilities::Trajectory::Request& req,
                                         common_utilities::Trajectory::Response& res){
-                ROS_INFO("New trajectory [%d elements] in controlMode %d at sampleRate %d",
+                ROS_DEBUG("New trajectory [%d elements] in controlMode %d at sampleRate %d",
 						 (int)req.waypoints.size(), req.controlmode, req.samplerate);
                 trajectory = req.waypoints;
                 return true;

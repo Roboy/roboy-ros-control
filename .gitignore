@@ -3,3 +3,5 @@ build/
 .idea
 *~
 .catkin_workspace
+log/
+latest

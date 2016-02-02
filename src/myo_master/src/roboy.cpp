@@ -14,7 +14,7 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
         ROS_ERROR("Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
         return false;
     }
-    ROS_INFO("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
+    ROS_DEBUG("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
     
     cmd = new double[req.idList.size()];
     pos = new double[req.idList.size()];
@@ -42,15 +42,15 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
     registerInterface(&jnt_state_interface);
     registerInterface(&jnt_pos_interface);
     
-    ROS_INFO("Hardware interface initialized");
+    ROS_DEBUG("Hardware interface initialized");
     string str;
     vector<string> resources = jnt_pos_interface.getNames();
     for(uint i=0; i<resources.size();i++){
         str.append(resources[i]);
         str.append(" ");
     }
-    ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
-    ROS_INFO("Waiting for controller");
+    ROS_DEBUG("Resources registered to this hardware interface:\n%s", str.c_str());
+    ROS_DEBUG("Waiting for controller");
     
     ready = true;
     return true;
