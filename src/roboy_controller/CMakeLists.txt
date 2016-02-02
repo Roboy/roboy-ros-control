@@ -17,9 +17,20 @@ ${catkin_INCLUDE_DIRS}
 ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
 )
 
-add_library(singleJoint_controller src/singleJoint_controller.cpp)
-
+############ POSITION CONTROLLER #############
+add_library(PositionController src/PositionController.cpp)
 # dont forget this line, otherwise the messages will not be generated properly
-add_dependencies(singleJoint_controller common_utilities_generate_messages_cpp)
+add_dependencies(PositionController common_utilities_generate_messages_cpp)
+target_link_libraries(PositionController ${catkin_LIBRARIES})
 
-target_link_libraries(singleJoint_controller ${catkin_LIBRARIES} -lncurses)
+############ VELOCITY CONTROLLER #############
+add_library(VelocityController src/VelocityController.cpp)
+# dont forget this line, otherwise the messages will not be generated properly
+add_dependencies(VelocityController common_utilities_generate_messages_cpp)
+target_link_libraries(VelocityController ${catkin_LIBRARIES})
+
+############ FORCE CONTROLLER #############
+add_library(ForceController src/ForceController.cpp)
+# dont forget this line, otherwise the messages will not be generated properly
+add_dependencies(ForceController common_utilities_generate_messages_cpp)
+target_link_libraries(ForceController ${catkin_LIBRARIES})

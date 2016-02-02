@@ -26,7 +26,6 @@ void GUI::initRequest(vector<signed char> motor){
 bool GUI::sendTrajectory(uint motor, uint32_t sampleRate, uint8_t controlMode, vector<float> setpoints){
     common_utilities::Trajectory msg;
     msg.request.samplerate = sampleRate;
-    msg.request.controlmode = controlMode;
     msg.request.waypoints = setpoints;
     if(trajectory_srvs.size()<motor){
         trajectory_srvs[motor].call<common_utilities::Trajectory>(msg);

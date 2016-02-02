@@ -1,7 +1,7 @@
 <package>
   <name>roboy_controller</name>
   <version>0.0.0</version>
-  <description>position_controllers</description>
+  <description>controllers</description>
   <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
   <license>BSD</license>
 
@@ -12,6 +12,8 @@
   <run_depend>message_runtime</run_depend>
 
   <export>
-  	<controller_interface plugin="${prefix}/singleJoint_controller_plugin.xml" />
+  	<controller_interface plugin="${prefix}/PositionController_plugin.xml" />
+	<controller_interface plugin="${prefix}/VelocityController_plugin.xml" />
+	<controller_interface plugin="${prefix}/ForceController_plugin.xml" />
   </export>
 </package>

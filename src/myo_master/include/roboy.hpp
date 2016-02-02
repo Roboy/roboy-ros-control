@@ -43,10 +43,13 @@ class HardwareInterface : public hardware_interface::RobotHW
 	void write();
         
 	bool ready = false;
-	hardware_interface::PositionJointInterface jnt_pos_interface;
-private:
 	hardware_interface::JointStateInterface jnt_state_interface;
+
+	hardware_interface::PositionJointInterface jnt_pos_interface;
+	hardware_interface::VelocityJointInterface jnt_vel_interface;
 	hardware_interface::EffortJointInterface jnt_eff_interface;
+	bool positionControllerRegistered = false, velocityControllerRegistered = false, forceControllerRegistered = false;
+private:
 	double *cmd;
 	double *pos;
 	double *vel;
@@ -75,7 +78,7 @@ public:
 		ros::Time prev_time = ros::Time::now();
 		ros::Rate rate(10);
 
-		ros::AsyncSpinner spinner(4); // 4 threads
+		ros::AsyncSpinner spinner(10); // 4 threads
 		spinner.start();
 
 		bool controller_loaded = false;
@@ -94,7 +97,18 @@ public:
 					rate.sleep();
 				}else{
 					ROS_DEBUG_THROTTLE(1, "loading controller");
+					// load position controller
 					vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
+					for (auto resource : resources) {
+						cm->loadController(resource);
+					}
+					// load velocity controller
+					resources = hardwareInterface.jnt_vel_interface.getNames();
+					for (auto resource : resources) {
+						cm->loadController(resource);
+					}
+					// load force controller
+					resources = hardwareInterface.jnt_eff_interface.getNames();
 					for(auto resource : resources) {
 						cm->loadController(resource);
 					}

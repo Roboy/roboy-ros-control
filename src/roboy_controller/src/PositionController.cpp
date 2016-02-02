@@ -8,7 +8,6 @@
 #include <common_utilities/Trajectory.h>
 #include <CommonDefinitions.h>
 #include <math.h>
-//#include <ncurses.h>
 
 class PositionController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
 {
@@ -105,8 +104,8 @@ class PositionController : public controller_interface::Controller<hardware_inte
                                         common_utilities::Trajectory::Response& res){
 				myStatus = PREPROCESS_TRAJECTORY;
 
-                ROS_DEBUG("New trajectory [%d elements] in controlMode %d at sampleRate %d",
-						 (int)req.waypoints.size(), req.controlmode, req.samplerate);
+                ROS_DEBUG("New trajectory [%d elements] at sampleRate %d",
+						 (int)req.waypoints.size(), req.samplerate);
 				if(!req.waypoints.empty()) {
 					trajectory = req.waypoints;
 					reachedEndpoint = false;

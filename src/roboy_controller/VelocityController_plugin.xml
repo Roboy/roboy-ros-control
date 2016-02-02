@@ -1,0 +1,7 @@
+<library path="lib/libVelocityController">
+  <class name="roboy_controller/VelocityController" type="VelocityController" 
+base_class_type="controller_interface::ControllerBase">
+    <description>This is a velocity controller plugin.</description>
+  </class>
+</library>
+

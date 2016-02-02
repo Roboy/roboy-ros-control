@@ -1,5 +1,5 @@
-<library path="lib/libsingleJoint_controller">
-  <class name="roboy_controller/singleJoint_controller" type="PositionController" 
+<library path="lib/libPositionController">
+  <class name="roboy_controller/PositionController" type="PositionController" 
 base_class_type="controller_interface::ControllerBase">
     <description>This is a position controller plugin.</description>
   </class>
