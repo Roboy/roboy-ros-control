@@ -11,6 +11,7 @@
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
 #include "CommonDefinitions.h"
+#include "ncurses_hardwareInterface.hpp"
 
 using namespace std;
 
@@ -56,6 +57,7 @@ private:
 	ros::NodeHandle nh;
 	ros::ServiceClient controller_manager_client;
 	ros::ServiceServer init_srv;
+	NCursesInterface *interface;
 };
 
 class Roboy{

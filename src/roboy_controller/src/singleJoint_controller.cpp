@@ -3,7 +3,6 @@
 #include <pluginlib/class_list_macros.h>
 #include <ros/ros.h>
 #include "std_msgs/Float32MultiArray.h"
-#include "../../common_utilities/include/CommonDefinitions.h"
 #include <common_utilities/Status.h>
 #include <common_utilities/Steer.h>
 #include <common_utilities/Trajectory.h>
@@ -28,24 +27,62 @@ class PositionController : public controller_interface::Controller<hardware_inte
             joint_ = hw->getHandle(joint_name);  // throws on failure
             trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &PositionController::trajectoryPreprocess, this);
 			status_srv = n.advertiseService("/roboy/status_"+joint_name, &PositionController::statusService, this);
-			myStatus = STATUS::INITIALIZED;
+			steer_sub = n.subscribe("/roboy/steer",1000, &PositionController::steer, this);
+			myStatus = INITIALIZED;
 			ROS_DEBUG("PositionController for %s initialized", joint_name.c_str());
             return true;
         }
         
         void update(const ros::Time& time, const ros::Duration& period)
         {
-            float pos = joint_.getPosition();
+			float pos = joint_.getPosition();
+			if(steered == PLAY_TRAJECTORY) {
+				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
+					myStatus = TRAJECTORY_PLAYING;
+					trajpos++;
+					setpoint_ = trajectory[trajpos];
+				}
 
-			setpoint_ = trajectory[0];
-
-            joint_.setCommand(setpoint_);
+				if (trajpos == trajectory.size() - 1) {
+					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, reached endpoint of trajectory %f",
+									   joint_name.c_str(), pos, trajectory[trajpos]);
+					setpoint_ = trajectory[trajpos];
+					reachedEndpoint = true;
+					myStatus = TRAJECTORY_DONE;
+				} else {
+					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos,
+									   setpoint_);
+				}
+				joint_.setCommand(setpoint_);
+			}else if(steered == REWIND_TRAJECTORY){
+				trajpos = 0;
+				steered = PLAY_TRAJECTORY;
+				myStatus = TRAJECTORY_PLAYING;
+			}
         }
 
 		bool statusService(common_utilities::Status::Request &req,
 							common_utilities::Status::Response &res){
 			res.statusCode = myStatus;
 			return true;
+		}
+
+		void steer(const common_utilities::Steer::ConstPtr& msg){
+			switch (msg->steeringCommand){
+				case STOP_TRAJECTORY:
+					steered = STOP_TRAJECTORY;
+					trajpos = 0;
+					break;
+				case PLAY_TRAJECTORY:
+					steered = PLAY_TRAJECTORY;
+					break;
+				case PAUSE_TRAJECTORY:
+					steered = PAUSE_TRAJECTORY;
+					break;
+				case REWIND_TRAJECTORY:
+					steered = REWIND_TRAJECTORY;
+					break;
+			}
 		}
 
         void starting(const ros::Time& time) { ROS_DEBUG("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}
@@ -60,14 +97,26 @@ class PositionController : public controller_interface::Controller<hardware_inte
             ros::ServiceServer trajectory_srv, status_srv;
             ros::Subscriber steer_sub;
             std::vector<float> trajectory;
-            uint trajpos = 0;
-			int8_t myStatus = 0;
+			uint trajpos = 0;
+			bool reachedEndpoint = false;
+			int8_t myStatus = UNDEFINED;
+			int8_t steered = STOP_TRAJECTORY;
             bool trajectoryPreprocess(common_utilities::Trajectory::Request& req,
                                         common_utilities::Trajectory::Response& res){
+				myStatus = PREPROCESS_TRAJECTORY;
+
                 ROS_DEBUG("New trajectory [%d elements] in controlMode %d at sampleRate %d",
 						 (int)req.waypoints.size(), req.controlmode, req.samplerate);
-                trajectory = req.waypoints;
-                return true;
+				if(!req.waypoints.empty()) {
+					trajectory = req.waypoints;
+					reachedEndpoint = false;
+					trajpos = 0;
+					myStatus = TRAJECTORY_READY;
+					return true;
+				}else{
+					myStatus = TRAJECTORY_FAILED;
+					return false;
+				}
             }
 };
 PLUGINLIB_EXPORT_CLASS(PositionController, controller_interface::ControllerBase);

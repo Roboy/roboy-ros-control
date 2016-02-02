@@ -53,15 +53,16 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
     ROS_DEBUG("Waiting for controller");
     
     ready = true;
+
+	interface = new NCursesInterface;
+	interface->MotorsInitialized();
+
     return true;
 }
 
 HardwareInterface::~HardwareInterface()
 {
-    delete[] cmd;
-    delete[] pos;
-    delete[] vel;
-    delete[] eff;
+	delete interface;
 }
 
 void HardwareInterface::read()
@@ -71,12 +72,14 @@ void HardwareInterface::read()
     flexray.exchangeData();
 #endif
     uint i = 0;
+	interface->clearAll(4);
     for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){ 
         // four motors can be connected to each ganglion
         for (uint motor=0;motor<4;motor++){ 
             pos[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
             vel[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
             eff[i] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement; // dummy TODO: use polynomial approx
+            interface->statusMotor(ganglion, motor, flexray.motorState[i]);
             i++;
         }
     }
