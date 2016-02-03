@@ -59,7 +59,7 @@ public:
 		printMessage(row+6,col,"----------");
 		char name[10];
 		sprintf(name,"motor%d", ganglion*4+motor);
-		printMessage(row*4+4,col,name);
+		printMessage(row+4,col,name);
 		switch(status){
 			case 0:
 				printMessage(row+5,col,"not ready", RED);
