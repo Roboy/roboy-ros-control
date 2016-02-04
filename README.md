@@ -68,10 +68,10 @@ This should output (among possibly others) these services:
 /controller_manager/switch_controller
 /controller_manager/unload_controller
 ```
-The following command will request motors 0, 1 and 3 to be initialized via the /robo/initialize service:
+The following command will request motors to be initialized via the /robo/initialize service:
 ```
 #!bash
-rosservice call /roboy/initialize '['0', '1', '3']'
+rosservice call /roboy/initialize [PRESS TAB TWICE]
 ```
 All services starting with the trailing /roboy give you access to the full functionality of our control hierarchy.
 You have probably already used the initialize service. Then there is also an emergency stop:
@@ -132,20 +132,20 @@ controller:
   - 
     name: motor0
     state: stopped
-    type: roboy_controller/singleJoint_controller
+    type: roboy_controller/PositionController
     hardware_interface: hardware_interface::PositionJointInterface
     resources: ['motor0']
   - 
     name: motor1
     state: stopped
-    type: roboy_controller/singleJoint_controller
-    hardware_interface: hardware_interface::PositionJointInterface
+    type: roboy_controller/VelocityController
+    hardware_interface: hardware_interface::VelocityJointInterface
     resources: ['motor1']
   - 
     name: motor3
     state: stopped
-    type: roboy_controller/singleJoint_controller
-    hardware_interface: hardware_interface::PositionJointInterface
+    type: roboy_controller/ForceController
+    hardware_interface: hardware_interface::EffortJointInterface
     resources: ['motor3']
 
 ```
