@@ -1,6 +1,6 @@
 This illustrates ros hierarchy applied to control of a myode muscle via flexray hardware interface
 # Dependencies #
-
+ROS, for detailed description of installation see [here](http://wiki.ros.org/indigo/Installation/Ubuntu)
 ```
 #!bash
 sudo apt-get install ros-indigo-desktop-full
