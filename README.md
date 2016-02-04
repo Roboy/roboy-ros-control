@@ -5,6 +5,7 @@ ROS, for detailed description of installation see [here](http://wiki.ros.org/ind
 #!bash
 sudo apt-get install ros-indigo-desktop-full
 sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox ros-indigo-gazebo-ros-control
+sudo apt-get install libncurses5-dev 
 ```
 project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
@@ -25,6 +26,14 @@ Please follow the installation instructions for [flexrayusbinterface](https://gi
 cd path/to/ros_hierarchy
 catkin_init_workspace
 rm CMakeLists.txt
+catkin_make
+```
+If the build fails, this is because ros cannot find the headers. You need to source the setup.bash. Use the following commands to add this to your bashrc.
+```
+#!bash
+cd path/to/ros_hierarchy
+echo "source $(pwd)/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 catkin_make
 ```
 
