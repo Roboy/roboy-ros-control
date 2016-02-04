@@ -6,8 +6,9 @@
             type="multiJoint" 
             respawn="false"
             output="screen" 
+	launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint"
 />
-
-        <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" -->        
 </launch>
+
+ <!-- FOR DEBUGGING USE THIS launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint" FOR VALGRIND USE THIS launch-prefix="valgrind -log-file=/home/letrend/workspace/ros_hierarchy/valgrind.log -leak-check=full"-->   
 	

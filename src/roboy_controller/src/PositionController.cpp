@@ -1,14 +1,15 @@
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
-#include <ros/ros.h>
 #include "std_msgs/Float32MultiArray.h"
 #include <common_utilities/Status.h>
 #include <common_utilities/Steer.h>
 #include <common_utilities/Trajectory.h>
 #include <CommonDefinitions.h>
-#include <math.h>
+#include "timer.hpp"
 #include "plot.hpp"
+
+using namespace std;
 
 class PositionController : public controller_interface::Controller<hardware_interface::PositionJointInterface>
 {
@@ -37,8 +38,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
         {
 			float pos = joint_.getPosition();
 			if(steered == PLAY_TRAJECTORY) {
-				float time = ros::Time::now().toNSec()*1000000.0f;
-				t.push_back(time-t[t.size()-1]);
+				dt.push_back(timer.elapsedTime());
 				positions.push_back(pos);
 
 				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
@@ -51,10 +51,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, reached endpoint of trajectory %f",
 									   joint_name.c_str(), pos, trajectory[trajpos]);
 					setpoint_ = trajectory[trajpos];
-					reachedEndpoint = true;
 					myStatus = TRAJECTORY_DONE;
-					m_plot.clear(1);
-					m_plot.array(t,pos,"actual pos",1);
+                    steered = STOP_TRAJECTORY;
+					m_plot.array(dt,positions,"actual pos",0);
 				} else {
 					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos,
 									   setpoint_);
@@ -104,11 +103,11 @@ class PositionController : public controller_interface::Controller<hardware_inte
             ros::Subscriber steer_sub;
             std::vector<float> trajectory;
 			uint trajpos = 0;
-			bool reachedEndpoint = false;
 			int8_t myStatus = UNDEFINED;
 			int8_t steered = STOP_TRAJECTORY;
-			vector<float> t;
+			vector<float> dt;
 			vector<float> positions;
+            Timer timer;
             bool trajectoryPreprocess(common_utilities::Trajectory::Request& req,
                                         common_utilities::Trajectory::Response& res){
 				myStatus = PREPROCESS_TRAJECTORY;
@@ -117,14 +116,10 @@ class PositionController : public controller_interface::Controller<hardware_inte
 						 (int)req.waypoints.size(), req.samplerate);
 				if(!req.waypoints.empty()) {
 					trajectory = req.waypoints;
-					reachedEndpoint = false;
 					trajpos = 0;
 					myStatus = TRAJECTORY_READY;
-					t.clear();
-					positions.clear();
-					t.push_back(ros::Time::now().toNSec()*1000000.0f);
-					positions.push_back(setpoint_);
-					m_plot.clearAll();
+                    timer.start();
+					m_plot.clear(0);
 					m_plot.array(trajectory,req.samplerate,"target trajectory",0);
 					return true;
 				}else{

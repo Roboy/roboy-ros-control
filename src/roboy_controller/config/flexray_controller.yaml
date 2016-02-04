@@ -6,7 +6,7 @@ motor0:
 
 motor1:
   joint_name: motor1
-  type: roboy_controller/PositionController
+  type: roboy_controller/VelocityController
 
 motor2:
   joint_name: motor2

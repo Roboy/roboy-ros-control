@@ -34,7 +34,7 @@ class HardwareInterface : public hardware_interface::RobotHW
          */
         ~HardwareInterface();
 	/**
-         * Read info from hardware
+         * Read from hardware
          */
 	void read();
         /**
@@ -48,7 +48,8 @@ class HardwareInterface : public hardware_interface::RobotHW
 	hardware_interface::PositionJointInterface jnt_pos_interface;
 	hardware_interface::VelocityJointInterface jnt_vel_interface;
 	hardware_interface::EffortJointInterface jnt_eff_interface;
-	bool positionControllerRegistered = false, velocityControllerRegistered = false, forceControllerRegistered = false;
+
+    NCursesInterface interface;
 private:
 	double *cmd;
 	double *pos;
@@ -58,81 +59,18 @@ private:
 	FlexRayHardwareInterface flexray;
 	//! ros handler
 	ros::NodeHandle nh;
-	ros::ServiceClient controller_manager_client;
 	ros::ServiceServer init_srv;
-	NCursesInterface *interface;
+    ros::ServiceClient cm_LoadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
 };
 
 class Roboy{
 public:
-	Roboy()
-	{
-		cm = new controller_manager::ControllerManager(&hardwareInterface);
-		emergencyStop_srv = nh.advertiseService("/roboy/emergencyStop", &Roboy::emergencyStopService, this);
-		// this is for asyncronous ros callbacks
-	}
+	Roboy();
 
-	void main_loop()
-	{
-		// Control loop
-		ros::Time prev_time = ros::Time::now();
-		ros::Rate rate(10);
-
-		ros::AsyncSpinner spinner(10); // 4 threads
-		spinner.start();
-
-		bool controller_loaded = false;
-
-		while (ros::ok() && !emergencyStop)
-		{
-			if(hardwareInterface.ready){
-				if(controller_loaded) {
-					const ros::Time time = ros::Time::now();
-					const ros::Duration period = time - prev_time;
-
-					hardwareInterface.read();
-					cm->update(time, period);
-					hardwareInterface.write();
-
-					rate.sleep();
-				}else{
-					ROS_DEBUG_THROTTLE(1, "loading controller");
-					// load position controller
-					vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
-					for (auto resource : resources) {
-						cm->loadController(resource);
-					}
-					// load velocity controller
-					resources = hardwareInterface.jnt_vel_interface.getNames();
-					for (auto resource : resources) {
-						cm->loadController(resource);
-					}
-					// load force controller
-					resources = hardwareInterface.jnt_eff_interface.getNames();
-					for(auto resource : resources) {
-						cm->loadController(resource);
-					}
-					controller_loaded = true;
-					ROS_DEBUG_THROTTLE(1, "roboy ready");
-				}
-			}else{
-				ROS_DEBUG_THROTTLE(1,"roboy not ready");
-			}
-		}
-	}
+	void main_loop();
 
 	bool emergencyStopService(common_utilities::EmergencyStop::Request &req,
-							  common_utilities::EmergencyStop::Response &res){
-		if(req.all){
-			emergencyStop=true;
-		}else{
-			for(auto i:req.idList) {
-				char controllername[50];
-				snprintf(controllername,50,"motor%d",i);
-				cm->unloadController(controllername);
-			}
-		}
-	}
+							  common_utilities::EmergencyStop::Response &res);
 private:
 	bool emergencyStop = false;
 	ros::NodeHandle nh;
