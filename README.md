@@ -18,7 +18,7 @@ git submodule update
 ```
 
 # Build #
-
+Please follow the installation instructions for [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) before proceeding 
 ```
 #!bash
 
