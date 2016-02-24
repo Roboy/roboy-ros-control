@@ -23,7 +23,7 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
     }
     ROS_DEBUG("Flexray interface says %d ganglions are connected", flexray.checkNumberOfConnectedGanglions());
     
-    char motorname[10];
+    char motorname[20];
 
     for (uint i=0; i<req.idList.size(); i++){
 		sprintf(motorname, "motor%d", req.idList[i]);
@@ -34,8 +34,8 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 
 		uint ganglion = req.idList[i]/4;
 		uint motor = req.idList[i]%4;
-		switch(req.controlmode[i]){
-			case '1': {
+		switch((uint)req.controlmode[i]){
+			case 1: {
 				ROS_INFO("%s position controller",motorname);
 				flexray.initPositionControl(ganglion, motor);
 				// connect and register the joint position interface
@@ -43,7 +43,7 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 				jnt_pos_interface.registerHandle(pos_handle);
 				break;
 			}
-			case '2': {
+			case 2: {
 				ROS_INFO("%s velocity controller",motorname);
 				flexray.initVelocityControl(ganglion, motor);
 				// connect and register the joint position interface
@@ -51,7 +51,7 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 				jnt_vel_interface.registerHandle(vel_handle);
 				break;
 			}
-			case '3': {
+			case 3: {
 				ROS_INFO("%s force controller",motorname);
 				flexray.initForceControl(ganglion, motor);
 				// connect and register the joint position interface

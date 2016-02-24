@@ -6,7 +6,7 @@
             type="multiJoint" 
             respawn="false"
             output="screen" 
-	launch-prefix="xterm -e gdb -se devel/lib/myo_master/multiJoint"
+	
 />
 </launch>
 
