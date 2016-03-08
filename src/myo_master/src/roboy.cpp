@@ -3,6 +3,7 @@
 HardwareInterface::HardwareInterface()
 {
     init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
+	record_srv = nh.advertiseService("/roboy/record", &HardwareInterface::recordService, this);
     cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
     cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
     cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
@@ -113,6 +114,20 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
     return true;
 }
 
+bool HardwareInterface::recordService(common_utilities::Record::Request &req,
+									  common_utilities::Record::Response &res) {
+	std::vector<std::vector<float>> trajectories;
+	flexray.recordTrajectories(req.samplingTime, req.duration, trajectories, req.idList, req.controlmode, req.name);
+	res.trajectories.resize(req.idList.size());
+	for(uint m=0; m<req.idList.size(); m++){
+		for(uint i=0; i<trajectories[req.idList[m]].size(); i++) {
+			res.trajectories[m] += to_string(trajectories[req.idList[m]][i]);
+			res.trajectories[m] += " ";
+		}
+	}
+	return true;
+}
+
 HardwareInterface::~HardwareInterface()
 {
 }
@@ -154,7 +169,7 @@ void HardwareInterface::write()
             if(ganglion<3)  // write to first commandframe
                 flexray.commandframe0[ganglion].sp[motor] = cmd[i];
             else            // else write to second commandframe
-                flexray.commandframe1[ganglion].sp[motor] = cmd[i];
+                flexray.commandframe1[ganglion-3].sp[motor] = cmd[i];
             i++;
         }
     }
@@ -175,6 +190,10 @@ void Roboy::main_loop()
     ros::Time prev_time = ros::Time::now();
     ros::Rate rate(10);
 
+//	ros::CallbackQueue hw_queue;
+//	hw_queue.addCallback(boost::shared_ptr<ros::CallbackInterface>nh.getCallbackQueue());
+//	ros::AsyncSpinner hw_spinner(1, &hw_queue);
+
     ros::AsyncSpinner spinner(10); // 4 threads
     spinner.start();
 
@@ -193,7 +212,7 @@ void Roboy::main_loop()
 
                 rate.sleep();
             }else{
-                ROS_INFO("loading controller");
+                ROS_INFO("loading position controller");
                 controller_loaded = true;
                 // load position controller
                 vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
@@ -215,6 +234,11 @@ void Roboy::main_loop()
                         ROS_INFO("Success");
                     }
                 }
+//				controller_manager_msgs::SwitchController msg;
+//				msg.request.start_controllers = resources;
+//				msg.request.strictness = 1;
+//				hardwareInterface.cm_SwitchController.call(msg);
+				ROS_INFO("loading velocity controller");
                 // load velocity controller
                 resources = hardwareInterface.jnt_vel_interface.getNames();
                 for (auto resource : resources) {
@@ -235,7 +259,11 @@ void Roboy::main_loop()
                         ROS_INFO("Success");
                     }
                 }
+//				msg.request.start_controllers = resources;
+//				msg.request.strictness = 2;
+//				hardwareInterface.cm_SwitchController.call(msg);
                 // load force controller
+				ROS_INFO("loading force controller");
                 resources = hardwareInterface.jnt_eff_interface.getNames();
                 for(auto resource : resources) {
                     if(!cm->loadController(resource)) {
@@ -255,6 +283,9 @@ void Roboy::main_loop()
                         ROS_INFO("Success");
                     }
                 }
+//				msg.request.start_controllers = resources;
+//				msg.request.strictness = 2;
+//				hardwareInterface.cm_SwitchController.call(msg);
                 if(controller_loaded) {
                     ROS_INFO("roboy ready");
                     hardwareInterface.interface.show();

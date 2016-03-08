@@ -119,13 +119,14 @@ private:
 			trajpos = 0;
 			myStatus = TRAJECTORY_READY;
 			timer.start();
-			res.state.state = TRAJECTORY_READY;
+			res.state = TRAJECTORY_READY;
 			return true;
 		}else{
 			myStatus = TRAJECTORY_FAILED;
-			res.state.state = TRAJECTORY_FAILED;
+			res.state = TRAJECTORY_FAILED;
 			return false;
 		}
+		return false;
 	}
 };
 PLUGINLIB_EXPORT_CLASS(VelocityController, controller_interface::ControllerBase);

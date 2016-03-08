@@ -31,6 +31,9 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			status_pub = n.advertise<common_utilities::Status>("/roboy/status_"+joint_name, 1);
 			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/plot",1);
 			myStatus = INITIALIZED;
+			statusMsg.statusCode = myStatus;
+			statusMsg.steered = steered;
+			status_pub.publish(statusMsg);
 			ROS_DEBUG("PositionController for %s initialized", joint_name.c_str());
 			return true;
         }
@@ -47,6 +50,9 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 
 				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
 					myStatus = TRAJECTORY_PLAYING;
+					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
+					status_pub.publish(statusMsg);
 					trajpos++;
 					setpoint_ = trajectory[trajpos];
 				}
@@ -56,6 +62,9 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 									   joint_name.c_str(), pos, trajectory[trajpos]);
 					setpoint_ = trajectory[trajpos];
 					myStatus = TRAJECTORY_DONE;
+					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
+					status_pub.publish(statusMsg);
                     steered = STOP_TRAJECTORY;
 				} else {
 					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos,
@@ -74,6 +83,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 					break;
 				case PLAY_TRAJECTORY:
 					steered = PLAY_TRAJECTORY;
+					myStatus = TRAJECTORY_PLAYING;
 					break;
 				case PAUSE_TRAJECTORY:
 					steered = PAUSE_TRAJECTORY;
@@ -85,6 +95,9 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 					myStatus = TRAJECTORY_READY;
 					break;
 			}
+			statusMsg.statusCode = myStatus;
+			statusMsg.steered = steered;
+			status_pub.publish(statusMsg);
 		}
 
         void starting(const ros::Time& time) { ROS_DEBUG("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}
@@ -106,11 +119,15 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			vector<float> dt;
 			vector<float> positions;
 			std_msgs::Float32 msg;
+			common_utilities::Status statusMsg;
             Timer timer;
             bool trajectoryPreprocess(common_utilities::Trajectory::Request& req,
                                         common_utilities::Trajectory::Response& res){
 				steered = STOP_TRAJECTORY;
 				myStatus = PREPROCESS_TRAJECTORY;
+				statusMsg.statusCode = myStatus;
+				statusMsg.steered = steered;
+				status_pub.publish(statusMsg);
 
                 ROS_DEBUG("New trajectory [%d elements] at sampleRate %d",
 						 (int)req.waypoints.size(), req.samplerate);
@@ -118,12 +135,18 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 					trajectory = req.waypoints;
 					trajpos = 0;
 					myStatus = TRAJECTORY_READY;
+					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
+					status_pub.publish(statusMsg);
                     timer.start();
-					res.state.state = TRAJECTORY_READY;
+					res.state = TRAJECTORY_READY;
 					return true;
 				}else{
 					myStatus = TRAJECTORY_FAILED;
-					res.state.state = TRAJECTORY_FAILED;
+					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
+					status_pub.publish(statusMsg);
+					res.state = TRAJECTORY_FAILED;
 					return false;
 				}
             }

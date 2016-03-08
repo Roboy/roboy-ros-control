@@ -28,9 +28,12 @@ class PositionController : public controller_interface::Controller<hardware_inte
             joint_ = hw->getHandle(joint_name);  // throws on failure
             trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &PositionController::trajectoryPreprocess, this);
 			steer_sub = n.subscribe("/roboy/steer",1000, &PositionController::steer, this);
-			status_pub = n.advertise<common_utilities::Status>("/roboy/status_"+joint_name, 1);
-			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/plot",1);
+			status_pub = n.advertise<common_utilities::Status>("/roboy/status_"+joint_name, 1000);
+			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/plot",1000);
 			myStatus = INITIALIZED;
+			statusMsg.statusCode = myStatus;
+			statusMsg.steered = steered;
+			status_pub.publish(statusMsg);
 			ROS_DEBUG("PositionController for %s initialized", joint_name.c_str());
             return true;
         }
@@ -48,6 +51,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
 					myStatus = TRAJECTORY_PLAYING;
 					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
 					trajpos++;
 					setpoint_ = trajectory[trajpos];
@@ -59,6 +63,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 					setpoint_ = trajectory[trajpos];
 					myStatus = TRAJECTORY_DONE;
 					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
                     steered = STOP_TRAJECTORY;
 				} else {
@@ -91,6 +96,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 					break;
 			}
 			statusMsg.statusCode = myStatus;
+			statusMsg.steered = steered;
 			status_pub.publish(statusMsg);
 		}
 
@@ -119,23 +125,28 @@ class PositionController : public controller_interface::Controller<hardware_inte
                                         common_utilities::Trajectory::Response& res){
 				steered = STOP_TRAJECTORY;
 				myStatus = PREPROCESS_TRAJECTORY;
+				statusMsg.statusCode = myStatus;
+				statusMsg.steered = steered;
+				status_pub.publish(statusMsg);
 
-                ROS_DEBUG("New trajectory [%d elements] at sampleRate %d",
+                ROS_INFO("New trajectory [%d elements] at sampleRate %d",
 						 (int)req.waypoints.size(), req.samplerate);
 				if(!req.waypoints.empty()) {
 					trajectory = req.waypoints;
 					trajpos = 0;
 					myStatus = TRAJECTORY_READY;
 					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
                     timer.start();
-					res.state.state = TRAJECTORY_READY;
+					res.state = TRAJECTORY_READY;
 					return true;
 				}else{
 					myStatus = TRAJECTORY_FAILED;
 					statusMsg.statusCode = myStatus;
+					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
-					res.state.state = TRAJECTORY_FAILED;
+					res.state = TRAJECTORY_FAILED;
 					return false;
 				}
             }
