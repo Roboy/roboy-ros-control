@@ -120,10 +120,7 @@ bool HardwareInterface::recordService(common_utilities::Record::Request &req,
 	flexray.recordTrajectories(req.samplingTime, req.duration, trajectories, req.idList, req.controlmode, req.name);
 	res.trajectories.resize(req.idList.size());
 	for(uint m=0; m<req.idList.size(); m++){
-		for(uint i=0; i<trajectories[req.idList[m]].size(); i++) {
-			res.trajectories[m] += to_string(trajectories[req.idList[m]][i]);
-			res.trajectories[m] += " ";
-		}
+		res.trajectories[m].waypoints = trajectories[req.idList[m]];
 	}
 	return true;
 }

@@ -10,6 +10,7 @@
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
+#include "common_utilities/Waypoints.h"
 #include <controller_manager_msgs/LoadController.h>
 #include "FlexRayHardwareInterface.hpp"
 #include "CommonDefinitions.h"
