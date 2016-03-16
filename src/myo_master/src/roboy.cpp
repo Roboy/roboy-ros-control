@@ -4,6 +4,7 @@ HardwareInterface::HardwareInterface()
 {
     init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
 	record_srv = nh.advertiseService("/roboy/record", &HardwareInterface::recordService, this);
+	steer_recording_sub = nh.subscribe("/roboy/steer_recoding",1000, &HardwareInterface::steer_recording, this);
     cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
     cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
     cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
@@ -18,6 +19,7 @@ HardwareInterface::HardwareInterface()
 bool HardwareInterface::initializeService(common_utilities::Initialize::Request  &req,
                               common_utilities::Initialize::Response &res)
 {
+	ready = false;
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
         ROS_ERROR_THROTTLE(5,"Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
@@ -117,12 +119,31 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 bool HardwareInterface::recordService(common_utilities::Record::Request &req,
 									  common_utilities::Record::Response &res) {
 	std::vector<std::vector<float>> trajectories;
-	flexray.recordTrajectories(req.samplingTime, req.duration, trajectories, req.idList, req.controlmode, req.name);
+	recording = PLAY_TRAJECTORY;
+	flexray.recordTrajectories(req.samplingTime, trajectories, req.idList, req.controlmode, &recording);
 	res.trajectories.resize(req.idList.size());
 	for(uint m=0; m<req.idList.size(); m++){
 		res.trajectories[m].waypoints = trajectories[req.idList[m]];
 	}
 	return true;
+}
+
+void HardwareInterface::steer_recording(const common_utilities::Steer::ConstPtr& msg){
+	switch (msg->steeringCommand){
+		case STOP_TRAJECTORY:
+			recording = STOP_TRAJECTORY;
+			ROS_INFO("Received STOP recording");
+			break;
+		case PAUSE_TRAJECTORY:
+			if (recording==PAUSE_TRAJECTORY) {
+				recording = PLAY_TRAJECTORY;
+				ROS_INFO("Received RESUME recording");
+			}else {
+				recording = PAUSE_TRAJECTORY;
+				ROS_INFO("Received PAUSE recording");
+			}
+			break;
+	}
 }
 
 HardwareInterface::~HardwareInterface()
@@ -136,7 +157,6 @@ void HardwareInterface::read()
     flexray.exchangeData();
 
     uint i = 0;
-	interface.clearAll();
 #ifdef HARDWARE
     for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){
 #else
@@ -147,7 +167,6 @@ void HardwareInterface::read()
             pos[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
             vel[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
             eff[i] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement; // dummy TODO: use polynomial approx
-            interface.statusMotor(ganglion, motor, flexray.motorState[i]);
             i++;
         }
     }
@@ -191,7 +210,7 @@ void Roboy::main_loop()
 //	hw_queue.addCallback(boost::shared_ptr<ros::CallbackInterface>nh.getCallbackQueue());
 //	ros::AsyncSpinner hw_spinner(1, &hw_queue);
 
-    ros::AsyncSpinner spinner(10); // 4 threads
+    ros::AsyncSpinner spinner(10); // 10 threads
     spinner.start();
 
     bool controller_loaded = false;
@@ -285,7 +304,7 @@ void Roboy::main_loop()
 //				hardwareInterface.cm_SwitchController.call(msg);
                 if(controller_loaded) {
                     ROS_INFO("roboy ready");
-                    hardwareInterface.interface.show();
+//                    hardwareInterface.interface.show();
                 }else{
                     hardwareInterface.ready = false;
                 }

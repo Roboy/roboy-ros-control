@@ -41,58 +41,49 @@ class PositionController : public controller_interface::Controller<hardware_inte
         void update(const ros::Time& time, const ros::Duration& period)
         {
 			float pos = joint_.getPosition();
-			msg.data = 10;
+			msg.data = pos;
 			trajectory_pub.publish(msg);
 
 			if(steered == PLAY_TRAJECTORY) {
-				dt.push_back(timer.elapsedTime());
-				positions.push_back(pos);
-
 				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
-					myStatus = TRAJECTORY_PLAYING;
 					statusMsg.statusCode = myStatus;
 					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
 					trajpos++;
-					setpoint_ = trajectory[trajpos];
 				}
-
 				if (trajpos == trajectory.size() - 1) {
-					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, reached endpoint of trajectory %f",
-									   joint_name.c_str(), pos, trajectory[trajpos]);
 					setpoint_ = trajectory[trajpos];
-					myStatus = TRAJECTORY_DONE;
 					statusMsg.statusCode = myStatus;
 					statusMsg.steered = steered;
 					status_pub.publish(statusMsg);
-                    steered = STOP_TRAJECTORY;
-				} else {
-					ROS_DEBUG_THROTTLE(1, "%s update, current pos: %f, setpoint: %f", joint_name.c_str(), pos,
-									   setpoint_);
 				}
-				joint_.setCommand(setpoint_);
+			}else if(steered == STOP_TRAJECTORY) {
+				trajpos = 0;
 			}
+			joint_.setCommand(trajectory[trajpos]);
         }
 
 		void steer(const common_utilities::Steer::ConstPtr& msg){
 			switch (msg->steeringCommand){
 				case STOP_TRAJECTORY:
 					steered = STOP_TRAJECTORY;
-					trajpos = 0;
 					myStatus = TRAJECTORY_READY;
+					ROS_INFO("Received steering STOP");
 					break;
 				case PLAY_TRAJECTORY:
 					steered = PLAY_TRAJECTORY;
 					myStatus = TRAJECTORY_PLAYING;
+					ROS_INFO("Received steering PLAY");
 					break;
 				case PAUSE_TRAJECTORY:
-					steered = PAUSE_TRAJECTORY;
-					myStatus = TRAJECTORY_READY;
-					break;
-				case REWIND_TRAJECTORY:
-					steered = PLAY_TRAJECTORY;
-					trajpos = 0;
-					myStatus = TRAJECTORY_READY;
+					if (steered==PAUSE_TRAJECTORY) {
+						steered = PLAY_TRAJECTORY;
+						myStatus = TRAJECTORY_PLAYING;
+					}else {
+						steered = PAUSE_TRAJECTORY;
+						myStatus = TRAJECTORY_READY;
+					}
+					ROS_INFO("Received steering PAUSE");
 					break;
 			}
 			statusMsg.statusCode = myStatus;
@@ -100,8 +91,8 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			status_pub.publish(statusMsg);
 		}
 
-        void starting(const ros::Time& time) { ROS_DEBUG("starting controller for %s, gain: %f, setpoint: %f", joint_name.c_str(),gain_,setpoint_);}
-        void stopping(const ros::Time& time) { ROS_DEBUG("stopping controller for %s", joint_name.c_str());}
+        void starting(const ros::Time& time) { ROS_INFO("controller started for %s", joint_name.c_str());}
+        void stopping(const ros::Time& time) { ROS_INFO("controller stopped for %s", joint_name.c_str());}
         
         private:
             hardware_interface::JointHandle joint_;
