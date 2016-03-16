@@ -4,7 +4,7 @@ HardwareInterface::HardwareInterface()
 {
     init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
 	record_srv = nh.advertiseService("/roboy/record", &HardwareInterface::recordService, this);
-	steer_recording_sub = nh.subscribe("/roboy/steer_recoding",1000, &HardwareInterface::steer_recording, this);
+	steer_recording_sub = nh.subscribe("/roboy/steer_recording",1000, &HardwareInterface::steer_recording, this);
     cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
     cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
     cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
@@ -118,6 +118,8 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 
 bool HardwareInterface::recordService(common_utilities::Record::Request &req,
 									  common_utilities::Record::Response &res) {
+	ROS_INFO("Record Service called");
+	ready = false;
 	std::vector<std::vector<float>> trajectories;
 	recording = PLAY_TRAJECTORY;
 	flexray.recordTrajectories(req.samplingTime, trajectories, req.idList, req.controlmode, &recording);
@@ -125,6 +127,7 @@ bool HardwareInterface::recordService(common_utilities::Record::Request &req,
 	for(uint m=0; m<req.idList.size(); m++){
 		res.trajectories[m].waypoints = trajectories[req.idList[m]];
 	}
+	ready = true;
 	return true;
 }
 
