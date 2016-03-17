@@ -78,14 +78,26 @@ private:
 	ros::Subscriber steer_recording_sub;
 };
 
-class Roboy{
+class Roboy : public gazebo_ros_control::RobotHWSim{
 public:
 	Roboy();
 
 	void main_loop();
-
 	bool emergencyStopService(common_utilities::EmergencyStop::Request &req,
 							  common_utilities::EmergencyStop::Response &res);
+
+	bool initSim (const std::string &robot_namespace, ros::NodeHandle model_nh, gazebo::physics::ModelPtr parent_model,
+			 const urdf::Model *const urdf_model, std::vector< transmission_interface::TransmissionInfo > transmissions){
+		// TODO: initialize simulation
+	};
+	void readSim (ros::Time time, ros::Duration period){
+		// TODO: write data from simulation to hardwareInterface.flexray.GanglionData
+	};
+	void writeSim (ros::Time time, ros::Duration period){
+		// TODO: write control values from hardwareInterface.flexray.controllerOutput to simulation
+	};
+	void eStopActive (const bool active){};
+
 private:
 	bool emergencyStop = false;
 	ros::NodeHandle nh;

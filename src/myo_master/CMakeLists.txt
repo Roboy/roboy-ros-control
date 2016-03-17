@@ -6,7 +6,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0")
 SET(CMAKE_BUILD_TYPE Debug)
 
 ## Find catkin and any catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs)
 
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
