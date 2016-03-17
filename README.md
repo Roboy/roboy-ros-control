@@ -10,7 +10,6 @@ sudo apt-get install libncurses5-dev
 ```
 project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
-This will only be successful if the repo has been shared with you. 
 ```
 #!bash
 git clone https://gitlab.lrz.de/rosifyingmyorobotics/ros_hierarchy.git
