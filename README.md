@@ -24,7 +24,14 @@ Additionally you need to patch two typedefs of the gazebo stuff, because they ar
 ```
 #!bash
 cd path/to/ros_hierarchy/src/myomaster/patches
-sudo patch /usr/include/FreeImage.h < FreeImage.h.diff
+diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
+sudo patch /usr/include/FreeImage.h < FreeImage.diff
+```
+Note: in case you want to undo the patch run with -R switch:
+```
+#!bash
+cd path/to/ros_hierarchy/src/myomaster/patches
+sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 ```
 Then you can build with:
 ```
