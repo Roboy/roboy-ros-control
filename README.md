@@ -20,6 +20,13 @@ git submodule update
 
 # Build #
 Please follow the installation instructions for [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) before proceeding 
+Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
+```
+#!bash
+cd path/to/ros_hierarchy/src/myomaster/patches
+sudo patch /usr/include/FreeImage.h < FreeImage.h.diff
+```
+Then you can build with:
 ```
 #!bash
 
