@@ -20,7 +20,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
 /usr/include/sdformat-1.4
 )
 
-add_executable(multiJoint src/multiJoint.cpp src/roboy.cpp
+add_executable(multiJoint src/main.cpp src/roboy.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
 add_dependencies(multiJoint common_utilities_gencpp)
 
