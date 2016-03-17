@@ -1,4 +1,5 @@
-This illustrates ros hierarchy applied to control of a myode muscle via flexray hardware interface
+Ros hierarchy provides ros control hierarchy for roboy (v2.0) hardware via flexray hardware interface and gazebp simulation.
+If you have any questions feel free to contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members.
 # Dependencies #
 ROS, for detailed description of installation see [here](http://wiki.ros.org/indigo/Installation/Ubuntu)
 ```
@@ -9,7 +10,7 @@ sudo apt-get install libncurses5-dev
 ```
 project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
-This will only be successful if the repo has been shared with you. Please contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members to grant access to you.
+This will only be successful if the repo has been shared with you. 
 ```
 #!bash
 git clone https://gitlab.lrz.de/rosifyingmyorobotics/ros_hierarchy.git
@@ -87,9 +88,9 @@ You have probably already used the initialize service. Then there is also an eme
 rosservice call /roboy/emergencyStop [PRESS TAB TWICE]
 ```
 Pressing tab twice after the service will tab complete to the valid service message. If this does not work, ROS probably does not 
-know about the services yet. (bear in mind, that you have to do that for every terminal you open, unless of course you add the 
-source command to your ~/.bashrc).
-Try sourceing the setup.bash:
+know about the services yet. 
+Try sourceing the setup.bash (bear in mind, that you have to do that for every terminal you open, unless of course you add the 
+source command to your ~/.bashrc).:
 ```
 #!bash
 source devel/setup.bash
@@ -99,14 +100,10 @@ Fill out the values as needed (should be self-explanatory).
 If you have initialized motors already, the rosservice list command will be augmented by new services for each motor:
 ```
 #!bash
-/roboy/status_motor0
-/roboy/status_motor1
-/roboy/status_motor3
 /roboy/trajectory_motor0
 /roboy/trajectory_motor1
 /roboy/trajectory_motor3
 ```
-Calling the status service will reply with the current status of the motor.
 Calling the trajectory service will request a trajectory, e.g. like this:
 ```
 #!bash
