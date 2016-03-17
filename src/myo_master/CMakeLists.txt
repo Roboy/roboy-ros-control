@@ -16,6 +16,8 @@ ${catkin_INCLUDE_DIRS}
 include/ 
 ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
 ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
+/usr/include/gazebo-2.2
+/usr/include/sdformat-1.4
 )
 
 add_executable(multiJoint src/multiJoint.cpp src/roboy.cpp
