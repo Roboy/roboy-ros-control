@@ -36,7 +36,6 @@ sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 Then you can build with:
 ```
 #!bash
-
 cd path/to/ros_hierarchy
 catkin_init_workspace
 rm CMakeLists.txt
@@ -162,3 +161,12 @@ controller:
 
 ## Test with hardware ##
 please follow instructions in [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface), concerning library installation and udev rule.
+
+## Documentation ##
+Generate a doxygen documentation using the following command:
+```
+#!bash
+cd path/to/ros_hierarchy
+doxygen Doxyfile
+```
+The documentation is put into the doc folder.
