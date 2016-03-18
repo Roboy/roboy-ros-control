@@ -1,3 +1,4 @@
+## Description ##
 Ros hierarchy provides ros control hierarchy for roboy (v2.0) hardware via flexray hardware interface and gazebp simulation.
 If you have any questions feel free to contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members.
 # Dependencies #
