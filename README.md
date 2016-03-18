@@ -10,7 +10,6 @@ sudo apt-get install libncurses5-dev
 ```
 project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
-This will only be successful if the repo has been shared with you. 
 ```
 #!bash
 git clone https://gitlab.lrz.de/rosifyingmyorobotics/ros_hierarchy.git
@@ -25,7 +24,14 @@ Additionally you need to patch two typedefs of the gazebo stuff, because they ar
 ```
 #!bash
 cd path/to/ros_hierarchy/src/myomaster/patches
-sudo patch /usr/include/FreeImage.h < FreeImage.h.diff
+diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
+sudo patch /usr/include/FreeImage.h < FreeImage.diff
+```
+Note: in case you want to undo the patch run with -R switch:
+```
+#!bash
+cd path/to/ros_hierarchy/src/myomaster/patches
+sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 ```
 Then you can build with:
 ```
