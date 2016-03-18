@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(myo_master)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 SET(CMAKE_BUILD_TYPE Debug)
 
@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_con
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
 
-include_directories(include 
+include_directories(
 ${catkin_INCLUDE_DIRS} 
 include/ 
 ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include

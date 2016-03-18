@@ -64,13 +64,13 @@ void read();
 	hardware_interface::EffortJointInterface jnt_eff_interface;
 
 	ros::ServiceClient cm_LoadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
+	FlexRayHardwareInterface flexray;
 private:
 	double *cmd;
 	double *pos;
 	double *vel;
 	double *eff;
 	ros::Time prevTime;
-	FlexRayHardwareInterface flexray;
 	int8_t recording;
 	//! ros handler
 	ros::NodeHandle nh;

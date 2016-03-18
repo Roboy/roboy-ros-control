@@ -1,5 +1,5 @@
---- /usr/include/FreeImage.h	2016-03-17 20:40:45.290001080 +0100
-+++ /home/letrend/Documents/FreeImage.h	2016-03-17 20:42:23.585997603 +0100
+--- /usr/include/FreeImage.h	2016-03-18 00:15:54.929544463 +0100
++++ FreeImage.h	2016-03-18 00:16:45.717542667 +0100
 @@ -136,11 +136,11 @@
  #ifndef _MSC_VER
  // define portable types for 32-bit / 64-bit OS
