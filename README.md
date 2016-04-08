@@ -1,3 +1,4 @@
+## Description ##
 Ros hierarchy provides ros control hierarchy for roboy (v2.0) hardware via flexray hardware interface and gazebp simulation.
 If you have any questions feel free to contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members.
 # Dependencies #
@@ -7,6 +8,7 @@ ROS, for detailed description of installation see [here](http://wiki.ros.org/ind
 sudo apt-get install ros-indigo-desktop-full
 sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox ros-indigo-gazebo-ros-control
 sudo apt-get install libncurses5-dev 
+sudo apt-get install doxygen
 ```
 project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
@@ -36,7 +38,6 @@ sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 Then you can build with:
 ```
 #!bash
-
 cd path/to/ros_hierarchy
 catkin_init_workspace
 rm CMakeLists.txt
@@ -162,3 +163,12 @@ controller:
 
 ## Test with hardware ##
 please follow instructions in [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface), concerning library installation and udev rule.
+
+## Documentation ##
+Generate a doxygen documentation using the following command:
+```
+#!bash
+cd path/to/ros_hierarchy
+doxygen Doxyfile
+```
+The documentation is put into the doc folder.
