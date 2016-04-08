@@ -66,7 +66,7 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 				ROS_WARN("The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
 				common_utilities::ControllerState msg;
 				msg.id = req.idList[i];
-				msg.state = STATUS::UNDEFINED;
+				msg.state = ControllerState::UNDEFINED;
 				res.states.push_back(msg);
 				break;
 		}
@@ -74,12 +74,12 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 		if(flexray.motorState[req.idList[i]] == 1) { // only for ready motors
 			common_utilities::ControllerState msg;
 			msg.id = req.idList[i];
-			msg.state = STATUS::INITIALIZED;
+			msg.state = ControllerState::INITIALIZED;
 			res.states.push_back(msg);
 		}else{
 			common_utilities::ControllerState msg;
 			msg.id = req.idList[i];
-			msg.state = STATUS::UNDEFINED;
+			msg.state = ControllerState::UNDEFINED;
 			res.states.push_back(msg);
 		}
     }
