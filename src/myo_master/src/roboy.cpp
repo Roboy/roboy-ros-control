@@ -6,7 +6,7 @@ Roboy::Roboy()
 
 	init_srv = nh.advertiseService("/roboy/initialize", &Roboy::initializeService, this);
 	record_srv = nh.advertiseService("/roboy/record", &Roboy::recordService, this);
-	steer_recording_sub = nh.subscribe("/roboy/steer_recording",1000, &Roboy::steer_recording, this);
+	steer_recording_sub = nh.subscribe("/roboy/steer_record",1000, &Roboy::steer_record, this);
 	cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
 	cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
 	cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
@@ -278,7 +278,7 @@ ActionState Roboy::NextState(ActionState s)
 			newstate = Controlloop;
 			break;
 		case Recording:
-			newstate = Controlloop;
+			newstate = Recording;
 			break;
 	}
 	return newstate;
@@ -300,10 +300,11 @@ bool Roboy::recordService(common_utilities::Record::Request &req,
 	for(uint m=0; m<req.controllers.size(); m++){
 		res.trajectories[m].waypoints = trajectories[req.controllers[m].id];
 	}
+	currentState = Controlloop;
 	return true;
 }
 
-void Roboy::steer_recording(const common_utilities::Steer::ConstPtr& msg){
+void Roboy::steer_record(const common_utilities::Steer::ConstPtr& msg){
 	switch (msg->steeringCommand){
 		case STOP_TRAJECTORY:
 			recording = STOP_TRAJECTORY;

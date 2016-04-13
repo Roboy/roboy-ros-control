@@ -33,9 +33,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_"+joint_name, 1000);
 			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/plot",1000);
 			myStatus = ControllerState::INITIALIZED;
-			// this pause seems to be necessary for successful communication with GUI
-			ros::Duration d(1);
-			d.sleep();
+			// wait for GUI subscriber
+			while(status_pub.getNumSubscribers()==0 && trajectory_pub.getNumSubscribers()==0)
+				ROS_INFO_THROTTLE(1,"PositionController %s waiting for subscriber", joint_name.c_str());
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 			return true;

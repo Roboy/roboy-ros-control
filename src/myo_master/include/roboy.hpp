@@ -74,7 +74,7 @@ private:
 	/**
 	 * SUBSCRIBER enables pause/resume and stop recording
 	 */
-	void steer_recording(const common_utilities::Steer::ConstPtr& msg);
+	void steer_record(const common_utilities::Steer::ConstPtr& msg);
 
 	ros::NodeHandle nh;
 	controller_manager::ControllerManager* cm;
