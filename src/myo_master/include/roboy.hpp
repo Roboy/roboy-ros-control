@@ -13,50 +13,79 @@
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
 #include <common_utilities/Steer.h>
-#include "common_utilities/Waypoints.h"
+#include "common_utilities/Trajectory.h"
 #include <controller_manager_msgs/LoadController.h>
+#include <mutex>
 
 using namespace std;
 
-class HardwareInterface : public hardware_interface::RobotHW
+//! enum for state machine
+typedef enum
 {
+	WaitForInitialize,
+	LoadControllers,
+	Controlloop,
+	Recording
+} ActionState;
+
+class Roboy : public hardware_interface::RobotHW{
 public:
 	/**
 	 * Constructor
 	 */
-	HardwareInterface();
+	Roboy();
+	/**
+	 * Destructor
+	 */
+	~Roboy();
 	/**
 	 * SERVICE This function initialises the requested motors
 	 * @param req vector<int8> containing requested motor ids
 	 * @param res vector<ControllerStates> cf. CommonDefinitions.h
 	 */
 	bool initializeService(common_utilities::Initialize::Request  &req,
-								  common_utilities::Initialize::Response &res);
+						   common_utilities::Initialize::Response &res);
+	/**
+	 * Read from hardware
+	 */
+	void read();
+	/**
+	 * Write to Hardware
+	 */
+	void write();
+	/**
+	 * This is the main loop
+	 */
+	void main_loop();
+private:
+	/*
+	 * This function loads the controllers registered to the individual joint interfaces
+	 * @param controlmode Position, Velocity or Force
+	 * @return success
+	 */
+	bool loadControllers(int controlmode);
 	/**
 	 * SERVICE This function record the trajectories of the requested motors
 	 * @param req vector<int8> containing requested motor ids
 	 * @param res vector<ControllerStates> cf. CommonDefinitions.h
 	 */
 	bool recordService(common_utilities::Record::Request  &req,
-						   common_utilities::Record::Response &res);
+					   common_utilities::Record::Response &res);
 	/**
 	 * SUBSCRIBER enables pause/resume and stop recording
 	 */
 	void steer_recording(const common_utilities::Steer::ConstPtr& msg);
-	/**
-	 * Destructor
-	 */
-	~HardwareInterface();
-	/**
-	 * Read from hardware
-	 */
-void read();
-	/**
-	 * Write to Hardware
-	 */
-	void write();
-        
-	bool ready = false;
+
+	ros::NodeHandle nh;
+	controller_manager::ControllerManager* cm;
+	double *cmd;
+	double *pos;
+	double *vel;
+	double *eff;
+	ros::Time prevTime;
+	int8_t recording;
+	bool initialized = false;
+
 	hardware_interface::JointStateInterface jnt_state_interface;
 
 	hardware_interface::PositionJointInterface jnt_pos_interface;
@@ -64,45 +93,25 @@ void read();
 	hardware_interface::EffortJointInterface jnt_eff_interface;
 
 	ros::ServiceClient cm_LoadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
-	FlexRayHardwareInterface flexray;
-private:
-	double *cmd;
-	double *pos;
-	double *vel;
-	double *eff;
-	ros::Time prevTime;
-	int8_t recording;
-	//! ros handler
-	ros::NodeHandle nh;
 	ros::ServiceServer init_srv, record_srv;
 	ros::Subscriber steer_recording_sub;
-};
 
-class Roboy : public gazebo_ros_control::RobotHWSim{
-public:
-	Roboy();
+	FlexRayHardwareInterface flexray;
 
-	void main_loop();
-	bool emergencyStopService(common_utilities::EmergencyStop::Request &req,
-							  common_utilities::EmergencyStop::Response &res);
-
-	bool initSim (const std::string &robot_namespace, ros::NodeHandle model_nh, gazebo::physics::ModelPtr parent_model,
-			 const urdf::Model *const urdf_model, std::vector< transmission_interface::TransmissionInfo > transmissions){
-		// TODO: initialize simulation
+	//! current state of roboy
+	ActionState currentState;
+	/**
+	 * Statemachine function for next state
+	 * @param s current State
+	 * @return next state
+	 */
+	ActionState NextState(ActionState s);
+	//! state strings describing each state
+	std::map<ActionState, std::string> state_strings = {
+			{ WaitForInitialize,     "Waiting for initialization of controllers" },
+			{ LoadControllers,       "Loading controllers" },
+			{ Controlloop,           "Control loop" },
+			{ Recording,             "Recording" }
 	};
-	void readSim (ros::Time time, ros::Duration period){
-		// TODO: write data from simulation to hardwareInterface.flexray.GanglionData
-	};
-	void writeSim (ros::Time time, ros::Duration period){
-		// TODO: write control values from hardwareInterface.flexray.controllerOutput to simulation
-	};
-	void eStopActive (const bool active){};
-
-private:
-	bool emergencyStop = false;
-	ros::NodeHandle nh;
-	controller_manager::ControllerManager* cm;
-	HardwareInterface hardwareInterface;
-	ros::ServiceServer emergencyStop_srv;
 };
 

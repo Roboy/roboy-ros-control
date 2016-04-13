@@ -1,25 +1,32 @@
 #include "roboy.hpp"
 
-HardwareInterface::HardwareInterface()
+Roboy::Roboy()
 {
-    init_srv = nh.advertiseService("/roboy/initialize", &HardwareInterface::initializeService, this);
-	record_srv = nh.advertiseService("/roboy/record", &HardwareInterface::recordService, this);
-	steer_recording_sub = nh.subscribe("/roboy/steer_recording",1000, &HardwareInterface::steer_recording, this);
-    cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
-    cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
-    cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
-    cm_SwitchController = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
+	cm = new controller_manager::ControllerManager(this);
 
-    cmd = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
-    pos = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
-    vel = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
-    eff = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
+	init_srv = nh.advertiseService("/roboy/initialize", &Roboy::initializeService, this);
+	record_srv = nh.advertiseService("/roboy/record", &Roboy::recordService, this);
+	steer_recording_sub = nh.subscribe("/roboy/steer_recording",1000, &Roboy::steer_recording, this);
+	cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
+	cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
+	cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
+	cm_SwitchController = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
+
+	cmd = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
+	pos = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
+	vel = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
+	eff = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
 }
 
-bool HardwareInterface::initializeService(common_utilities::Initialize::Request  &req,
+Roboy::~Roboy()
+{
+	delete cm;
+}
+
+bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
                               common_utilities::Initialize::Response &res)
 {
-	ready = false;
+	initialized = false;
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
         ROS_ERROR_THROTTLE(5,"Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
@@ -109,51 +116,13 @@ bool HardwareInterface::initializeService(common_utilities::Initialize::Request 
 
     ROS_INFO("Hardware interface initialized");
     ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
-    ROS_INFO("Waiting for controller");
-    
-    ready = true;
+
+	initialized = true;
 
     return true;
 }
 
-bool HardwareInterface::recordService(common_utilities::Record::Request &req,
-									  common_utilities::Record::Response &res) {
-	ROS_INFO("Record Service called");
-	ready = false;
-	std::vector<std::vector<float>> trajectories;
-	recording = PLAY_TRAJECTORY;
-	flexray.recordTrajectories(req.samplingTime, trajectories, req.idList, req.controlmode, &recording);
-	res.trajectories.resize(req.idList.size());
-	for(uint m=0; m<req.idList.size(); m++){
-		res.trajectories[m].waypoints = trajectories[req.idList[m]];
-	}
-	ready = true;
-	return true;
-}
-
-void HardwareInterface::steer_recording(const common_utilities::Steer::ConstPtr& msg){
-	switch (msg->steeringCommand){
-		case STOP_TRAJECTORY:
-			recording = STOP_TRAJECTORY;
-			ROS_INFO("Received STOP recording");
-			break;
-		case PAUSE_TRAJECTORY:
-			if (recording==PAUSE_TRAJECTORY) {
-				recording = PLAY_TRAJECTORY;
-				ROS_INFO("Received RESUME recording");
-			}else {
-				recording = PAUSE_TRAJECTORY;
-				ROS_INFO("Received PAUSE recording");
-			}
-			break;
-	}
-}
-
-HardwareInterface::~HardwareInterface()
-{
-}
-
-void HardwareInterface::read()
+void Roboy::read()
 {
     ROS_DEBUG("read");
 
@@ -174,7 +143,7 @@ void HardwareInterface::read()
         }
     }
 }
-void HardwareInterface::write()
+void Roboy::write()
 {
     ROS_DEBUG("write");
     uint i = 0;
@@ -197,136 +166,157 @@ void HardwareInterface::write()
     flexray.exchangeData();
 }
 
-Roboy::Roboy()
-{
-    cm = new controller_manager::ControllerManager(&hardwareInterface);
-    emergencyStop_srv = nh.advertiseService("/roboy/emergencyStop", &Roboy::emergencyStopService, this);
-}
-
 void Roboy::main_loop()
 {
     // Control loop
     ros::Time prev_time = ros::Time::now();
     ros::Rate rate(10);
 
-//	ros::CallbackQueue hw_queue;
-//	hw_queue.addCallback(boost::shared_ptr<ros::CallbackInterface>nh.getCallbackQueue());
-//	ros::AsyncSpinner hw_spinner(1, &hw_queue);
-
     ros::AsyncSpinner spinner(10); // 10 threads
     spinner.start();
 
-    bool controller_loaded = false;
+	currentState = WaitForInitialize;
 
-    while (ros::ok() && !emergencyStop)
+    while (ros::ok())
     {
-        if(hardwareInterface.ready){
-            if(controller_loaded) {
-                const ros::Time time = ros::Time::now();
-                const ros::Duration period = time - prev_time;
+		switch(currentState){
+			case WaitForInitialize: {
+				ros::Duration d(1);
+				while (!initialized) {
+					ROS_INFO_THROTTLE(5, "%s", state_strings[WaitForInitialize].c_str());
+					d.sleep();
+				}
+				break;
+			}
+			case LoadControllers: {
+				ROS_INFO_THROTTLE(1,  "%s", state_strings[LoadControllers].c_str());
+				if(!loadControllers(ControlMode::POSITION_CONTROL))
+					return;
+				if(!loadControllers(ControlMode::VELOCITY_CONTROL))
+					return;
+				if(!loadControllers(ControlMode::FORCE_CONTROL))
+					return;
+				break;
+			}
+			case Controlloop: {
+				ROS_INFO_THROTTLE(10, "%s", state_strings[Controlloop].c_str());
+				const ros::Time time = ros::Time::now();
+				const ros::Duration period = time - prev_time;
 
-                hardwareInterface.read();
-                cm->update(time, period);
-                hardwareInterface.write();
+				read();
+				cm->update(time, period);
+				write();
 
-                rate.sleep();
-            }else{
-                ROS_INFO("loading position controller");
-                controller_loaded = true;
-                // load position controller
-                vector<string> resources = hardwareInterface.jnt_pos_interface.getNames();
-                for (auto resource : resources) {
-                    if(!cm->loadController(resource)) {
-                        string controllerType = resource, controllerOnParameterServer, controller;
-                        controllerType.append("/type");
-                        nh.getParam(controllerType,controllerOnParameterServer);
-                        ROS_WARN("Unable to load PositionController for %s, because parameter server assigned %s to it", resource.c_str(),controllerOnParameterServer.c_str());
-                        controller = "roboy_controller/PositionController";
-                        ROS_INFO("Changing parameter server for %s: %s --> %s ", resource.c_str(),controllerOnParameterServer.c_str(),controller.c_str());
-                        nh.setParam(controllerType,controller);
-                        ROS_INFO("Trying to load controller");
-                        if(!cm->loadController(resource)) {
-                            ROS_ERROR("Could not load %s for %s", controller.c_str(), resource.c_str());
-                            controller_loaded = false;
-                            continue;
-                        }
-                        ROS_INFO("Success");
-                    }
-                }
-//				controller_manager_msgs::SwitchController msg;
-//				msg.request.start_controllers = resources;
-//				msg.request.strictness = 1;
-//				hardwareInterface.cm_SwitchController.call(msg);
-				ROS_INFO("loading velocity controller");
-                // load velocity controller
-                resources = hardwareInterface.jnt_vel_interface.getNames();
-                for (auto resource : resources) {
-                    if(!cm->loadController(resource)) {
-                        string controllerType = resource, controllerOnParameterServer, controller;
-                        controllerType.append("/type");
-                        nh.getParam(controllerType,controllerOnParameterServer);
-                        ROS_WARN("Unable to load VelocityController for %s, because parameter server assigned %s to it", resource.c_str(),controllerOnParameterServer.c_str());
-                        controller = "roboy_controller/VelocityController";
-                        ROS_INFO("Changing parameter server for %s: %s --> %s ", resource.c_str(),controllerOnParameterServer.c_str(),controller.c_str());
-                        nh.setParam(controllerType,controller);
-                        ROS_INFO("Trying to load controller");
-                        if(!cm->loadController(resource)) {
-                            ROS_ERROR("Could not load %s for %s", controller.c_str(), resource.c_str());
-                            controller_loaded = false;
-                            continue;
-                        }
-                        ROS_INFO("Success");
-                    }
-                }
-//				msg.request.start_controllers = resources;
-//				msg.request.strictness = 2;
-//				hardwareInterface.cm_SwitchController.call(msg);
-                // load force controller
-				ROS_INFO("loading force controller");
-                resources = hardwareInterface.jnt_eff_interface.getNames();
-                for(auto resource : resources) {
-                    if(!cm->loadController(resource)) {
-                        string controllerType = resource, controllerOnParameterServer, controller;
-                        controllerType.append("/type");
-                        nh.getParam(controllerType,controllerOnParameterServer);
-                        ROS_WARN("Unable to load ForceController for %s, because parameter server assigned %s to it", resource.c_str(),controllerOnParameterServer.c_str());
-                        controller = "roboy_controller/ForceController";
-                        ROS_INFO("Changing parameter server for %s: %s --> %s ", resource.c_str(),controllerOnParameterServer.c_str(),controller.c_str());
-                        nh.setParam(controllerType,controller);
-                        ROS_INFO("Trying to load controller");
-                        if(!cm->loadController(resource)) {
-                            ROS_ERROR("Could not load %s for %s", controller.c_str(), resource.c_str());
-                            controller_loaded = false;
-                            continue;
-                        }
-                        ROS_INFO("Success");
-                    }
-                }
-//				msg.request.start_controllers = resources;
-//				msg.request.strictness = 2;
-//				hardwareInterface.cm_SwitchController.call(msg);
-                if(controller_loaded) {
-                    ROS_INFO("roboy ready");
-//                    hardwareInterface.interface.show();
-                }else{
-                    hardwareInterface.ready = false;
-                }
-            }
-        }else{
-            ROS_INFO_THROTTLE(1,"roboy not ready");
-        }
+				rate.sleep();
+				break;
+			}
+			case Recording: {
+				ROS_INFO_THROTTLE(5, "%s", state_strings[Recording].c_str());
+				ros::Duration d(1);
+				d.sleep();
+				break;
+			}
+		}
+		// get next state from state machine
+		currentState = NextState(currentState);
     }
 }
 
-bool Roboy::emergencyStopService(common_utilities::EmergencyStop::Request &req,
-                          common_utilities::EmergencyStop::Response &res){
-    if(req.all){
-        emergencyStop=true;
-    }else{
-        for(auto i:req.idList) {
-            char controllername[50];
-            snprintf(controllername,50,"motor%d",i);
-            cm->unloadController(controllername);
-        }
-    }
+bool Roboy::loadControllers(int controlmode){
+	vector<string> resources;
+	string controller;
+	switch(controlmode){
+		case ControlMode::POSITION_CONTROL:
+			ROS_INFO("loading position controller");
+			resources = jnt_pos_interface.getNames();
+			controller = "roboy_controller/PositionController";
+			break;
+		case ControlMode::VELOCITY_CONTROL:
+			ROS_INFO("loading velocity controller");
+			resources = jnt_vel_interface.getNames();
+			controller = "roboy_controller/VelocityController";
+			break;
+		case ControlMode::FORCE_CONTROL:
+			ROS_INFO("loading force controller");
+			resources = jnt_eff_interface.getNames();
+			controller = "roboy_controller/ForceController";
+			break;
+	}
+	bool controller_loaded = true;
+	for (auto resource : resources) {
+		if(!cm->loadController(resource)) {
+			string controllerType = resource, controllerOnParameterServer;
+			controllerType.append("/type");
+			nh.getParam(controllerType,controllerOnParameterServer);
+			ROS_WARN("Unable to load controller for %s, because parameter server assigned %s to it", resource.c_str(),controllerOnParameterServer.c_str());
+			ROS_INFO("Changing parameter server for %s: %s --> %s ", resource.c_str(),controllerOnParameterServer.c_str(),controller.c_str());
+			nh.setParam(controllerType,controller);
+			ROS_INFO("Trying to load controller");
+			if(!cm->loadController(resource)) {
+				ROS_ERROR("Could not load %s for %s", controller.c_str(), resource.c_str());
+				controller_loaded = false;
+				continue;
+			}
+			ROS_INFO("Success");
+		}
+	}
+	return controller_loaded;
+}
+
+ActionState Roboy::NextState(ActionState s)
+{
+	ActionState newstate;
+	switch (s)
+	{
+		case WaitForInitialize:
+			newstate = LoadControllers;
+			break;
+		case LoadControllers:
+			newstate = Controlloop;
+			break;
+		case Controlloop:
+			newstate = Controlloop;
+			break;
+		case Recording:
+			newstate = Controlloop;
+			break;
+	}
+	return newstate;
+}
+
+bool Roboy::recordService(common_utilities::Record::Request &req,
+									  common_utilities::Record::Response &res) {
+	currentState = Recording;
+	std::vector<std::vector<float>> trajectories;
+	recording = PLAY_TRAJECTORY;
+	vector<int> controllers;
+	vector<int> controlmode;
+	for(auto controller:req.controllers){
+		controllers.push_back(controller.id);
+		controlmode.push_back(controller.controlmode);
+	}
+	flexray.recordTrajectories(req.samplingTime, trajectories, controllers, controlmode, &recording);
+	res.trajectories.resize(req.controllers.size());
+	for(uint m=0; m<req.controllers.size(); m++){
+		res.trajectories[m].waypoints = trajectories[req.controllers[m].id];
+	}
+	return true;
+}
+
+void Roboy::steer_recording(const common_utilities::Steer::ConstPtr& msg){
+	switch (msg->steeringCommand){
+		case STOP_TRAJECTORY:
+			recording = STOP_TRAJECTORY;
+			ROS_INFO("Received STOP recording");
+			break;
+		case PAUSE_TRAJECTORY:
+			if (recording==PAUSE_TRAJECTORY) {
+				recording = PLAY_TRAJECTORY;
+				ROS_INFO("Received RESUME recording");
+			}else {
+				recording = PAUSE_TRAJECTORY;
+				ROS_INFO("Received PAUSE recording");
+			}
+			break;
+	}
 }

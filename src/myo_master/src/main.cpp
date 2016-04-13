@@ -8,6 +8,8 @@ int main(int argc, char* argv[])
 
     robot.main_loop();
 
+    ROS_INFO("TERMINATING...");
+
     return 0;
 }
 
