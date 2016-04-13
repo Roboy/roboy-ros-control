@@ -49,13 +49,15 @@ class VelocityController : public controller_interface::Controller<hardware_inte
 
 			if(steered == PLAY_TRAJECTORY) {
 				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
-					statusMsg.state = myStatus;
-					status_pub.publish(statusMsg);
+//					statusMsg.state = myStatus;
+//					status_pub.publish(statusMsg);
 					trajpos++;
 				}
 				if (trajpos == trajectory.size() - 1) {
 					setpoint_ = trajectory[trajpos];
+					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
+					steered = STOP_TRAJECTORY;
 					status_pub.publish(statusMsg);
 				}
 			}else if(steered == STOP_TRAJECTORY) {
@@ -119,10 +121,13 @@ class VelocityController : public controller_interface::Controller<hardware_inte
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 
-			ROS_INFO("New trajectory [%d elements] at sampleRate %d",
+			ROS_INFO("New trajectory [%d elements] at sampleRate %f",
 					 (int)req.trajectory.waypoints.size(), req.trajectory.samplerate);
 			if(!req.trajectory.waypoints.empty()) {
 				trajectory = req.trajectory.waypoints;
+				for(auto f:req.trajectory.waypoints)
+					cout << f << " ";
+				cout << endl;
 				trajpos = 0;
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;

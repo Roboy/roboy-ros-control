@@ -43,19 +43,21 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 
 		void update(const ros::Time& time, const ros::Duration& period)
 		{
-			float pos = joint_.getPosition();
+			float pos = joint_.getEffort();
 			msg.data = pos;
 			trajectory_pub.publish(msg);
 
 			if(steered == PLAY_TRAJECTORY) {
-				if (fabs(pos - trajectory[trajpos]) < 0.2 && trajpos < trajectory.size() - 1) {
-					statusMsg.state = myStatus;
-					status_pub.publish(statusMsg);
+				if (fabs(pos - trajectory[trajpos]) < 0.02 && trajpos < trajectory.size() - 1) {
+//					statusMsg.state = myStatus;
+//					status_pub.publish(statusMsg);
 					trajpos++;
 				}
 				if (trajpos == trajectory.size() - 1) {
 					setpoint_ = trajectory[trajpos];
+					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
+					steered = STOP_TRAJECTORY;
 					status_pub.publish(statusMsg);
 				}
 			}else if(steered == STOP_TRAJECTORY) {
@@ -119,10 +121,13 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 
-			ROS_INFO("New trajectory [%d elements] at sampleRate %d",
+			ROS_INFO("New trajectory [%d elements] at sampleRate %f",
 					 (int)req.trajectory.waypoints.size(), req.trajectory.samplerate);
 			if(!req.trajectory.waypoints.empty()) {
 				trajectory = req.trajectory.waypoints;
+				for(auto f:req.trajectory.waypoints)
+					cout << f << " ";
+				cout << endl;
 				trajpos = 0;
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;

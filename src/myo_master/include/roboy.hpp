@@ -64,6 +64,12 @@ private:
 	 * @return success
 	 */
 	bool loadControllers(int controlmode);
+	/*
+	 * This function unloads the controllers registered to the individual joint interfaces
+	 * @param controlmode Position, Velocity or Force
+	 * @return success
+	 */
+	bool unloadControllers(int controlmode);
 	/**
 	 * SERVICE This function record the trajectories of the requested motors
 	 * @param req vector<int8> containing requested motor ids
@@ -77,7 +83,7 @@ private:
 	void steer_record(const common_utilities::Steer::ConstPtr& msg);
 
 	ros::NodeHandle nh;
-	controller_manager::ControllerManager* cm;
+	controller_manager::ControllerManager* cm = nullptr;
 	double *cmd;
 	double *pos;
 	double *vel;

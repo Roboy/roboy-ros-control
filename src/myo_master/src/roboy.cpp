@@ -3,7 +3,6 @@
 Roboy::Roboy()
 {
 	cm = new controller_manager::ControllerManager(this);
-
 	init_srv = nh.advertiseService("/roboy/initialize", &Roboy::initializeService, this);
 	record_srv = nh.advertiseService("/roboy/record", &Roboy::recordService, this);
 	steer_recording_sub = nh.subscribe("/roboy/steer_record",1000, &Roboy::steer_record, this);
@@ -26,6 +25,12 @@ Roboy::~Roboy()
 bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
                               common_utilities::Initialize::Response &res)
 {
+	if(!unloadControllers(ControlMode::POSITION_CONTROL))
+		return false;
+	if(!unloadControllers(ControlMode::VELOCITY_CONTROL))
+		return false;
+	if(!unloadControllers(ControlMode::FORCE_CONTROL))
+		return false;
 	initialized = false;
     // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
@@ -39,33 +44,33 @@ bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
 		sprintf(motorname, "motor%d", req.idList[i]);
 
 		// connect and register the joint state interface
-		hardware_interface::JointStateHandle state_handle(motorname, &pos[i], &vel[i], &eff[i]);
+		hardware_interface::JointStateHandle state_handle(motorname, &pos[req.idList[i]], &vel[req.idList[i]], &eff[req.idList[i]]);
 		jnt_state_interface.registerHandle(state_handle);
 
 		uint ganglion = req.idList[i]/4;
 		uint motor = req.idList[i]%4;
 		switch((uint)req.controlmode[i]){
 			case 1: {
-				ROS_INFO("%s position controller",motorname);
+				ROS_INFO("%s position controller ganglion %d motor %d",motorname, ganglion, motor);
 				flexray.initPositionControl(ganglion, motor);
 				// connect and register the joint position interface
-				hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
+				hardware_interface::JointHandle pos_handle(jnt_state_interface.getHandle(motorname), &cmd[req.idList[i]]);
 				jnt_pos_interface.registerHandle(pos_handle);
 				break;
 			}
 			case 2: {
-				ROS_INFO("%s velocity controller",motorname);
+				ROS_INFO("%s velocity controller ganglion %d motor %d",motorname, ganglion, motor);
 				flexray.initVelocityControl(ganglion, motor);
 				// connect and register the joint position interface
-				hardware_interface::JointHandle vel_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
+				hardware_interface::JointHandle vel_handle(jnt_state_interface.getHandle(motorname), &cmd[req.idList[i]]);
 				jnt_vel_interface.registerHandle(vel_handle);
 				break;
 			}
 			case 3: {
-				ROS_INFO("%s force controller",motorname);
+				ROS_INFO("%s force controller ganglion %d motor %d",motorname, ganglion, motor);
 				flexray.initForceControl(ganglion, motor);
 				// connect and register the joint position interface
-				hardware_interface::JointHandle eff_handle(jnt_state_interface.getHandle(motorname), &cmd[i]);
+				hardware_interface::JointHandle eff_handle(jnt_state_interface.getHandle(motorname), &cmd[req.idList[i]]);
 				jnt_eff_interface.registerHandle(eff_handle);
 				break;
 			}
@@ -138,8 +143,12 @@ void Roboy::read()
         for (uint motor=0;motor<NUMBER_OF_JOINTS_PER_GANGLION;motor++){
             pos[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
             vel[i] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
-            eff[i] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement; // dummy TODO: use polynomial approx
-            i++;
+			float polyPar[4];
+			polyPar[0]=0; polyPar[1]=0.237536; polyPar[2]=-0.000032; polyPar[3]=0;
+			float tendonDisplacement = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement;
+			eff[i] = polyPar[0] + polyPar[1] * tendonDisplacement + polyPar[2] * powf(tendonDisplacement, 2.0f) + polyPar[3] * powf(tendonDisplacement, 3.0f);
+
+			i++;
         }
     }
 }
@@ -147,11 +156,7 @@ void Roboy::write()
 {
     ROS_DEBUG("write");
     uint i = 0;
-#ifdef HARDWARE
-    for (uint ganglion=0;ganglion<flexray.numberOfGanglionsConnected;ganglion++){
-#else
     for (uint ganglion=0;ganglion<NUMBER_OF_GANGLIONS;ganglion++){
-#endif
         // four motors can be connected to each ganglion
         for (uint motor=0;motor<4;motor++){ 
             if(ganglion<3)  // write to first commandframe
@@ -263,6 +268,47 @@ bool Roboy::loadControllers(int controlmode){
 	return controller_loaded;
 }
 
+bool Roboy::unloadControllers(int controlmode){
+	vector<string> resources;
+	string controller;
+	switch(controlmode){
+		case ControlMode::POSITION_CONTROL:
+			ROS_INFO("loading position controller");
+			resources = jnt_pos_interface.getNames();
+			controller = "roboy_controller/PositionController";
+			break;
+		case ControlMode::VELOCITY_CONTROL:
+			ROS_INFO("loading velocity controller");
+			resources = jnt_vel_interface.getNames();
+			controller = "roboy_controller/VelocityController";
+			break;
+		case ControlMode::FORCE_CONTROL:
+			ROS_INFO("loading force controller");
+			resources = jnt_eff_interface.getNames();
+			controller = "roboy_controller/ForceController";
+			break;
+	}
+	bool controller_loaded = true;
+	for (auto resource : resources) {
+		if(!cm->unloadController(resource)) {
+			string controllerType = resource, controllerOnParameterServer;
+			controllerType.append("/type");
+			nh.getParam(controllerType,controllerOnParameterServer);
+			ROS_WARN("Unable to load controller for %s, because parameter server assigned %s to it", resource.c_str(),controllerOnParameterServer.c_str());
+			ROS_INFO("Changing parameter server for %s: %s --> %s ", resource.c_str(),controllerOnParameterServer.c_str(),controller.c_str());
+			nh.setParam(controllerType,controller);
+			ROS_INFO("Trying to load controller");
+			if(!cm->loadController(resource)) {
+				ROS_ERROR("Could not load %s for %s", controller.c_str(), resource.c_str());
+				controller_loaded = false;
+				continue;
+			}
+			ROS_INFO("Success");
+		}
+	}
+	return controller_loaded;
+}
+
 ActionState Roboy::NextState(ActionState s)
 {
 	ActionState newstate;
@@ -295,10 +341,12 @@ bool Roboy::recordService(common_utilities::Record::Request &req,
 		controllers.push_back(controller.id);
 		controlmode.push_back(controller.controlmode);
 	}
-	flexray.recordTrajectories(req.samplingTime, trajectories, controllers, controlmode, &recording);
+	float averageSamplingTime = flexray.recordTrajectories(req.samplingTime, trajectories, controllers, controlmode, &recording);
 	res.trajectories.resize(req.controllers.size());
 	for(uint m=0; m<req.controllers.size(); m++){
+		res.trajectories[m].id = req.controllers[m].id;
 		res.trajectories[m].waypoints = trajectories[req.controllers[m].id];
+		res.trajectories[m].samplerate = averageSamplingTime;
 	}
 	currentState = Controlloop;
 	return true;
