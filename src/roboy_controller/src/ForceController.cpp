@@ -1,11 +1,12 @@
 #include <controller_interface/controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <pluginlib/class_list_macros.h>
-#include "std_msgs/Float32.h"
-#include <common_utilities/ControllerState.h>
-#include <common_utilities/Steer.h>
-#include <common_utilities/SetTrajectory.h>
-#include <CommonDefinitions.h>
+#include <std_msgs/Float32.h>
+#include "common_utilities/ControllerState.h"
+#include "common_utilities/Steer.h"
+#include "common_utilities/SetTrajectory.h"
+#include "CommonDefinitions.h"
+#include "spline.h"
 #include "timer.hpp"
 
 using namespace std;
@@ -14,7 +15,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 {
 	public:
 		ForceController(){
-			trajectory.push_back(0);
+
 		};
 
 		bool init(hardware_interface::EffortJointInterface* hw, ros::NodeHandle &n)
@@ -27,7 +28,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			}
 			n.getParam("id", statusMsg.id);
 			ROS_INFO("ForceController %d for %s initialized", statusMsg.id, joint_name.c_str());
-			joint_ = hw->getHandle(joint_name);  // throws on failure
+			joint = hw->getHandle(joint_name);  // throws on failure
 			trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &ForceController::trajectoryPreprocess, this);
 			steer_sub = n.subscribe("/roboy/steer",1000, &ForceController::steer, this);
 			status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_"+joint_name, 1000);
@@ -43,27 +44,22 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 
 		void update(const ros::Time& time, const ros::Duration& period)
 		{
-			float pos = joint_.getEffort();
-			msg.data = pos;
+			float eff = joint.getEffort();
+			msg.data = eff;
 			trajectory_pub.publish(msg);
 
 			if(steered == PLAY_TRAJECTORY) {
-				if (fabs(pos - trajectory[trajpos]) < 0.02 && trajpos < trajectory.size() - 1) {
-//					statusMsg.state = myStatus;
-//					status_pub.publish(statusMsg);
-					trajpos++;
-				}
-				if (trajpos == trajectory.size() - 1) {
-					setpoint_ = trajectory[trajpos];
+				double dt = timer.elapsedTimeMilliSeconds();
+				if (dt<trajectory_duration) {
+					setpoint = spline_trajectory(dt);
+				}else{
 					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
 					steered = STOP_TRAJECTORY;
 					status_pub.publish(statusMsg);
 				}
-			}else if(steered == STOP_TRAJECTORY) {
-				trajpos = 0;
+				joint.setCommand(setpoint);
 			}
-			joint_.setCommand(trajectory[trajpos]);
 		}
 
 		void steer(const common_utilities::Steer::ConstPtr& msg){
@@ -74,19 +70,10 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 					ROS_INFO("%s received steering STOP", joint_name.c_str());
 					break;
 				case PLAY_TRAJECTORY:
+					timer.start();
 					steered = PLAY_TRAJECTORY;
 					myStatus = TRAJECTORY_PLAYING;
 					ROS_INFO("%s received steering PLAY", joint_name.c_str());
-					break;
-				case PAUSE_TRAJECTORY:
-					if (steered==PAUSE_TRAJECTORY) {
-						steered = PLAY_TRAJECTORY;
-						myStatus = TRAJECTORY_PLAYING;
-					}else {
-						steered = PAUSE_TRAJECTORY;
-						myStatus = TRAJECTORY_READY;
-					}
-					ROS_INFO("%s received steering PAUSE", joint_name.c_str());
 					break;
 			}
 			statusMsg.state = myStatus;
@@ -97,20 +84,18 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 		void stopping(const ros::Time& time) { ROS_INFO("controller stopped for %s", joint_name.c_str());}
 
 	private:
-		hardware_interface::JointHandle joint_;
-		double gain_ = 1.25; // not used
-		double setpoint_ = 0;
-		std::string joint_name;
+		hardware_interface::JointHandle joint;
+		double setpoint = 0;
+		string joint_name;
 		ros::NodeHandle n;
 		ros::ServiceServer trajectory_srv;
 		ros::Subscriber steer_sub;
 		ros::Publisher trajectory_pub, status_pub;
-		std::vector<float> trajectory;
+		tk::spline spline_trajectory;
+		double trajectory_duration;
 		uint trajpos = 0;
 		int8_t myStatus = UNDEFINED;
 		int8_t steered = STOP_TRAJECTORY;
-		vector<float> dt;
-		vector<float> positions;
 		std_msgs::Float32 msg;
 		common_utilities::ControllerState statusMsg;
 		Timer timer;
@@ -124,10 +109,13 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			ROS_INFO("New trajectory [%d elements] at sampleRate %f",
 					 (int)req.trajectory.waypoints.size(), req.trajectory.samplerate);
 			if(!req.trajectory.waypoints.empty()) {
-				trajectory = req.trajectory.waypoints;
-				for(auto f:req.trajectory.waypoints)
-					cout << f << " ";
-				cout << endl;
+				vector<double> x,y;
+				for(uint i=0; i<req.trajectory.waypoints.size(); i++){
+					x.push_back(i*req.trajectory.samplerate);
+					y.push_back(req.trajectory.waypoints[i]);
+				}
+				trajectory_duration = x.back();
+				spline_trajectory.set_points(x,y);
 				trajpos = 0;
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;

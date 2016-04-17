@@ -341,7 +341,7 @@ bool Roboy::recordService(common_utilities::Record::Request &req,
 		controllers.push_back(controller.id);
 		controlmode.push_back(controller.controlmode);
 	}
-	float averageSamplingTime = flexray.recordTrajectories(req.samplingTime, trajectories, controllers, controlmode, &recording);
+	float averageSamplingTime = flexray.recordTrajectories(req.sampleRate, trajectories, controllers, controlmode, &recording);
 	res.trajectories.resize(req.controllers.size());
 	for(uint m=0; m<req.controllers.size(); m++){
 		res.trajectories[m].id = req.controllers[m].id;
