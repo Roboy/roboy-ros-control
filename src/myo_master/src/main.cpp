@@ -6,6 +6,8 @@ int main(int argc, char* argv[])
     
     Roboy robot;
 
+    ROS_INFO("STARTING ROBOY MAIN LOOP...");
+    
     robot.main_loop();
 
     ROS_INFO("TERMINATING...");

@@ -1,3 +1,4 @@
+#include <CommunicationData.h>
 #include "roboy.hpp"
 
 Roboy::Roboy()
@@ -10,6 +11,12 @@ Roboy::Roboy()
 	cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
 	cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
 	cm_SwitchController = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
+	roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state",1000);
+	roboyStateMsg.setPoint.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
+	roboyStateMsg.actuatorPos.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
+	roboyStateMsg.actuatorVel.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
+	roboyStateMsg.tendonDisplacement.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
+	roboyStateMsg.actuatorCurrent.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
 
 	cmd = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
 	pos = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
@@ -123,7 +130,6 @@ bool Roboy::initializeService(common_utilities::Initialize::Request  &req,
     ROS_INFO("Resources registered to this hardware interface:\n%s", str.c_str());
 
 	initialized = true;
-
     return true;
 }
 
@@ -174,7 +180,7 @@ void Roboy::write()
 void Roboy::main_loop()
 {
     // Control loop
-    ros::Time prev_time = ros::Time::now();
+	ros::Time prev_time = ros::Time::now();
     ros::Rate rate(10);
 
     ros::AsyncSpinner spinner(10); // 10 threads
@@ -201,6 +207,7 @@ void Roboy::main_loop()
 					return;
 				if(!loadControllers(ControlMode::FORCE_CONTROL))
 					return;
+				prev_time = ros::Time::now();
 				break;
 			}
 			case Controlloop: {
@@ -212,7 +219,29 @@ void Roboy::main_loop()
 				cm->update(time, period);
 				write();
 
+				prev_time = time;
+
 				rate.sleep();
+				break;
+			}
+			case PublishState: {
+				ROS_INFO_THROTTLE(10, "%s", state_strings[PublishState].c_str());
+				uint m = 0;
+				for(uint ganglion=0;ganglion<NUMBER_OF_GANGLIONS;ganglion++){
+					for(uint motor=0;motor<NUMBER_OF_JOINTS_PER_GANGLION;motor++){
+						if(ganglion<3)
+							roboyStateMsg.setPoint[m] = flexray.commandframe0->sp[motor];
+						else
+							roboyStateMsg.setPoint[m] = flexray.commandframe1->sp[motor];
+
+						roboyStateMsg.actuatorPos[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos;
+						roboyStateMsg.actuatorVel[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel;
+						roboyStateMsg.tendonDisplacement[m] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement;
+						roboyStateMsg.actuatorCurrent[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorCurrent;
+						m++;
+					}
+				}
+				roboy_pub.publish(roboyStateMsg);
 				break;
 			}
 			case Recording: {
@@ -321,6 +350,9 @@ ActionState Roboy::NextState(ActionState s)
 			newstate = Controlloop;
 			break;
 		case Controlloop:
+			newstate = PublishState;
+			break;
+		case PublishState:
 			newstate = Controlloop;
 			break;
 		case Recording:

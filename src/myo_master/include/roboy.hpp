@@ -14,6 +14,7 @@
 #include "common_utilities/Record.h"
 #include <common_utilities/Steer.h>
 #include "common_utilities/Trajectory.h"
+#include "common_utilities/RoboyState.h"
 #include <controller_manager_msgs/LoadController.h>
 #include <mutex>
 
@@ -25,6 +26,7 @@ typedef enum
 	WaitForInitialize,
 	LoadControllers,
 	Controlloop,
+	PublishState,
 	Recording
 } ActionState;
 
@@ -101,8 +103,10 @@ private:
 	ros::ServiceClient cm_LoadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
 	ros::ServiceServer init_srv, record_srv;
 	ros::Subscriber steer_recording_sub;
+	ros::Publisher roboy_pub;
 
 	FlexRayHardwareInterface flexray;
+	common_utilities::RoboyState roboyStateMsg;
 
 	//! current state of roboy
 	ActionState currentState;
@@ -117,6 +121,7 @@ private:
 			{ WaitForInitialize,     "Waiting for initialization of controllers" },
 			{ LoadControllers,       "Loading controllers" },
 			{ Controlloop,           "Control loop" },
+			{ PublishState,           "Publish roboy state" },
 			{ Recording,             "Recording" }
 	};
 };
