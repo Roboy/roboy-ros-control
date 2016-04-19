@@ -61,7 +61,6 @@ rosservice list
 This should output (among possibly others) these services:
 ```
 #!bash
-/roboy/emergencyStop
 /roboy/initialize
 /controller_manager/list_controller_types
 /controller_manager/list_controllers
@@ -76,11 +75,7 @@ The following command will request motors to be initialized via the /robo/initia
 rosservice call /roboy/initialize [PRESS TAB TWICE]
 ```
 All services starting with the trailing /roboy give you access to the full functionality of our control hierarchy.
-You have probably already used the initialize service. Then there is also an emergency stop:
-```
-#!bash
-rosservice call /roboy/emergencyStop [PRESS TAB TWICE]
-```
+You have probably already used the initialize service. 
 Pressing tab twice after the service will tab complete to the valid service message. If this does not work, ROS probably does not 
 know about the services yet. 
 Try sourceing the setup.bash (bear in mind, that you have to do that for every terminal you open, unless of course you add the 
@@ -113,7 +108,7 @@ rosservice call /controller_manager/list_controller_types
 This should show our custom controller plugin:
 ```
 #!bash
-types: ['roboy_controller/singleJoint_controller']
+types: ['roboy_controller/Position_controller']
 base_classes: ['controller_interface::ControllerBase']
 ```
 
