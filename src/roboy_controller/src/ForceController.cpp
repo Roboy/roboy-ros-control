@@ -59,9 +59,6 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 					status_pub.publish(statusMsg);
 				}
 				joint.setCommand(setpoint);
-			}else if(steered == STOP_TRAJECTORY){
-				if(time.sec%10 == 0)
-					status_pub.publish(statusMsg);
 			}
 		}
 

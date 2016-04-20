@@ -164,7 +164,7 @@ void Roboy::write()
     uint i = 0;
     for (uint ganglion=0;ganglion<NUMBER_OF_GANGLIONS;ganglion++){
         // four motors can be connected to each ganglion
-        for (uint motor=0;motor<4;motor++){ 
+        for (uint motor=0;motor<NUMBER_OF_JOINTS_PER_GANGLION;motor++){
             if(ganglion<3)  // write to first commandframe
                 flexray.commandframe0[ganglion].sp[motor] = cmd[i];
             else            // else write to second commandframe
@@ -234,8 +234,8 @@ void Roboy::main_loop()
 						else
 							roboyStateMsg.setPoint[m] = flexray.commandframe1->sp[motor];
 
-						roboyStateMsg.actuatorPos[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos;
-						roboyStateMsg.actuatorVel[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel;
+						roboyStateMsg.actuatorPos[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
+						roboyStateMsg.actuatorVel[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
 						roboyStateMsg.tendonDisplacement[m] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement;
 						roboyStateMsg.actuatorCurrent[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorCurrent;
 						m++;

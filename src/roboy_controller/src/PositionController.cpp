@@ -38,15 +38,18 @@ class PositionController : public controller_interface::Controller<hardware_inte
 				ROS_INFO_THROTTLE(1,"PositionController %s waiting for subscriber", joint_name.c_str());
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
-			// initialize spline to zero
-			vector<double> initial_zero_x = {0,1,2}, initial_zero_y = {0,0,0};
+			// initialize spline to current position (spline needs at least three values)
+			setpoint = joint.getPosition();
+			ROS_INFO("current position: %f", setpoint);
+			joint.setCommand(setpoint);
+			vector<double> initial_zero_x = {0,1,2}, initial_zero_y = {setpoint,setpoint,setpoint};
 			spline_trajectory.set_points(initial_zero_x,initial_zero_y);
 			return true;
 		}
 
 		void update(const ros::Time& time, const ros::Duration& period)
 		{
-			float pos = joint.getPosition();
+			double pos = joint.getPosition();
 
 			if(steered == PLAY_TRAJECTORY) {
 				dt += period.nsec/1000000;
@@ -59,9 +62,6 @@ class PositionController : public controller_interface::Controller<hardware_inte
 					status_pub.publish(statusMsg);
 				}
 				joint.setCommand(setpoint);
-			}else if(steered == STOP_TRAJECTORY){
-				if(time.sec%10 == 0)
-					status_pub.publish(statusMsg);
 			}
 		}
 
@@ -124,8 +124,9 @@ class PositionController : public controller_interface::Controller<hardware_inte
 				for(uint i=0; i<req.trajectory.waypoints.size(); i++){
 					x.push_back(i*req.trajectory.samplerate);
 					y.push_back(req.trajectory.waypoints[i]);
+					cout << req.trajectory.waypoints[i] << " ";
 				}
-
+				cout << endl;
 				spline_trajectory.set_points(x,y);
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;
