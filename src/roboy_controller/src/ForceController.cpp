@@ -32,6 +32,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &ForceController::trajectoryPreprocess, this);
 			steer_sub = n.subscribe("/roboy/steer",1000, &ForceController::steer, this);
 			status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_"+joint_name, 1000);
+			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/eff", 1000);
 			myStatus = ControllerState::INITIALIZED;
 			// wait for GUI subscriber
 			while(status_pub.getNumSubscribers()==0)
@@ -46,7 +47,9 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 
 		void update(const ros::Time& time, const ros::Duration& period)
 		{
-			float eff = joint.getEffort();
+			double eff = joint.getEffort();
+			eff_msg.data = eff;
+			trajectory_pub.publish(eff_msg);
 
 			if(steered == PLAY_TRAJECTORY) {
 				dt += period.nsec/1000000;
@@ -98,12 +101,12 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 		ros::NodeHandle n;
 		ros::ServiceServer trajectory_srv;
 		ros::Subscriber steer_sub;
-		ros::Publisher  status_pub;
+		ros::Publisher  status_pub, trajectory_pub;
 		tk::spline spline_trajectory;
 		double trajectory_duration = 0;
 		int8_t myStatus = UNDEFINED;
 		int8_t steered = STOP_TRAJECTORY;
-		std_msgs::Float32 msg;
+		std_msgs::Float32 eff_msg;
 		int32_t dt = 0;
 		common_utilities::ControllerState statusMsg;
 		bool trajectoryPreprocess(common_utilities::SetTrajectory::Request& req,
