@@ -6,7 +6,7 @@ ROS, for detailed description of installation see [here](http://wiki.ros.org/ind
 ```
 #!bash
 sudo apt-get install ros-indigo-desktop-full
-sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox ros-indigo-gazebo-ros-control
+sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox
 sudo apt-get install libncurses5-dev 
 sudo apt-get install doxygen
 ```
@@ -21,20 +21,7 @@ git submodule update
 ```
 
 # Build #
-Please follow the installation instructions for [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) before proceeding 
-Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
-```
-#!bash
-cd path/to/ros_hierarchy/src/myomaster/patches
-diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
-sudo patch /usr/include/FreeImage.h < FreeImage.diff
-```
-Note: in case you want to undo the patch run with -R switch:
-```
-#!bash
-cd path/to/ros_hierarchy/src/myomaster/patches
-sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
-```
+Please follow the installation instructions for [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) before proceeding.
 Then you can build with:
 ```
 #!bash
@@ -74,7 +61,6 @@ rosservice list
 This should output (among possibly others) these services:
 ```
 #!bash
-/roboy/emergencyStop
 /roboy/initialize
 /controller_manager/list_controller_types
 /controller_manager/list_controllers
@@ -89,11 +75,7 @@ The following command will request motors to be initialized via the /robo/initia
 rosservice call /roboy/initialize [PRESS TAB TWICE]
 ```
 All services starting with the trailing /roboy give you access to the full functionality of our control hierarchy.
-You have probably already used the initialize service. Then there is also an emergency stop:
-```
-#!bash
-rosservice call /roboy/emergencyStop [PRESS TAB TWICE]
-```
+You have probably already used the initialize service. 
 Pressing tab twice after the service will tab complete to the valid service message. If this does not work, ROS probably does not 
 know about the services yet. 
 Try sourceing the setup.bash (bear in mind, that you have to do that for every terminal you open, unless of course you add the 
@@ -126,7 +108,7 @@ rosservice call /controller_manager/list_controller_types
 This should show our custom controller plugin:
 ```
 #!bash
-types: ['roboy_controller/singleJoint_controller']
+types: ['roboy_controller/Position_controller']
 base_classes: ['controller_interface::ControllerBase']
 ```
 
