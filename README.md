@@ -10,18 +10,18 @@ sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manag
 sudo apt-get install libncurses5-dev 
 sudo apt-get install doxygen
 ```
-project also depends on the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
-The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) and [common_utilities](https://gitlab.lrz.de/letrend/common_utilities).
+project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
+The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
-git clone https://gitlab.lrz.de/rosifyingmyorobotics/ros_hierarchy.git
+git clone https://github.com/Roboy/ros_control
 cd ros_hierarchy
 git submodule init
 git submodule update
 ```
 
 # Build #
-Please follow the installation instructions for [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface) before proceeding.
+Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
 Then you can build with:
 ```
 #!bash
@@ -144,7 +144,7 @@ controller:
 ```
 
 ## Test with hardware ##
-please follow instructions in [flexrayusbinterface](https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface), concerning library installation and udev rule.
+please follow instructions in [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface), concerning library installation and udev rule.
 
 ## Documentation ##
 Generate a doxygen documentation using the following command:

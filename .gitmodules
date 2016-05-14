@@ -1,6 +1,6 @@
 [submodule "src/flexrayusbinterface"]
 	path = src/flexrayusbinterface
-	url = https://gitlab.lrz.de/rosifyingmyorobotics/flexrayusbinterface.git
+	url = https://github.com/Roboy/flexrayusbinterface
 [submodule "src/common_utilities"]
 	path = src/common_utilities
-	url = https://gitlab.lrz.de/letrend/common_utilities.git
+	url = https://github.com/Roboy/common_utilities
