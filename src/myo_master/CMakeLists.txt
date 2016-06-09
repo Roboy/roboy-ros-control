@@ -5,6 +5,10 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 SET(CMAKE_BUILD_TYPE Debug)
 
+find_package(gazebo REQUIRED)
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+
 ## Find catkin and any catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs)
 
@@ -24,4 +28,7 @@ add_executable(multiJoint src/main.cpp src/roboy.cpp
 ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
 add_dependencies(multiJoint common_utilities_gencpp)
 
-target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx -lncurses)
+target_link_libraries(multiJoint ${catkin_LIBRARIES} -lftd2xx -lncurses ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
+add_library(roboySim SHARED src/roboySim.cpp)
+target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})

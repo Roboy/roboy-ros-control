@@ -5,7 +5,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/robot_hw.h>
-#include <gazebo_ros_control/robot_hw_sim.h>
+#include <gazebo_ros_control/default_robot_hw_sim.h>
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <vector>
@@ -30,7 +30,7 @@ typedef enum
 	Recording
 } ActionState;
 
-class Roboy : public hardware_interface::RobotHW{
+class Roboy : public ros_control::RobotHW{
 public:
 	/**
 	 * Constructor
@@ -47,7 +47,8 @@ public:
 	 */
 	bool initializeService(common_utilities::Initialize::Request  &req,
 						   common_utilities::Initialize::Response &res);
-	/**
+
+    /**
 	 * Read from hardware
 	 */
 	void read();

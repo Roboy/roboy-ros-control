@@ -22,6 +22,19 @@ git submodule update
 
 # Build #
 Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
+Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
+```
+#!bash
+cd path/to/ros_hierarchy/src/myomaster/patches
+diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
+sudo patch /usr/include/FreeImage.h < FreeImage.diff
+```
+Note: in case you want to undo the patch run with -R switch:
+```
+#!bash
+cd path/to/ros_hierarchy/src/myomaster/patches
+sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
+```
 Then you can build with:
 ```
 #!bash
