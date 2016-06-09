@@ -18,6 +18,11 @@
 #include <hardware_interface/robot_hw.h>
 #include <transmission_interface/transmission_parser.h>
 #include <pluginlib/class_list_macros.h>
+#include <control_toolbox/pid.h>
+#include <joint_limits_interface/joint_limits.h>
+#include <joint_limits_interface/joint_limits_interface.h>
+#include <joint_limits_interface/joint_limits_rosparam.h>
+#include <joint_limits_interface/joint_limits_urdf.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -119,7 +124,6 @@ namespace gazebo_ros_control{
 		hardware_interface::VelocityJointInterface jnt_vel_interface;
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
-		ros::ServiceClient cm_LoadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
 		ros::ServiceServer init_srv, record_srv;
 		ros::Subscriber steer_recording_sub;
 		ros::Publisher roboy_pub;
@@ -198,7 +202,8 @@ namespace gazebo_ros_control{
 		boost::shared_ptr<gazebo_ros_control::RobotHWSim> robot_hw_sim_;
 
 		// Controller manager
-		boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
+		controller_manager::ControllerManager* cm = nullptr;
+//		boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
 
 		// Timing
 		ros::Duration control_period_;
@@ -225,11 +230,6 @@ namespace gazebo_ros_control{
 
 		unsigned int n_dof_;
 
-		hardware_interface::JointStateInterface    js_interface_;
-		hardware_interface::EffortJointInterface   ej_interface_;
-		hardware_interface::PositionJointInterface pj_interface_;
-		hardware_interface::VelocityJointInterface vj_interface_;
-
 		joint_limits_interface::EffortJointSaturationInterface   ej_sat_interface_;
 		joint_limits_interface::EffortJointSoftLimitsInterface   ej_limits_interface_;
 		joint_limits_interface::PositionJointSaturationInterface pj_sat_interface_;
@@ -244,18 +244,8 @@ namespace gazebo_ros_control{
 		std::vector<double> joint_effort_limits_;
 		std::vector<ControlMethod> joint_control_methods_;
 		std::vector<control_toolbox::Pid> pid_controllers_;
-		std::vector<double> joint_position_;
-		std::vector<double> joint_velocity_;
-		std::vector<double> joint_effort_;
-		std::vector<double> joint_effort_command_;
-		std::vector<double> joint_position_command_;
-		std::vector<double> last_joint_position_command_;
-		std::vector<double> joint_velocity_command_;
 
 		std::vector<gazebo::physics::JointPtr> sim_joints_;
-
-		// e_stop_active_ is true if the emergency stop is active.
-		bool e_stop_active_, last_e_stop_active_;
 	};
 
 }

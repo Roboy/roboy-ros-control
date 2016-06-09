@@ -302,17 +302,17 @@ bool Roboy::unloadControllers(int controlmode){
 	string controller;
 	switch(controlmode){
 		case ControlMode::POSITION_CONTROL:
-			ROS_INFO("loading position controller");
+			ROS_INFO("unloading position controller");
 			resources = jnt_pos_interface.getNames();
 			controller = "roboy_controller/PositionController";
 			break;
 		case ControlMode::VELOCITY_CONTROL:
-			ROS_INFO("loading velocity controller");
+			ROS_INFO("unloading velocity controller");
 			resources = jnt_vel_interface.getNames();
 			controller = "roboy_controller/VelocityController";
 			break;
 		case ControlMode::FORCE_CONTROL:
-			ROS_INFO("loading force controller");
+			ROS_INFO("unloading force controller");
 			resources = jnt_eff_interface.getNames();
 			controller = "roboy_controller/ForceController";
 			break;
