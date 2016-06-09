@@ -30,7 +30,7 @@ typedef enum
 	Recording
 } ActionState;
 
-class Roboy : public ros_control::RobotHW{
+class Roboy : public hardware_interface::RobotHW{
 public:
 	/**
 	 * Constructor

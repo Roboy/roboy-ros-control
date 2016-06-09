@@ -1,0 +1,10 @@
+<library path="libroboySim">
+  <class
+    name="roboySim"
+    type="gazebo_ros_control::RoboySim"
+    base_class_type="gazebo_ros_control::RobotHWSim">
+    <description>
+    	Roboy RobotHWSim class
+    </description>
+  </class>
+</library>
