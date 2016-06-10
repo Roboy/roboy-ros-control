@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <package>
-  <name>myo_master</name>
+  <name>roboy_simulation</name>
   <version>0.0.0</version>
-  <description>The myo_master package for controlling roboy with myo_muscles</description>
+  <description>The roboy_simulation package</description>
+  <maintainer email="aliona.kharchenko@gmail.com">Aliona Kharchenko</maintainer>
   <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
   <license>BSD</license>
 
@@ -38,5 +39,6 @@
   <run_depend>angles</run_depend>
 
   <export>
+	<roboy_simulation plugin="${prefix}/roboySim.xml"/>
   </export>
 </package>

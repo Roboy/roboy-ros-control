@@ -462,7 +462,7 @@ namespace gazebo_ros_control {
 		roboy_pub = model_nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
 
 		while(!initialized){
-			ROS_INFO_THROTTLE_NAMED(5,"initSim", "Waiting for initialization from GUI");
+			ROS_INFO_THROTTLE(1, "Waiting for initialization from GUI");
 		}
 
 		// getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each

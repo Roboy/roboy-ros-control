@@ -1,21 +1,23 @@
 #pragma once
 #include "FlexRayHardwareInterface.hpp"
 #include "CommonDefinitions.h"
-#include <controller_manager/controller_manager.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <hardware_interface/joint_state_interface.h>
-#include <hardware_interface/robot_hw.h>
-#include <gazebo_ros_control/default_robot_hw_sim.h>
-#include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <vector>
+// common definitions
+#include "CommonDefinitions.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
 #include <common_utilities/Steer.h>
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
+// ros
+#include <ros/ros.h>
+#include <controller_manager/controller_manager.h>
 #include <controller_manager_msgs/LoadController.h>
+#include <hardware_interface/joint_command_interface.h>
+#include <hardware_interface/joint_state_interface.h>
+#include <hardware_interface/robot_hw.h>
+// std
+#include <vector>
 #include <mutex>
 
 using namespace std;
