@@ -1,0 +1,1 @@
+roboy_right_upper_arm 0.00,-0.1,0.0 roboy_right_hand 0.00,-0.11,0.00 roboy_right_hand 0.00,0.00,0.00

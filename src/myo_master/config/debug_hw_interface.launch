@@ -1,9 +1,0 @@
-<launch>
-	<node name="debug_hw_interface" 
-            pkg="hw_interface" 
-            type="multiJoint" 
-            respawn="false"
-            output="screen" 
-            launch-prefix="xterm -e gdb --args"/>
-</launch>
-	

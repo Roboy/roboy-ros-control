@@ -2,60 +2,41 @@
 <package>
   <name>myo_master</name>
   <version>0.0.0</version>
-  <description>The hw_interface package</description>
-
-  <!-- One maintainer tag required, multiple allowed, one person per tag --> 
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+  <description>The myo_master package for controlling roboy with myo_muscles</description>
   <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
-
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>controller_manager</build_depend>
-  <build_depend>gazebo_ros_control</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>message_generation</build_depend>
-  <run_depend>controller_manager</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>gazebo_ros_control</run_depend>
-  <run_depend>roscpp</run_depend>
-
-<build_depend>roscpp</build_depend> 
   <build_depend>std_msgs</build_depend>
-  <build_depend>gazebo</build_depend>
+  <build_depend>message_generation</build_depend>
   <build_depend>control_toolbox</build_depend> 
-  <build_depend>controller_manager</build_depend> 
-  <build_depend>pluginlib</build_depend> 
+  <build_depend>controller_manager</build_depend>
   <build_depend>hardware_interface</build_depend>
   <build_depend>transmission_interface</build_depend> 
   <build_depend>joint_limits_interface</build_depend>
+  <build_depend>gazebo</build_depend>
+  <build_depend>gazebo_ros_control</build_depend>
   <build_depend>urdf</build_depend>
   <build_depend>angles</build_depend>
-  
-  <build_depend>myo_mster</build_depend>
-  <run_depend>myo_mster</run_depend>
+  <build_depend>pluginlib</build_depend> 
 
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>gazebo_ros_control</run_depend>
+  <run_depend>controller_manager</run_depend>
   <run_depend>gazebo</run_depend>
   <run_depend>gazebo_ros</run_depend> 
   <run_depend>control_toolbox</run_depend> 
   <run_depend>controller_manager</run_depend> 
-  <run_depend>pluginlib</run_depend> 
   <run_depend>hardware_interface</run_depend>
   <run_depend>transmission_interface</run_depend> 
   <run_depend>joint_limits_interface</run_depend>
+  <run_depend>pluginlib</run_depend> 
   <run_depend>urdf</run_depend>
   <run_depend>angles</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <!-- Other tools can request additional information be placed here -->
-	<myo_master plugin="${prefix}/roboySim.xml"/>
   </export>
 </package>
