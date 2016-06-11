@@ -119,6 +119,117 @@ namespace gazebo_ros_control {
 		return true;
 	}
 
+	void RoboySim::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
+		ROS_INFO_STREAM_NAMED("gazebo_ros_control", "Loading gazebo_ros_control plugin");
+		// Save pointers to the model
+		parent_model = parent_;
+		sdf = sdf_;
+
+		// Error message if the model couldn't be found
+		if (!parent_model) {
+			ROS_ERROR_STREAM_NAMED("loadThread", "parent model is NULL");
+			return;
+		}
+
+		// Check that ROS has been initialized
+		if (!ros::isInitialized()) {
+			ROS_FATAL_STREAM_NAMED("gazebo_ros_control",
+								   "A ROS node for Gazebo has not been initialized, unable to load plugin. "
+								   <<
+								   "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+			return;
+		}
+
+		// Get namespace for nodehandle
+		if (sdf_->HasElement("robotNamespace")) {
+			robot_namespace = sdf_->GetElement("robotNamespace")->Get<std::string>();
+		}
+		else {
+			robot_namespace = parent_model->GetName(); // default
+		}
+
+		// Get robot_description ROS param name
+		if (sdf_->HasElement("robotParam")) {
+			robot_description = sdf_->GetElement("robotParam")->Get<std::string>();
+		}
+		else {
+			robot_description = "robot_description"; // default
+		}
+
+		// Get the Gazebo simulation period
+		ros::Duration gazebo_period(parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize());
+
+		// Decide the plugin control period
+		if (sdf_->HasElement("controlPeriod")) {
+			control_period = ros::Duration(sdf_->Get<double>("controlPeriod"));
+
+			// Check the period against the simulation period
+			if (control_period < gazebo_period) {
+				ROS_ERROR_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
+															 << " s) is faster than the gazebo simulation period (" <<
+															 gazebo_period << " s).");
+			}
+			else if (control_period > gazebo_period) {
+				ROS_WARN_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
+															<< " s) is slower than the gazebo simulation period (" <<
+															gazebo_period << " s).");
+			}
+		}
+		else {
+			control_period = gazebo_period;
+			ROS_DEBUG_STREAM_NAMED("gazebo_ros_control",
+								   "Control period not found in URDF/SDF, defaulting to Gazebo period of "
+								   << control_period);
+		}
+
+		// Get parameters/settings for controllers from ROS param server
+		nh = ros::NodeHandle(robot_namespace);
+
+		// Initialize the emergency stop code.
+		e_stop_active = false;
+		last_e_stop_active = false;
+		if (sdf_->HasElement("eStopTopic")) {
+			const std::string e_stop_topic = sdf_->GetElement("eStopTopic")->Get<std::string>();
+			e_stop_sub = nh.subscribe(e_stop_topic, 1, &RoboySim::eStopCB, this);
+		}
+
+		ROS_INFO_NAMED("gazebo_ros_control", "Starting gazebo_ros_control plugin in namespace: %s",
+					   robot_namespace.c_str());
+
+		// Read urdf from ros parameter server then
+		// setup actuators and mechanism control node.
+		// This call will block if ROS is not properly initialized.
+		const std::string urdf_string = getURDF(robot_description);
+		if (!parseTransmissionsFromURDF(urdf_string)) {
+			ROS_ERROR_NAMED("gazebo_ros_control",
+							"Error parsing URDF in gazebo_ros_control plugin, plugin not active.\n");
+			return;
+		}
+
+		urdf::Model urdf_model;
+		const urdf::Model *const urdf_model_ptr = urdf_model.initString(urdf_string) ? &urdf_model : NULL;
+
+		init_srv = nh.advertiseService("/roboy/initialize", &RoboySim::initializeService, this);
+		record_srv = nh.advertiseService("/roboy/record", &RoboySim::recordService, this);
+		steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+		roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
+
+		ROS_INFO("Waiting for initialization from GUI");
+		while (!initialized) {
+			usleep(10000);
+		}
+
+		if (!initSim(robot_namespace, nh, parent_model, urdf_model_ptr, transmissions)) {
+			ROS_FATAL_NAMED("gazebo_ros_control", "Could not initialize robot simulation interface");
+			return;
+		}
+
+		// Listen to the update event. This event is broadcast every simulation iteration.
+		update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
+
+		ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
+	}
+
 	void RoboySim::readSim(ros::Time time, ros::Duration period) {
 		ROS_DEBUG("read simulation");
 
@@ -157,6 +268,175 @@ namespace gazebo_ros_control {
 				i++;
 			}
 		}
+	}
+
+	bool RoboySim::initSim(const std::string &robot_namespace,
+						   ros::NodeHandle model_nh,
+						   gazebo::physics::ModelPtr parent_model,
+						   const urdf::Model *const urdf_model,
+						   std::vector<transmission_interface::TransmissionInfo> transmissions) {
+
+		ROS_INFO("initializing simulation");
+		// getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
+		// parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
+		const ros::NodeHandle joint_limit_nh(model_nh);
+
+		// Resize vectors to our DOF
+		gazebo::physics::Joint_V joints = parent_model->GetJoints();
+		n_dof = joints.size();
+		joint_names.resize(n_dof);
+		joint_types.resize(n_dof);
+		joint_lower_limits.resize(n_dof);
+		joint_upper_limits.resize(n_dof);
+		joint_effort_limits.resize(n_dof);
+		joint_control_methods.resize(n_dof);
+		pid_controllers.resize(n_dof);
+
+		// Initialize values
+		for (unsigned int j = 0; j < n_dof; j++) {
+			// Get the gazebo joint that corresponds to the robot joint.
+			gazebo::physics::JointPtr joint = joints[j];
+			joint_names[j] = joint->GetName();
+			ROS_INFO_NAMED("initSim", "init joint: %s", joint_names[j].c_str());
+			if (!joint) {
+				ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names[j]
+								 << "\" which is not in the gazebo model.");
+				return false;
+			}
+			sim_joints.push_back(joint);
+
+			// connect and register the joint state interface
+			hardware_interface::JointStateHandle state_handle(joint_names[j], &pos[j], &vel[j], &eff[j]);
+			jnt_state_interface.registerHandle(state_handle);
+
+			uint ganglion = j / 4;
+			uint motor = j % 4;
+
+			uint controlMode = POSITION_CONTROL;
+
+			hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names[j]), &cmd[j]);
+
+			switch ((uint) controlMode) {
+				case 1: {
+					ROS_INFO("%s position controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_pos_interface.registerHandle(joint_handle);
+					break;
+				}
+				case 2: {
+					ROS_INFO("%s velocity controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_vel_interface.registerHandle(joint_handle);
+					break;
+				}
+				case 3: {
+					ROS_INFO("%s force controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_eff_interface.registerHandle(joint_handle);
+					break;
+				}
+				default:
+					ROS_WARN(
+							"The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
+					break;
+			}
+
+			registerJointLimits(joint_names[j], joint_handle, joint_control_methods[j],
+								joint_limit_nh, urdf_model,
+								&joint_types[j], &joint_lower_limits[j], &joint_upper_limits[j],
+								&joint_effort_limits[j]);
+
+			if (joint_control_methods[j] != FORCE_CONTROL) {
+				// Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
+				// joint->SetParam("vel") to control the joint.
+				const ros::NodeHandle nh(model_nh, "/gazebo_ros_control/pid_gains/" +
+												   joint_names[j]);
+				if (pid_controllers[j].init(nh, true)) {
+					switch (joint_control_methods[j]) {
+						case POSITION_CONTROL:
+							joint_control_methods[j] = POSITION_CONTROL;
+							break;
+						case VELOCITY_CONTROL:
+							joint_control_methods[j] = VELOCITY_CONTROL;
+							break;
+					}
+				}
+				else {
+					// joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
+					// going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
+					// going to be called.
+#if GAZEBO_MAJOR_VERSION > 2
+					joint->SetParam("fmax", 0, joint_effort_limits[j]);
+#else
+					joint->SetMaxForce(0, joint_effort_limits[j]);
+#endif
+				}
+			}
+		}
+
+		// Create the controller manager
+		ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
+		cm = new controller_manager::ControllerManager(this, nh);
+
+		// load the controllers
+		if (!loadControllers(ControlMode::POSITION_CONTROL))
+			return false;
+		if (!loadControllers(ControlMode::VELOCITY_CONTROL))
+			return false;
+		if (!loadControllers(ControlMode::FORCE_CONTROL))
+			return false;
+
+		// Initialize the emergency stop code.
+		e_stop_active = false;
+		last_e_stop_active = false;
+
+		return true;
+	}
+
+	void RoboySim::Update() {
+		// Get the simulation time and period
+		gazebo::common::Time gz_time_now = parent_model->GetWorld()->GetSimTime();
+		ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
+		ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
+
+		eStopActive(e_stop_active);
+
+		// Check if we should update the controllers
+		if (sim_period >= control_period) {
+			// Store this simulation time
+			last_update_sim_time_ros = sim_time_ros;
+
+			// Update the robot simulation with the state of the gazebo model
+			readSim(sim_time_ros, sim_period);
+
+			// Compute the controller commands
+			bool reset_ctrlrs;
+			if (e_stop_active) {
+				reset_ctrlrs = false;
+				last_e_stop_active = true;
+			}
+			else {
+				if (last_e_stop_active) {
+					reset_ctrlrs = true;
+					last_e_stop_active = false;
+				}
+				else {
+					reset_ctrlrs = false;
+				}
+			}
+			cm->update(sim_time_ros, sim_period, reset_ctrlrs);
+		}
+
+		// Update the gazebo model with the result of the controller
+		// computation
+		writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
+		last_write_sim_time_ros = sim_time_ros;
+	}
+
+	void RoboySim::Reset() {
+		// Reset timing variables to not pass negative update periods to controllers on world reset
+		last_update_sim_time_ros = ros::Time();
+		last_write_sim_time_ros = ros::Time();
 	}
 
 	bool RoboySim::loadControllers(int controlmode) {
@@ -284,291 +564,6 @@ namespace gazebo_ros_control {
 		}
 	}
 
-// Overloaded Gazebo entry point
-	void RoboySim::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf) {
-		ROS_INFO_STREAM_NAMED("gazebo_ros_control", "Loading gazebo_ros_control plugin");
-
-		// Save pointers to the model
-		parent_model_ = parent;
-		sdf_ = sdf;
-
-		// Error message if the model couldn't be found
-		if (!parent_model_) {
-			ROS_ERROR_STREAM_NAMED("loadThread", "parent model is NULL");
-			return;
-		}
-
-		// Check that ROS has been initialized
-		if (!ros::isInitialized()) {
-			ROS_FATAL_STREAM_NAMED("gazebo_ros_control",
-								   "A ROS node for Gazebo has not been initialized, unable to load plugin. "
-								   <<
-								   "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
-			return;
-		}
-
-		// Get namespace for nodehandle
-		if (sdf_->HasElement("robotNamespace")) {
-			robot_namespace_ = sdf_->GetElement("robotNamespace")->Get<std::string>();
-		}
-		else {
-			robot_namespace_ = parent_model_->GetName(); // default
-		}
-
-		// Get robot_description ROS param name
-		if (sdf_->HasElement("robotParam")) {
-			robot_description_ = sdf_->GetElement("robotParam")->Get<std::string>();
-		}
-		else {
-			robot_description_ = "robot_description"; // default
-		}
-
-		// Get the Gazebo simulation period
-		ros::Duration gazebo_period(parent_model_->GetWorld()->GetPhysicsEngine()->GetMaxStepSize());
-
-		// Decide the plugin control period
-		if (sdf_->HasElement("controlPeriod")) {
-			control_period_ = ros::Duration(sdf_->Get<double>("controlPeriod"));
-
-			// Check the period against the simulation period
-			if (control_period_ < gazebo_period) {
-				ROS_ERROR_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period_
-															 << " s) is faster than the gazebo simulation period (" <<
-															 gazebo_period << " s).");
-			}
-			else if (control_period_ > gazebo_period) {
-				ROS_WARN_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period_
-															<< " s) is slower than the gazebo simulation period (" <<
-															gazebo_period << " s).");
-			}
-		}
-		else {
-			control_period_ = gazebo_period;
-			ROS_DEBUG_STREAM_NAMED("gazebo_ros_control",
-								   "Control period not found in URDF/SDF, defaulting to Gazebo period of "
-								   << control_period_);
-		}
-
-		// Get parameters/settings for controllers from ROS param server
-		nh = ros::NodeHandle(robot_namespace_);
-
-		// Initialize the emergency stop code.
-		e_stop_active_ = false;
-		last_e_stop_active_ = false;
-		if (sdf_->HasElement("eStopTopic")) {
-			const std::string e_stop_topic = sdf_->GetElement("eStopTopic")->Get<std::string>();
-			e_stop_sub_ = nh.subscribe(e_stop_topic, 1, &RoboySim::eStopCB, this);
-		}
-
-		ROS_INFO_NAMED("gazebo_ros_control", "Starting gazebo_ros_control plugin in namespace: %s",
-					   robot_namespace_.c_str());
-
-		// Read urdf from ros parameter server then
-		// setup actuators and mechanism control node.
-		// This call will block if ROS is not properly initialized.
-		const std::string urdf_string = getURDF(robot_description_);
-		if (!parseTransmissionsFromURDF(urdf_string)) {
-			ROS_ERROR_NAMED("gazebo_ros_control",
-							"Error parsing URDF in gazebo_ros_control plugin, plugin not active.\n");
-			return;
-		}
-
-		urdf::Model urdf_model;
-		const urdf::Model *const urdf_model_ptr = urdf_model.initString(urdf_string) ? &urdf_model : NULL;
-
-		init_srv = nh.advertiseService("/roboy/initialize", &RoboySim::initializeService, this);
-		record_srv = nh.advertiseService("/roboy/record", &RoboySim::recordService, this);
-		steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
-		roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
-
-		ROS_INFO("Waiting for initialization from GUI");
-		while (!initialized) {
-			usleep(10000);
-		}
-
-		if (!initSim(robot_namespace_, nh, parent_model_, urdf_model_ptr, transmissions_)) {
-			ROS_FATAL_NAMED("gazebo_ros_control", "Could not initialize robot simulation interface");
-			return;
-		}
-
-		// Listen to the update event. This event is broadcast every simulation iteration.
-		update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
-
-		ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
-	}
-
-	bool RoboySim::initSim(const std::string &robot_namespace,
-						   ros::NodeHandle model_nh,
-						   gazebo::physics::ModelPtr parent_model,
-						   const urdf::Model *const urdf_model,
-						   std::vector<transmission_interface::TransmissionInfo> transmissions) {
-
-		ROS_INFO("initializing simulation");
-		// getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
-		// parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
-		const ros::NodeHandle joint_limit_nh(model_nh);
-
-		// Resize vectors to our DOF
-		gazebo::physics::Joint_V joints = parent_model->GetJoints();
-		n_dof_ = joints.size();
-		joint_names_.resize(n_dof_);
-		joint_types_.resize(n_dof_);
-		joint_lower_limits_.resize(n_dof_);
-		joint_upper_limits_.resize(n_dof_);
-		joint_effort_limits_.resize(n_dof_);
-		joint_control_methods_.resize(n_dof_);
-		pid_controllers_.resize(n_dof_);
-
-		// Initialize values
-		for (unsigned int j = 0; j < n_dof_; j++) {
-			// Get the gazebo joint that corresponds to the robot joint.
-			gazebo::physics::JointPtr joint = joints[j];
-			joint_names_[j] = joint->GetName();
-			ROS_INFO_NAMED("initSim", "init joint: %s", joint_names_[j].c_str());
-			if (!joint) {
-				ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names_[j]
-								 << "\" which is not in the gazebo model.");
-				return false;
-			}
-			sim_joints_.push_back(joint);
-
-			// connect and register the joint state interface
-			hardware_interface::JointStateHandle state_handle(joint_names_[j], &pos[j], &vel[j], &eff[j]);
-			jnt_state_interface.registerHandle(state_handle);
-
-			uint ganglion = j / 4;
-			uint motor = j % 4;
-
-			uint controlMode = POSITION;
-
-			hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names_[j]), &cmd[j]);
-
-			switch ((uint) controlMode) {
-				case 1: {
-					ROS_INFO("%s position controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_pos_interface.registerHandle(joint_handle);
-					break;
-				}
-				case 2: {
-					ROS_INFO("%s velocity controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_vel_interface.registerHandle(joint_handle);
-					break;
-				}
-				case 3: {
-					ROS_INFO("%s force controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_eff_interface.registerHandle(joint_handle);
-					break;
-				}
-				default:
-					ROS_WARN(
-							"The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
-					break;
-			}
-
-			registerJointLimits(joint_names_[j], joint_handle, joint_control_methods_[j],
-								joint_limit_nh, urdf_model,
-								&joint_types_[j], &joint_lower_limits_[j], &joint_upper_limits_[j],
-								&joint_effort_limits_[j]);
-
-			if (joint_control_methods_[j] != EFFORT) {
-				// Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
-				// joint->SetParam("vel") to control the joint.
-				const ros::NodeHandle nh(model_nh, "/gazebo_ros_control/pid_gains/" +
-												   joint_names_[j]);
-				if (pid_controllers_[j].init(nh, true)) {
-					switch (joint_control_methods_[j]) {
-						case POSITION:
-							joint_control_methods_[j] = POSITION_PID;
-							break;
-						case VELOCITY:
-							joint_control_methods_[j] = VELOCITY_PID;
-							break;
-					}
-				}
-				else {
-					// joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
-					// going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
-					// going to be called.
-#if GAZEBO_MAJOR_VERSION > 2
-					joint->SetParam("fmax", 0, joint_effort_limits_[j]);
-#else
-					joint->SetMaxForce(0, joint_effort_limits_[j]);
-#endif
-				}
-			}
-		}
-
-		// Create the controller manager
-		ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
-		cm = new controller_manager::ControllerManager(this, nh);
-
-		// load the controllers
-		if (!loadControllers(ControlMode::POSITION_CONTROL))
-			return false;
-		if (!loadControllers(ControlMode::VELOCITY_CONTROL))
-			return false;
-		if (!loadControllers(ControlMode::FORCE_CONTROL))
-			return false;
-
-		// Initialize the emergency stop code.
-		e_stop_active_ = false;
-		last_e_stop_active_ = false;
-
-		return true;
-	}
-
-// Called by the world update start event
-	void RoboySim::Update() {
-		// Get the simulation time and period
-		gazebo::common::Time gz_time_now = parent_model_->GetWorld()->GetSimTime();
-		ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
-		ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros_;
-
-		eStopActive(e_stop_active_);
-
-		// Check if we should update the controllers
-		if (sim_period >= control_period_) {
-			// Store this simulation time
-			last_update_sim_time_ros_ = sim_time_ros;
-
-			// Update the robot simulation with the state of the gazebo model
-			readSim(sim_time_ros, sim_period);
-
-			// Compute the controller commands
-			bool reset_ctrlrs;
-			if (e_stop_active_) {
-				reset_ctrlrs = false;
-				last_e_stop_active_ = true;
-			}
-			else {
-				if (last_e_stop_active_) {
-					reset_ctrlrs = true;
-					last_e_stop_active_ = false;
-				}
-				else {
-					reset_ctrlrs = false;
-				}
-			}
-			cm->update(sim_time_ros, sim_period, reset_ctrlrs);
-		}
-
-		// Update the gazebo model with the result of the controller
-		// computation
-		writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros_);
-		last_write_sim_time_ros_ = sim_time_ros;
-	}
-
-// Called on world reset
-	void RoboySim::Reset() {
-		// Reset timing variables to not pass negative update periods to controllers on world reset
-		last_update_sim_time_ros_ = ros::Time();
-		last_write_sim_time_ros_ = ros::Time();
-	}
-
-// Get the URDF XML from the parameter server
 	std::string RoboySim::getURDF(std::string param_name) const {
 		std::string urdf_string;
 
@@ -583,7 +578,7 @@ namespace gazebo_ros_control {
 			}
 			else {
 				ROS_INFO_ONCE_NAMED("gazebo_ros_control", "gazebo_ros_control plugin is waiting for model"
-						" URDF in parameter [%s] on the ROS param server.", robot_description_.c_str());
+						" URDF in parameter [%s] on the ROS param server.", robot_description.c_str());
 
 				nh.getParam(param_name, urdf_string);
 			}
@@ -596,20 +591,18 @@ namespace gazebo_ros_control {
 		return urdf_string;
 	}
 
-// Get Transmissions from the URDF
 	bool RoboySim::parseTransmissionsFromURDF(const std::string &urdf_string) {
-		transmission_interface::TransmissionParser::parse(urdf_string, transmissions_);
+		transmission_interface::TransmissionParser::parse(urdf_string, transmissions);
 		return true;
 	}
 
-// Emergency stop callback
 	void RoboySim::eStopCB(const std_msgs::BoolConstPtr &e_stop_active) {
-		e_stop_active_ = e_stop_active->data;
+
 	}
 
 	void RoboySim::registerJointLimits(const std::string &joint_name,
 									   const hardware_interface::JointHandle &joint_handle,
-									   const ControlMethod ctrl_method,
+									   const int ctrl_method,
 									   const ros::NodeHandle &joint_limit_nh,
 									   const urdf::Model *const urdf_model,
 									   int *const joint_type, double *const lower_limit,
@@ -665,51 +658,49 @@ namespace gazebo_ros_control {
 
 		if (has_soft_limits) {
 			switch (ctrl_method) {
-				case EFFORT: {
+				case FORCE_CONTROL: {
 					const joint_limits_interface::EffortJointSoftLimitsHandle
 							limits_handle(joint_handle, limits, soft_limits);
-					ej_limits_interface_.registerHandle(limits_handle);
+					ej_limits_interface.registerHandle(limits_handle);
 				}
 					break;
-				case POSITION: {
+				case POSITION_CONTROL: {
 					const joint_limits_interface::PositionJointSoftLimitsHandle
 							limits_handle(joint_handle, limits, soft_limits);
-					pj_limits_interface_.registerHandle(limits_handle);
+					pj_limits_interface.registerHandle(limits_handle);
 				}
 					break;
-				case VELOCITY: {
+				case VELOCITY_CONTROL: {
 					const joint_limits_interface::VelocityJointSoftLimitsHandle
 							limits_handle(joint_handle, limits, soft_limits);
-					vj_limits_interface_.registerHandle(limits_handle);
-				}
+					vj_limits_interface.registerHandle(limits_handle);
 					break;
+				}
 			}
 		}
 		else {
 			switch (ctrl_method) {
-				case EFFORT: {
+				case FORCE_CONTROL: {
 					const joint_limits_interface::EffortJointSaturationHandle
 							sat_handle(joint_handle, limits);
-					ej_sat_interface_.registerHandle(sat_handle);
+					ej_sat_interface.registerHandle(sat_handle);
 				}
 					break;
-				case POSITION: {
+				case POSITION_CONTROL: {
 					const joint_limits_interface::PositionJointSaturationHandle
 							sat_handle(joint_handle, limits);
-					pj_sat_interface_.registerHandle(sat_handle);
+					pj_sat_interface.registerHandle(sat_handle);
 				}
 					break;
-				case VELOCITY: {
+				case VELOCITY_CONTROL: {
 					const joint_limits_interface::VelocityJointSaturationHandle
 							sat_handle(joint_handle, limits);
-					vj_sat_interface_.registerHandle(sat_handle);
-				}
+					vj_sat_interface.registerHandle(sat_handle);
 					break;
+				}
 			}
 		}
 	}
 }
 
 GZ_REGISTER_MODEL_PLUGIN(gazebo_ros_control::RoboySim)
-
-PLUGINLIB_EXPORT_CLASS(gazebo_ros_control::RoboySim, gazebo_ros_control::RobotHWSim)
