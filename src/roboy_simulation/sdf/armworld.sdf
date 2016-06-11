@@ -164,7 +164,7 @@
         </joint>-->
 
         <plugin name="roboySim" filename="libroboySim.so">
-            <robotNamespace>/roboy</robotNamespace>
+            <robotNamespace></robotNamespace>
             <robotSimType>roboySim</robotSimType>
         </plugin>
 

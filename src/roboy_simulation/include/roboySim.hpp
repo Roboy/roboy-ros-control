@@ -37,17 +37,7 @@
 
 using namespace std;
 
-//! enum for state machine
-typedef enum
-{
-    WaitForInitialize,
-    LoadControllers,
-    Controlloop,
-    PublishState,
-    Recording
-} ActionState;
-
-namespace gazebo_ros_control{
+namespace gazebo_ros_control {
 
 	class RoboySim : public gazebo_ros_control::RobotHWSim, public gazebo::ModelPlugin {
 	public:
@@ -129,39 +119,17 @@ namespace gazebo_ros_control{
 		ros::Publisher roboy_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
-
-		//! current state of roboy
-		ActionState currentState;
-
-		/**
-		 * Statemachine function for next state
-		 * @param s current State
-		 * @return next state
-		 */
-		ActionState NextState(ActionState s);
-
-		//! state strings describing each state
-		std::map<ActionState, std::string> state_strings = {
-				{WaitForInitialize, "Waiting for initialization of controllers"},
-				{LoadControllers,   "Loading controllers"},
-				{Controlloop,       "Control loop"},
-				{PublishState,      "Publish roboy state"},
-				{Recording,         "Recording"}
-		};
-
 	public:
-		virtual bool initSim(
-				const std::string& robot_namespace,
-				ros::NodeHandle model_nh,
-				gazebo::physics::ModelPtr parent_model,
-				const urdf::Model *const urdf_model,
-				std::vector<transmission_interface::TransmissionInfo> transmissions);
+		bool initSim(const std::string &robot_namespace,
+					 ros::NodeHandle model_nh,
+					 gazebo::physics::ModelPtr parent_model,
+					 const urdf::Model *const urdf_model,
+					 std::vector<transmission_interface::TransmissionInfo> transmissions);
 
-		// Called by the world update start event
 		void Update();
 
 		// Called on world reset
-		virtual void Reset();
+		void Reset();
 
 		// Get the URDF XML from the parameter server
 		std::string getURDF(std::string param_name) const;
@@ -185,9 +153,6 @@ namespace gazebo_ros_control{
 		// Pointer to the update event connection
 		gazebo::event::ConnectionPtr update_connection_;
 
-		// Interface loader
-		boost::shared_ptr<pluginlib::ClassLoader<gazebo_ros_control::RobotHWSim> > robot_hw_sim_loader_;
-
 		void load_robot_hw_sim_srv();
 
 		// Strings
@@ -199,10 +164,9 @@ namespace gazebo_ros_control{
 
 		// Robot simulator interface
 		std::string robot_hw_sim_type_str_;
-		boost::shared_ptr<gazebo_ros_control::RobotHWSim> robot_hw_sim_;
 
 		// Controller manager
-		controller_manager::ControllerManager* cm = nullptr;
+		controller_manager::ControllerManager *cm = nullptr;
 //		boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
 
 		// Timing
@@ -215,23 +179,25 @@ namespace gazebo_ros_control{
 		ros::Subscriber e_stop_sub_;  // Emergency stop subscriber
 
 		// Methods used to control a joint.
-		enum ControlMethod {EFFORT, POSITION, POSITION_PID, VELOCITY, VELOCITY_PID};
+		enum ControlMethod {
+			EFFORT, POSITION, POSITION_PID, VELOCITY, VELOCITY_PID
+		};
 
 		// Register the limits of the joint specified by joint_name and joint_handle. The limits are
 		// retrieved from joint_limit_nh. If urdf_model is not NULL, limits are retrieved from it also.
 		// Return the joint's type, lower position limit, upper position limit, and effort limit.
-		void registerJointLimits(const std::string& joint_name,
-								 const hardware_interface::JointHandle& joint_handle,
+		void registerJointLimits(const std::string &joint_name,
+								 const hardware_interface::JointHandle &joint_handle,
 								 const ControlMethod ctrl_method,
-								 const ros::NodeHandle& joint_limit_nh,
+								 const ros::NodeHandle &joint_limit_nh,
 								 const urdf::Model *const urdf_model,
 								 int *const joint_type, double *const lower_limit,
 								 double *const upper_limit, double *const effort_limit);
 
 		unsigned int n_dof_;
 
-		joint_limits_interface::EffortJointSaturationInterface   ej_sat_interface_;
-		joint_limits_interface::EffortJointSoftLimitsInterface   ej_limits_interface_;
+		joint_limits_interface::EffortJointSaturationInterface ej_sat_interface_;
+		joint_limits_interface::EffortJointSoftLimitsInterface ej_limits_interface_;
 		joint_limits_interface::PositionJointSaturationInterface pj_sat_interface_;
 		joint_limits_interface::PositionJointSoftLimitsInterface pj_limits_interface_;
 		joint_limits_interface::VelocityJointSaturationInterface vj_sat_interface_;
