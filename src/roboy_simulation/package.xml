@@ -39,6 +39,5 @@
   <run_depend>angles</run_depend>
 
   <export>
-	<roboy_simulation plugin="${prefix}/roboySim.xml"/>
   </export>
 </package>
