@@ -88,8 +88,7 @@ namespace gazebo_ros_control {
 				res.states.push_back(msg);
 			}
 		}
-
-		registerInterface(&jnt_state_interface);
+		robot_hw_sim_->registerInterface(&jnt_state_interface);
 		string str;
 		registerInterface(&jnt_pos_interface);
 		vector<string> resources = jnt_pos_interface.getNames();
@@ -98,14 +97,14 @@ namespace gazebo_ros_control {
 			str.append(" ");
 		}
 
-		registerInterface(&jnt_vel_interface);
+		robot_hw_sim_->registerInterface(&jnt_vel_interface);
 		resources = jnt_vel_interface.getNames();
 		for (uint i = 0; i < resources.size(); i++) {
 			str.append(resources[i]);
 			str.append(" ");
 		}
 
-		registerInterface(&jnt_eff_interface);
+		robot_hw_sim_->registerInterface(&jnt_eff_interface);
 		resources = jnt_eff_interface.getNames();
 		for (uint i = 0; i < resources.size(); i++) {
 			str.append(resources[i]);
@@ -410,34 +409,30 @@ namespace gazebo_ros_control {
 		try {
 			robot_hw_sim_loader_.reset
 					(new pluginlib::ClassLoader<gazebo_ros_control::RobotHWSim>
-							 ("myo_master",
+							 ("roboy_simulation",
 							  "gazebo_ros_control::RobotHWSim"));
 
 			robot_hw_sim_ = robot_hw_sim_loader_->createInstance(robot_hw_sim_type_str_);
 			urdf::Model urdf_model;
 			const urdf::Model *const urdf_model_ptr = urdf_model.initString(urdf_string) ? &urdf_model : NULL;
 
+			init_srv = nh.advertiseService("/roboy/initialize", &RoboySim::initializeService, this);
+			record_srv = nh.advertiseService("/roboy/record", &RoboySim::recordService, this);
+			steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+			roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
+
+			ROS_INFO("Waiting for initialization from GUI");
+			while(!initialized){
+				usleep(10000);
+			}
+
 			if (!robot_hw_sim_->initSim(robot_namespace_, nh, parent_model_, urdf_model_ptr, transmissions_)) {
 				ROS_FATAL_NAMED("gazebo_ros_control", "Could not initialize robot simulation interface");
 				return;
 			}
 
-			// Create the controller manager
-			ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
-			cm = new controller_manager::ControllerManager(this, nh);
-
-			// load the controllers
-			if(!loadControllers(ControlMode::POSITION_CONTROL))
-				return;
-			if(!loadControllers(ControlMode::VELOCITY_CONTROL))
-				return;
-			if(!loadControllers(ControlMode::FORCE_CONTROL))
-				return;
-
 			// Listen to the update event. This event is broadcast every simulation iteration.
-			update_connection_ =
-					gazebo::event::Events::ConnectWorldUpdateBegin
-							(boost::bind(&RoboySim::Update, this));
+			update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
 
 		}
 		catch (pluginlib::LibraryLoadException &ex) {
@@ -454,23 +449,15 @@ namespace gazebo_ros_control {
 			gazebo::physics::ModelPtr parent_model,
 			const urdf::Model *const urdf_model,
 			std::vector<transmission_interface::TransmissionInfo> transmissions) {
-		ROS_INFO_NAMED("initSim", "initializing simulation");
 
-		init_srv = model_nh.advertiseService("/roboy/initialize", &RoboySim::initializeService, this);
-		record_srv = model_nh.advertiseService("/roboy/record", &RoboySim::recordService, this);
-		steer_recording_sub = model_nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
-		roboy_pub = model_nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
-
-		while(!initialized){
-			ROS_INFO_THROTTLE(1, "Waiting for initialization from GUI");
-		}
-
+		ROS_INFO("initializing simulation");
 		// getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
 		// parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
 		const ros::NodeHandle joint_limit_nh(model_nh);
 
 		// Resize vectors to our DOF
-		n_dof_ = transmissions.size();
+		gazebo::physics::Joint_V joints = parent_model->GetJoints();
+		n_dof_ = joints.size();
 		joint_names_.resize(n_dof_);
 		joint_types_.resize(n_dof_);
 		joint_lower_limits_.resize(n_dof_);
@@ -482,9 +469,9 @@ namespace gazebo_ros_control {
 		// Initialize values
 		for (unsigned int j = 0; j < n_dof_; j++) {
 			// Get the gazebo joint that corresponds to the robot joint.
-			//ROS_DEBUG_STREAM_NAMED("default_robot_hw_sim", "Getting pointer to gazebo joint: "
-			//  << joint_names_[j]);
-			gazebo::physics::JointPtr joint = parent_model->GetJoint(joint_names_[j]);
+			gazebo::physics::JointPtr joint = joints[j];
+			joint_names_[j] = joint->GetName();
+			ROS_INFO_NAMED("initSim","init joint: %s", joint_names_[j].c_str());
 			if (!joint) {
 				ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names_[j]
 								 << "\" which is not in the gazebo model.");
@@ -492,13 +479,46 @@ namespace gazebo_ros_control {
 			}
 			sim_joints_.push_back(joint);
 
+			// connect and register the joint state interface
+			hardware_interface::JointStateHandle state_handle(joint_names_[j], &pos[j], &vel[j], &eff[j]);
+			jnt_state_interface.registerHandle(state_handle);
+
+			uint ganglion = j / 4;
+			uint motor = j % 4;
+
+			uint controlMode = POSITION;
 
 			hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names_[j]), &cmd[j]);
 
-			registerJointLimits(joint_names_[j], joint_handle, joint_control_methods_[j],
+			switch ((uint) controlMode) {
+				case 1: {
+					ROS_INFO("%s position controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_pos_interface.registerHandle(joint_handle);
+					break;
+				}
+				case 2: {
+					ROS_INFO("%s velocity controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_vel_interface.registerHandle(joint_handle);
+					break;
+				}
+				case 3: {
+					ROS_INFO("%s force controller ganglion %d motor %d", joint_names_[j].c_str(), ganglion, motor);
+					// connect and register the joint position interface
+					jnt_eff_interface.registerHandle(joint_handle);
+					break;
+				}
+				default:
+					ROS_WARN( "The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
+					break;
+			}
+
+			registerJointLimits(joint_names_[j],  joint_handle, joint_control_methods_[j],
 								joint_limit_nh, urdf_model,
 								&joint_types_[j], &joint_lower_limits_[j], &joint_upper_limits_[j],
 								&joint_effort_limits_[j]);
+
 			if (joint_control_methods_[j] != EFFORT) {
 				// Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
 				// joint->SetParam("vel") to control the joint.
@@ -526,6 +546,18 @@ namespace gazebo_ros_control {
 				}
 			}
 		}
+
+		// Create the controller manager
+		ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
+		cm = new controller_manager::ControllerManager(this, nh);
+
+		// load the controllers
+		if(!loadControllers(ControlMode::POSITION_CONTROL))
+			return false;
+		if(!loadControllers(ControlMode::VELOCITY_CONTROL))
+			return false;
+		if(!loadControllers(ControlMode::FORCE_CONTROL))
+			return false;
 
 		// Initialize the emergency stop code.
 		e_stop_active_ = false;

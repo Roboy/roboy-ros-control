@@ -1,27 +1,31 @@
 <launch>
-	<!-- Load the parameters to the parameter server from the yaml file-->
-	<rosparam file="$(find roboy_controller)/config/flexray_controller.yaml" command="load"/>
-	
-	<!-- these are the arguments you can pass to this launch file, for example paused:=true -->
-	<arg name="paused" default="false"/>
-	<arg name="use_sim_time" default="true"/>
-	<arg name="gui" default="true"/>
-	<arg name="headless" default="false"/>
-	<arg name="debug" default="false"/>
+    <!-- Load the parameters to the parameter server from the yaml file-->
+    <rosparam file="$(find roboy_controller)/config/roboy_controller.yaml" command="load"/>
 
-	<include file="$(find gazebo_ros)/launch/empty_world.launch">
-		<arg name="world_name" value="$(find myo_master)/worlds/roboy.world"/>
-		<arg name="debug" value="$(arg debug)" />
-		<arg name="gui" value="$(arg gui)" />
-		<arg name="paused" value="$(arg paused)"/>
-		<arg name="use_sim_time" value="$(arg use_sim_time)"/>
-		<arg name="headless" value="$(arg headless)"/>
-	</include>
+    <!-- these are the arguments you can pass to this launch file, for example paused:=true -->
+    <arg name="paused" default="false"/>
+    <arg name="use_sim_time" default="true"/>
+    <arg name="gui" default="false"/>
+    <arg name="headless" default="false"/>
+    <arg name="debug" default="false"/>
 
-	<!-- Load the sdf into the ROS Parameter Server -->
-	<param name="robot_description" textfile="$(find roboy_simulation)/sdf/armworld.sdf"/>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find myo_master)/worlds/roboy.world"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+        <arg name="headless" value="$(arg headless)"/>
+    </include>
 
-	<!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
-	<node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-	args="-sdf -model arm -param robot_description"/>
+    <!-- Run a python script to convert the sdf file to urdf -->
+    <node name="sdf2urdf" pkg="pysdf" type="sdf2urdf.py" output="screen"
+          args="$(find roboy_simulation)/sdf/armworld.sdf $(find roboy_simulation)/urdf/armworld.urdf"/>
+
+    <!-- Load the urdf into the ROS Parameter Server -->
+    <param name="robot_description" textfile="$(find roboy_simulation)/urdf/armworld.urdf"/>
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot-->
+    <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+          args="-sdf -file $(find roboy_simulation)/sdf/armworld.sdf -model arm"/>
 </launch>

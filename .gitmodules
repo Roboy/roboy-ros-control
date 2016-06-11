@@ -4,3 +4,6 @@
 [submodule "src/common_utilities"]
 	path = src/common_utilities
 	url = https://github.com/Roboy/common_utilities
+[submodule "src/pysdf"]
+	path = src/pysdf
+	url = https://github.com/Roboy/pysdf
