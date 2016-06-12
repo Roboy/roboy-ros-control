@@ -54,13 +54,6 @@ namespace gazebo_ros_control {
 		 * Destructor
 		 */
 		~RoboySim();
-		/**
-		 * SERVICE This function initialises the requested motors
-		 * @param req vector<int8> containing requested motor ids
-		 * @param res vector<ControllerStates> cf. CommonDefinitions.h
-		 */
-		bool initializeService(common_utilities::Initialize::Request &req,
-							   common_utilities::Initialize::Response &res);
 
 		/**
 		 * Overloaded Gazebo entry point
