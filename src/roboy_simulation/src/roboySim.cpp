@@ -200,7 +200,8 @@ namespace gazebo_ros_control {
 		// setup actuators and mechanism control node.
 		// This call will block if ROS is not properly initialized.
 		const std::string urdf_string = getURDF(robot_description);
-		if (!parseTransmissionsFromURDF(urdf_string)) {
+		// parse for transmission tags
+		if (!transmission_interface::TransmissionParser::parse(urdf_string, transmissions)) {
 			ROS_ERROR_NAMED("gazebo_ros_control",
 							"Error parsing URDF in gazebo_ros_control plugin, plugin not active.\n");
 			return;
@@ -232,42 +233,20 @@ namespace gazebo_ros_control {
 
 	void RoboySim::readSim(ros::Time time, ros::Duration period) {
 		ROS_DEBUG("read simulation");
-
-		uint i = 0;
-
-		for (uint ganglion = 0; ganglion < NUMBER_OF_GANGLIONS; ganglion++) {
-			// four motors can be connected to each ganglion
-			for (uint motor = 0; motor < NUMBER_OF_JOINTS_PER_GANGLION; motor++) {
-				pos[i] = 0;
-				vel[i] = 0;
-				float polyPar[4];
-				polyPar[0] = 0;
-				polyPar[1] = 0.237536;
-				polyPar[2] = -0.000032;
-				polyPar[3] = 0;
-				float tendonDisplacement = 0;
-				eff[i] = 0;
-
-				i++;
-			}
-		}
+//		for (uint motor=0; motor<sim_joints.size(); motor++) {
+//			cout << sim_joints[motor]->GetVelocity(0) << " "
+//				 << sim_joints[motor]->GetVelocity(0) << " "
+//				 << sim_joints[motor]->GetVelocity(0) << endl;
+//		}
 	}
 
 	void RoboySim::writeSim(ros::Time time, ros::Duration period) {
 		ROS_DEBUG("write simulation");
-		uint i = 0;
-		for (uint ganglion = 0; ganglion < NUMBER_OF_GANGLIONS; ganglion++) {
-			// four motors can be connected to each ganglion
-			for (uint motor = 0; motor < NUMBER_OF_JOINTS_PER_GANGLION; motor++) {
-//				if (ganglion < 3)  // write to first commandframe
-////                flexray.commandframe0[ganglion].sp[motor] = cmd[i];
-//					cout << "write " << cmd << endl;
-//				else            // else write to second commandframe
-////                flexray.commandframe1[ganglion-3].sp[motor] = cmd[i];
-//					cout << "write " << cmd << endl;
-				i++;
-			}
-		}
+//		for (uint motor=0; motor<sim_joints.size(); motor++) {
+//			sim_joints[motor]->SetVelocity(0,0);
+//			sim_joints[motor]->SetVelocity(1,0);
+//			sim_joints[motor]->SetVelocity(2,0);
+//		}
 	}
 
 	bool RoboySim::initSim(const std::string &robot_namespace,
@@ -589,11 +568,6 @@ namespace gazebo_ros_control {
 							  "Recieved urdf " << param_name.c_str() << " from param server, parsing...");
 
 		return urdf_string;
-	}
-
-	bool RoboySim::parseTransmissionsFromURDF(const std::string &urdf_string) {
-		transmission_interface::TransmissionParser::parse(urdf_string, transmissions);
-		return true;
 	}
 
 	void RoboySim::eStopCB(const std_msgs::BoolConstPtr &e_stop_active) {
