@@ -1,4 +1,7 @@
 #pragma once
+// common definitions
+#include "CommonDefinitions.h"
+#include "CommunicationData.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -7,6 +10,9 @@
 #include <gazebo/util/system.hh>
 #include <ignition/math/Vector3.hh>
 #include <ignition/math/Pose3.hh>
+// ros
+#include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
 // boost
 #include <boost/numeric/odeint.hpp>
 #include <boost/bind.hpp>
@@ -22,10 +28,11 @@
 #include <fstream>
 #include <chrono>
 
-namespace gazebo {
+namespace roboy_simulation {
 
 	using namespace std;
 	using namespace boost::numeric::odeint;
+	using namespace gazebo;
 
 	const int linkNumber = 3; //later read this number from some table or .txt files
 
@@ -58,14 +65,34 @@ namespace gazebo {
 	};
 
 	struct tendonType {
-		math::Vector3 MidPoint[linkNumber - 1];
-		math::Vector3 Vector[linkNumber - 1];
+		vector<math::Vector3> MidPoint;
+		vector<math::Vector3> Vector;
 		//might need it to calculate length
-		math::Vector3 Orientation[linkNumber - 1];
-		double Pitch[linkNumber - 1];
-		double Roll[linkNumber - 1];
+		vector<math::Vector3> Orientation;
+		vector<double> Pitch;
+		vector<double> Roll;
 	};
 
+	struct MyoMuscleInfo{
+		string name;
+		vector<string> joint;
+		map<string,vector<math::Vector3>> viaPoints;
+		Motor motor;
+		Gear gear;
+		Spindle spindle;
+		SEE see;
+	};
+
+	struct PIDcontroller{
+		double calc_output(double cmd, double pos, double timePeriod);
+		sint32 outputPosMax = 24; /*!< maximum control output in the positive direction in counts, max 4000*/
+		sint32 outputNegMax = -24; /*!< maximum control output in the negative direction in counts, max -4000*/
+		float32 spPosMax = 100;/*<!Positive limit for the set point.*/
+		float32 spNegMax = 100;/*<!Negative limit for the set point.*/
+		parameters_t params;
+		float32 integral;
+		float32 lastError;
+	};
 
 	class ITendon {
 		////////////////////////////////////////
@@ -97,7 +124,7 @@ namespace gazebo {
 		math::Vector3 CalculateForce(double _elasticForce, double _motorForce,
 									 const math::Vector3 &_tendonOrien);
 
-		static void GetTendonInfo(math::Vector3 _viaPointPose[], tendonType *tendon_p);
+		static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
 
 		SEE see;
 	private:
@@ -143,17 +170,21 @@ namespace gazebo {
 	};
 
 
-	class MusclePlugin : public ModelPlugin {
+	class MusclePlugin{
 
 	public:
 		MusclePlugin();
 
-		void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
-
-		void Init();
-
-		void OnUpdate();
-
+		void Init(MyoMuscleInfo &myoMuscle);
+		void Update(ros::Time &time, ros::Duration &period,
+					vector<math::Vector3> &viaPointInGobalFrame,
+					vector<math::Vector3> &force);
+		string name;
+		vector<string> joint;
+		map<string,vector<math::Vector3>> viaPoints;
+		map<string,math::Pose> linkPose;
+		PIDcontroller pid;
+		double cmd;
 	private:
 		event::ConnectionPtr connection;
 		common::Time prevUpdateTime;
@@ -161,16 +192,15 @@ namespace gazebo {
 		std::vector<physics::LinkPtr> links;
 
 		IActuator::state_type x;
-		IActuator actuator;
 		ITendon tendon;
+		IActuator actuator;
 
 		double actuatorForce;
 
 		transport::NodePtr node;
 		transport::PublisherPtr visPub;
 
-		msgs::Visual visualMsg[linkNumber - 1];
-		math::Vector3 linkRelVec[linkNumber];
+//		msgs::Visual visualMsg[linkNumber - 1];
 	};
 }
 

@@ -39,5 +39,6 @@
   <run_depend>angles</run_depend>
 
   <export>
+	<roboy_simulation plugin="${prefix}/muscle_plugin.xml" />
   </export>
 </package>

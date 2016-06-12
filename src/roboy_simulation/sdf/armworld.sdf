@@ -151,69 +151,63 @@
         </joint>
 
 
-        <joint name="armholder_ground" type="revolute">
-            <parent>world</parent>
-            <child>arm_holder</child>
-            <axis>
-                <limit>
-                    <lower>0</lower>
-                    <upper>0</upper>
-                </limit>
-                <xyz>0 1 0</xyz>
-            </axis>
-        </joint>
-
-        <transmission name="tran1">
-            <type>transmission_interface/SimpleTransmission</type>
-            <joint name="joint1">
-                <hardwareInterface>EffortJointInterface</hardwareInterface>
-            </joint>
-            <actuator name="motor1">
-                <hardwareInterface>EffortJointInterface</hardwareInterface>
-                <mechanicalReduction>1</mechanicalReduction>
-            </actuator>
-        </transmission>
-
-        <plugin name="roboySim" filename="libroboySim.so">
-            <robotNamespace></robotNamespace>
-            <robotSimType>roboySim</robotSimType>
-        </plugin>
+        <!--<joint name="armholder_ground" type="revolute">-->
+        <!--<parent>world</parent>-->
+        <!--<child>arm_holder</child>-->
+        <!--<axis>-->
+        <!--<limit>-->
+        <!--<lower>0</lower>-->
+        <!--<upper>0</upper>-->
+        <!--</limit>-->
+        <!--<xyz>0 1 0</xyz>-->
+        <!--</axis>-->
+        <!--</joint>-->
 
         <!--<plugin name='muscle_plugin' filename='libmuscle_plugin.so'>-->
-            <!--<motor>-->
-                <!--<bemf_constant>0.001488</bemf_constant> &lt;!&ndash;V/rpm&ndash;&gt;-->
-                <!--<torque_constant>14.2</torque_constant> &lt;!&ndash;mNm/A&ndash;&gt;-->
-                <!--<inductance>0.118</inductance> &lt;!&ndash;mH&ndash;&gt;-->
-                <!--<resistance>0.797</resistance> &lt;!&ndash;Ohm&ndash;&gt;-->
-                <!--<inertiaMoment>4.09</inertiaMoment> &lt;!&ndash;gcm^2&ndash;&gt;-->
-            <!--</motor>-->
-            <!--<gear>-->
-                <!--<ratio>53</ratio>-->
-                <!--<efficiency>0.59</efficiency>-->
-                <!--<inertiaMoment>0.4</inertiaMoment> &lt;!&ndash;gcm^2&ndash;&gt;-->
-            <!--</gear>-->
-            <!--<spindle>-->
-                <!--<radius>0.005</radius> &lt;!&ndash;m&ndash;&gt;-->
-            <!--</spindle>-->
-            <!--<SEE>-->
-                <!--<stiffness>1.0</stiffness>-->
-                <!--&lt;!&ndash; <length>0.5</length> &ndash;&gt;-->
-                <!--<length0>0.1</length0>-->
-            <!--</SEE>-->
+
         <!--</plugin>-->
 
         <!--<plugin name="tendon_plugin" filename="libtendon_plugin.so">-->
-            <!--<motor>-->
-                <!--<torque_constant>1</torque_constant>-->
-            <!--</motor>-->
-            <!--<spindle>-->
-                <!--<radius>0.005</radius>-->
-            <!--</spindle>-->
-            <!--<SEE>-->
-                <!--<stiffness>100000.0 2.0 3.0 4.0</stiffness>-->
-                <!--<length0>0.35</length0>-->
-            <!--</SEE>-->
+        <!--<motor>-->
+        <!--<torque_constant>1</torque_constant>-->
+        <!--</motor>-->
+        <!--<spindle>-->
+        <!--<radius>0.005</radius>-->
+        <!--</spindle>-->
+        <!--<SEE>-->
+        <!--<stiffness>100000.0 2.0 3.0 4.0</stiffness>-->
+        <!--<length0>0.35</length0>-->
+        <!--</SEE>-->
         <!--</plugin>-->
 
+        <plugin name="roboySim" filename="libroboySim.so">
+            <myoMuscle name="elbow">
+                <joint name="motor1">
+                    <viaPoint>0.0 -0.1 0.0</viaPoint>
+                    <viaPoint>0.0 -0.11 0.0</viaPoint>
+                    <viaPoint>0.0 0.0 0.0</viaPoint>
+                </joint>
+                <motor>
+                    <bemf_constant>0.001488</bemf_constant> <!--V/rpm-->
+                    <torque_constant>14.2</torque_constant> <!--mNm/A-->
+                    <inductance>0.118</inductance> <!--mH-->
+                    <resistance>0.797</resistance> <!--Ohm-->
+                    <inertiaMoment>4.09</inertiaMoment> <!--gcm^2-->
+                </motor>
+                <gear>
+                    <ratio>53</ratio>
+                    <efficiency>0.59</efficiency>
+                    <inertiaMoment>0.4</inertiaMoment> <!--gcm^2-->
+                </gear>
+                <spindle>
+                    <radius>0.005</radius> <!--m-->
+                </spindle>
+                <SEE>
+                    <stiffness>1.0</stiffness>
+                    <!-- <length>0.5</length> -->
+                    <length>0.1</length>
+                </SEE>
+            </myoMuscle>
+        </plugin>
     </model>
 </sdf>
