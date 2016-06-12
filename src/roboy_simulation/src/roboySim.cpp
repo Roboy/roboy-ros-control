@@ -1,4 +1,3 @@
-#include <CommunicationData.h>
 #include "roboySim.hpp"
 
 namespace gazebo_ros_control {
@@ -200,12 +199,10 @@ namespace gazebo_ros_control {
 		// setup actuators and mechanism control node.
 		// This call will block if ROS is not properly initialized.
 		const std::string urdf_string = getURDF(robot_description);
-		// parse for transmission tags
-		if (!transmission_interface::TransmissionParser::parse(urdf_string, transmissions)) {
-			ROS_ERROR_NAMED("gazebo_ros_control",
-							"Error parsing URDF in gazebo_ros_control plugin, plugin not active.\n");
-			return;
-		}
+
+		ROS_INFO_NAMED("gazebo_ros_control", "Parsing myoMuscles");
+		if(!parseMyoMuscleSDF(sdf_->ToString(""),myoMuscles))
+			ROS_WARN_NAMED("gazebo_ros_control", "ERROR parsing myoMuscles, check your sdf file.");
 
 		urdf::Model urdf_model;
 		const urdf::Model *const urdf_model_ptr = urdf_model.initString(urdf_string) ? &urdf_model : NULL;
@@ -233,20 +230,34 @@ namespace gazebo_ros_control {
 
 	void RoboySim::readSim(ros::Time time, ros::Duration period) {
 		ROS_DEBUG("read simulation");
-//		for (uint motor=0; motor<sim_joints.size(); motor++) {
-//			cout << sim_joints[motor]->GetVelocity(0) << " "
-//				 << sim_joints[motor]->GetVelocity(0) << " "
-//				 << sim_joints[motor]->GetVelocity(0) << endl;
-//		}
+		// update muscle plugins
+		for(uint muscle=0; muscle< sim_muscles.size(); muscle++) {
+			map<string, math::Pose> linkPose;
+			for (uint j = 0; j < sim_muscles[muscle]->joint.size(); j++) {
+				sim_muscles[muscle]->linkPose[sim_muscles[muscle]->joint[j]] = parent_model->GetLink(
+						sim_muscles[muscle]->joint[j])->GetWorldCoGPose();
+			}
+
+			sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
+		}
 	}
 
 	void RoboySim::writeSim(ros::Time time, ros::Duration period) {
 		ROS_DEBUG("write simulation");
-//		for (uint motor=0; motor<sim_joints.size(); motor++) {
-//			sim_joints[motor]->SetVelocity(0,0);
-//			sim_joints[motor]->SetVelocity(1,0);
-//			sim_joints[motor]->SetVelocity(2,0);
-//		}
+		// apply the calculated forces
+		for(uint muscle=0; muscle< sim_muscles.size(); muscle++) {
+			uint j = 0;
+			for (auto viaPoint:sim_muscles[muscle]->viaPoints) {
+				physics::LinkPtr link = parent_model->GetLink(viaPoint.first);
+				for (uint i = 0; i < viaPoint.second.size(); i++) {
+					link->AddForceAtWorldPosition(-force[j], viaPointInGobalFrame[j]);
+					link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j + 1]);
+				}
+				j++;
+				if (j == viaPointInGobalFrame.size() - 1)
+					break;
+			}
+		}
 	}
 
 	bool RoboySim::initSim(const std::string &robot_namespace,
@@ -256,100 +267,119 @@ namespace gazebo_ros_control {
 						   std::vector<transmission_interface::TransmissionInfo> transmissions) {
 
 		ROS_INFO("initializing simulation");
+
+		// load a muscleplugin for every transmission
+		class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
+						 ("roboy_simulation",
+						  "roboy_simulation::MusclePlugin"));
+
 		// getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
 		// parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
 		const ros::NodeHandle joint_limit_nh(model_nh);
 
 		// Resize vectors to our DOF
 		gazebo::physics::Joint_V joints = parent_model->GetJoints();
-		n_dof = joints.size();
-		joint_names.resize(n_dof);
-		joint_types.resize(n_dof);
-		joint_lower_limits.resize(n_dof);
-		joint_upper_limits.resize(n_dof);
-		joint_effort_limits.resize(n_dof);
-		joint_control_methods.resize(n_dof);
-		pid_controllers.resize(n_dof);
+		numberOfMyoMuscles = myoMuscles.size();
+		joint_names.resize(numberOfMyoMuscles);
+		joint_types.resize(numberOfMyoMuscles);
+		joint_lower_limits.resize(numberOfMyoMuscles);
+		joint_upper_limits.resize(numberOfMyoMuscles);
+		joint_effort_limits.resize(numberOfMyoMuscles);
+		joint_control_methods.resize(numberOfMyoMuscles);
+		pid_controllers.resize(numberOfMyoMuscles);
 
-		// Initialize values
-		for (unsigned int j = 0; j < n_dof; j++) {
-			// Get the gazebo joint that corresponds to the robot joint.
-			gazebo::physics::JointPtr joint = joints[j];
-			joint_names[j] = joint->GetName();
-			ROS_INFO_NAMED("initSim", "init joint: %s", joint_names[j].c_str());
-			if (!joint) {
-				ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names[j]
-								 << "\" which is not in the gazebo model.");
-				return false;
-			}
-			sim_joints.push_back(joint);
+		sim_muscles.clear();
 
-			// connect and register the joint state interface
-			hardware_interface::JointStateHandle state_handle(joint_names[j], &pos[j], &vel[j], &eff[j]);
-			jnt_state_interface.registerHandle(state_handle);
+		for(uint i=0; i<numberOfMyoMuscles; i++){
+			try
+			{
+				sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
+				sim_muscles.back()->Init(myoMuscles[i]);
 
-			uint ganglion = j / 4;
-			uint motor = j % 4;
-
-			uint controlMode = POSITION_CONTROL;
-
-			hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names[j]), &cmd[j]);
-
-			switch ((uint) controlMode) {
-				case 1: {
-					ROS_INFO("%s position controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_pos_interface.registerHandle(joint_handle);
-					break;
+				// Get the gazebo joint that corresponds to the robot joint.
+				gazebo::physics::JointPtr joint = joints[i];
+				joint_names[i] = joint->GetName();
+				ROS_INFO_NAMED("initSim", "init joint: %s", joint_names[i].c_str());
+				if (!joint) {
+					ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names[i]
+									 << "\" which is not in the gazebo model.");
+					return false;
 				}
-				case 2: {
-					ROS_INFO("%s velocity controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_vel_interface.registerHandle(joint_handle);
-					break;
-				}
-				case 3: {
-					ROS_INFO("%s force controller ganglion %d motor %d", joint_names[j].c_str(), ganglion, motor);
-					// connect and register the joint position interface
-					jnt_eff_interface.registerHandle(joint_handle);
-					break;
-				}
-				default:
-					ROS_WARN(
-							"The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
-					break;
-			}
+				sim_joints.push_back(joint);
 
-			registerJointLimits(joint_names[j], joint_handle, joint_control_methods[j],
-								joint_limit_nh, urdf_model,
-								&joint_types[j], &joint_lower_limits[j], &joint_upper_limits[j],
-								&joint_effort_limits[j]);
+				// connect and register the joint state interface
+				hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i], &vel[i], &eff[i]);
+				jnt_state_interface.registerHandle(state_handle);
 
-			if (joint_control_methods[j] != FORCE_CONTROL) {
-				// Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
-				// joint->SetParam("vel") to control the joint.
-				const ros::NodeHandle nh(model_nh, "/gazebo_ros_control/pid_gains/" +
-												   joint_names[j]);
-				if (pid_controllers[j].init(nh, true)) {
-					switch (joint_control_methods[j]) {
-						case POSITION_CONTROL:
-							joint_control_methods[j] = POSITION_CONTROL;
-							break;
-						case VELOCITY_CONTROL:
-							joint_control_methods[j] = VELOCITY_CONTROL;
-							break;
+				uint ganglion = i / 4;
+				uint motor = i % 4;
+
+				uint controlMode = POSITION_CONTROL;
+
+				hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names[i]),
+															 &sim_muscles.back()->cmd);
+
+				switch ((uint) controlMode) {
+					case 1: {
+						ROS_INFO("%s position controller ganglion %d motor %d", joint_names[i].c_str(), ganglion, motor);
+						// connect and register the joint position interface
+						jnt_pos_interface.registerHandle(joint_handle);
+						break;
+					}
+					case 2: {
+						ROS_INFO("%s velocity controller ganglion %d motor %d", joint_names[i].c_str(), ganglion, motor);
+						// connect and register the joint position interface
+						jnt_vel_interface.registerHandle(joint_handle);
+						break;
+					}
+					case 3: {
+						ROS_INFO("%s force controller ganglion %d motor %d", joint_names[i].c_str(), ganglion, motor);
+						// connect and register the joint position interface
+						jnt_eff_interface.registerHandle(joint_handle);
+						break;
+					}
+					default:
+						ROS_WARN(
+								"The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
+						break;
+				}
+
+				registerJointLimits(joint_names[i], joint_handle, joint_control_methods[i],
+									joint_limit_nh, urdf_model,
+									&joint_types[i], &joint_lower_limits[i], &joint_upper_limits[i],
+									&joint_effort_limits[i]);
+
+				if (joint_control_methods[i] != FORCE_CONTROL) {
+					// Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
+					// joint->SetParam("vel") to control the joint.
+					const ros::NodeHandle nh(model_nh, "/gazebo_ros_control/pid_gains/" +
+													   joint_names[i]);
+					if (pid_controllers[i].init(nh, true)) {
+						switch (joint_control_methods[i]) {
+							case POSITION_CONTROL:
+								joint_control_methods[i] = POSITION_CONTROL;
+								break;
+							case VELOCITY_CONTROL:
+								joint_control_methods[i] = VELOCITY_CONTROL;
+								break;
+						}
+					}
+					else {
+						// joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
+						// going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
+						// going to be called.
+#if GAZEBO_MAJOR_VERSION > 2
+						joint->SetParam("fmax", 0, joint_effort_limits[i]);
+#else
+						joint->SetMaxForce(0, joint_effort_limits[i]);
+#endif
 					}
 				}
-				else {
-					// joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
-					// going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
-					// going to be called.
-#if GAZEBO_MAJOR_VERSION > 2
-					joint->SetParam("fmax", 0, joint_effort_limits[j]);
-#else
-					joint->SetMaxForce(0, joint_effort_limits[j]);
-#endif
-				}
+			}
+			catch(pluginlib::PluginlibException& ex)
+			{
+				//handle the class failing to load
+				ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
 			}
 		}
 
@@ -674,6 +704,226 @@ namespace gazebo_ros_control {
 				}
 			}
 		}
+	}
+
+	bool RoboySim::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo>& myoMuscles) {
+		// initialize TiXmlDocument doc with a string
+		TiXmlDocument doc;
+		if (!doc.Parse(sdf.c_str()) && doc.Error()) {
+			ROS_ERROR("Can't parse MyoMuscles. Invalid robot description.");
+			return false;
+		}
+
+		// Find joints in transmission tags
+		TiXmlElement *root = doc.RootElement();
+
+		// Constructs the myoMuscles by parsing custom xml.
+		TiXmlElement *myoMuscle_it = NULL;
+		for (myoMuscle_it = root->FirstChildElement("myoMuscle"); myoMuscle_it;
+			 myoMuscle_it = myoMuscle_it->NextSiblingElement("myoMuscle")) {
+			roboy_simulation::MyoMuscleInfo myoMuscle;
+			if (myoMuscle_it->Attribute("name")) {
+				myoMuscle.name=myoMuscle_it->Attribute("name");
+				// myoMuscle joint acting on
+				TiXmlElement *joint_child_it = NULL;
+				for (joint_child_it = myoMuscle_it->FirstChildElement("joint"); joint_child_it;
+					 joint_child_it = joint_child_it->NextSiblingElement("joint")) {
+					if (joint_child_it->Attribute("name")) {
+						myoMuscle.joint.push_back(joint_child_it->Attribute("name"));
+						if (myoMuscle.joint.back().empty()) {
+							ROS_ERROR_STREAM_NAMED("parser", "Empty joint name attribute specified for myoMuscle.");
+							return false;
+						} else {
+							TiXmlElement *viaPoint_child_it = NULL;
+							for (viaPoint_child_it = joint_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
+								 viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
+								float x, y, z;
+								if (sscanf(viaPoint_child_it->GetText(), "%f %f %f", &x, &y, &z) != 3) {
+									ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
+									return false;
+								} else {
+									myoMuscle.viaPoints[myoMuscle.joint.back()].push_back(math::Vector3(x, y, z));
+								}
+							}
+							if (myoMuscle.viaPoints.empty()) {
+								ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
+																 << myoMuscle.name << "' motor element.");
+								return false;
+							}
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No joint name attribute specified for myoMuscle.");
+						continue;
+					}
+				}
+
+				TiXmlElement *motor_child = myoMuscle_it->FirstChildElement("motor");
+				if (motor_child) {
+					// bemf_constant
+					TiXmlElement *bemf_constant_child = motor_child->FirstChildElement("bemf_constant");
+					if (bemf_constant_child) {
+						if (sscanf(bemf_constant_child->GetText(), "%lf", &myoMuscle.motor.BEMFConst) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading bemf_constant constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No bemf_constant element found in myoMuscle '"
+														 << myoMuscle.name << "' motor element.");
+						continue;
+					}
+					// torque_constant
+					TiXmlElement *torque_constant_child = motor_child->FirstChildElement("torque_constant");
+					if (torque_constant_child) {
+						if (sscanf(torque_constant_child->GetText(), "%lf", &myoMuscle.motor.torqueConst) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading torque_constant constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No torque_constant element found in myoMuscle '"
+														 << myoMuscle.name << "' motor element.");
+						continue;
+					}
+					// inductance
+					TiXmlElement *inductance_child = motor_child->FirstChildElement("inductance");
+					if (inductance_child) {
+						if (sscanf(inductance_child->GetText(), "%lf", &myoMuscle.motor.inductance) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading inductance constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No inductance element found in myoMuscle '"
+														 << myoMuscle.name << "' motor element.");
+						continue;
+					}
+					// resistance
+					TiXmlElement *resistance_child = motor_child->FirstChildElement("resistance");
+					if (resistance_child) {
+						if (sscanf(resistance_child->GetText(), "%lf", &myoMuscle.motor.resistance) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading resistance constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No resistance element found in myoMuscle '"
+														 << myoMuscle.name << "' motor element.");
+						continue;
+					}
+					// inertiaMoment
+					TiXmlElement *inertiaMoment_child = motor_child->FirstChildElement("inertiaMoment");
+					if (inertiaMoment_child) {
+						if (sscanf(inertiaMoment_child->GetText(), "%lf", &myoMuscle.motor.inertiaMoment) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading inertiaMoment constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
+														 << myoMuscle.name << "' motor element.");
+						continue;
+					}
+				} else {
+					ROS_ERROR_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name << "'.");
+					continue;
+				}
+
+				TiXmlElement *gear_child = myoMuscle_it->FirstChildElement("gear");
+				if (gear_child) {
+					// ratio
+					TiXmlElement *ratio_child = gear_child->FirstChildElement("ratio");
+					if (ratio_child) {
+						if (sscanf(ratio_child->GetText(), "%lf", &myoMuscle.gear.ratio) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading ratio constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No ratio element found in myoMuscle '"
+														 << myoMuscle.name << "' gear element.");
+						continue;
+					}
+					// ratio
+					TiXmlElement *efficiency_child = gear_child->FirstChildElement("efficiency");
+					if (efficiency_child) {
+						if (sscanf(efficiency_child->GetText(), "%lf", &myoMuscle.gear.efficiency) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading efficiency constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No efficiency element found in myoMuscle '"
+														 << myoMuscle.name << "' gear element.");
+						continue;
+					}
+					// inertiaMoment
+					TiXmlElement *inertiaMoment_child = gear_child->FirstChildElement("inertiaMoment");
+					if (inertiaMoment_child) {
+						if (sscanf(inertiaMoment_child->GetText(), "%lf", &myoMuscle.gear.inertiaMoment) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading inertiaMoment constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
+														 << myoMuscle.name << "' gear element.");
+						continue;
+					}
+				} else {
+					ROS_ERROR_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name << "'.");
+					continue;
+				}
+
+				TiXmlElement *spindle_child = myoMuscle_it->FirstChildElement("spindle");
+				if (spindle_child) {
+					// radius
+					TiXmlElement *radius_child = spindle_child->FirstChildElement("radius");
+					if (radius_child) {
+						if (sscanf(radius_child->GetText(), "%lf", &myoMuscle.spindle.radius) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading radius constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No radius element found in myoMuscle '"
+														 << myoMuscle.name << "' spindle element.");
+						continue;
+					}
+				} else {
+					ROS_ERROR_STREAM_NAMED("parser",
+										   "No spindle element found in myoMuscle '" << myoMuscle.name << "'.");
+					continue;
+				}
+
+				TiXmlElement *SEE_child = myoMuscle_it->FirstChildElement("SEE");
+				if (SEE_child) {
+					// stiffness
+					TiXmlElement *stiffness_child = SEE_child->FirstChildElement("stiffness");
+					if (stiffness_child) {
+						if (sscanf(stiffness_child->GetText(), "%lf", &myoMuscle.see.stiffness) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading radius constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No stiffness element found in myoMuscle '"
+														 << myoMuscle.name << "' SEE element.");
+						continue;
+					}
+					// length
+					TiXmlElement *length_child = SEE_child->FirstChildElement("length");
+					if (length_child) {
+						if (sscanf(length_child->GetText(), "%lf", &myoMuscle.see.length) != 1) {
+							ROS_ERROR_STREAM_NAMED("parser", "error reading length constant");
+							return false;
+						}
+					} else {
+						ROS_ERROR_STREAM_NAMED("parser", "No length element found in myoMuscle '"
+														 << myoMuscle.name << "' SEE element.");
+						continue;
+					}
+				} else {
+					ROS_ERROR_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name << "'.");
+					continue;
+				}
+
+			} else {
+				ROS_ERROR_STREAM_NAMED("parser", "No name attribute specified for myoMuscle.");
+				continue;
+			}
+		}
+		return true;
 	}
 }
 

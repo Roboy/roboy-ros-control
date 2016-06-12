@@ -35,8 +35,11 @@
 //std
 #include <vector>
 #include <mutex>
+// muscle plugin
+#include "MusclePlugin.hh"
 
 using namespace std;
+using namespace gazebo;
 
 namespace gazebo_ros_control {
 
@@ -127,6 +130,8 @@ namespace gazebo_ros_control {
 								 int *const joint_type, double *const lower_limit,
 								 double *const upper_limit, double *const effort_limit);
 
+		bool parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo>& myoMuscles);
+
 		//! ros node handle
 		ros::NodeHandle nh;
 
@@ -170,7 +175,7 @@ namespace gazebo_ros_control {
 		bool e_stop_active, last_e_stop_active;
 		ros::Subscriber e_stop_sub;  // Emergency stop subscriber
 
-		unsigned int n_dof;
+		uint numberOfMyoMuscles;
 
 		joint_limits_interface::EffortJointSaturationInterface ej_sat_interface;
 		joint_limits_interface::EffortJointSoftLimitsInterface ej_limits_interface;
@@ -188,5 +193,9 @@ namespace gazebo_ros_control {
 		vector<control_toolbox::Pid> pid_controllers;
 
 		vector<gazebo::physics::JointPtr> sim_joints;
+		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::MusclePlugin>> class_loader;
+		vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
+		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
+		vector<math::Vector3> viaPointInGobalFrame, force;
 	};
 }
