@@ -114,9 +114,6 @@ namespace gazebo_ros_control {
 		// Get the URDF XML from the parameter server
 		string getURDF(string param_name) const;
 
-		// Get Transmissions from the URDF
-		bool parseTransmissionsFromURDF(const string &urdf_string);
-
 		void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
 
 		// Register the limits of the joint specified by joint_name and joint_handle. The limits are
