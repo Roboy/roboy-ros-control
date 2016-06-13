@@ -28,7 +28,7 @@ sudo apt-get install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 ```
 ### [ROS jade](http://wiki.ros.org/jade/)
-For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, since the simulation part depends on [sdformat v1.5](http://sdformat.org/spec?elem=sdf&ver=1.5), the following instructions will guide you through the installation. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
+For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, the following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
