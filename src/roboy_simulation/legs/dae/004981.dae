@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <contributor>
+      <author>Blender User</author>
+      <authoring_tool>Blender 2.77.0 commit date:2016-04-05, commit time:18:12, hash:abf6f08</authoring_tool>
+    </contributor>
+    <created>2016-06-13T14:51:05</created>
+    <modified>2016-06-13T14:51:05</modified>
+    <unit name="meter" meter="1"/>
+    <up_axis>Z_UP</up_axis>
+  </asset>
+  <library_images/>
+  <library_effects>
+    <effect id="Material1-effect">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0 1</color>
+            </emission>
+            <ambient>
+              <color sid="ambient">0 0 0 1</color>
+            </ambient>
+            <diffuse>
+              <color sid="diffuse">1 1 1 1</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0.5 0.5 0.5 1</color>
+            </specular>
+            <index_of_refraction>
+              <float sid="index_of_refraction">1</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_materials>
+    <material id="Material1-material" name="Material1">
+      <instance_effect url="#Material1-effect"/>
+    </material>
+  </library_materials>
+  <library_geometries>
+    <geometry id="Rotation12-0-mesh" name="Rotation12-0">
+      <mesh>
+        <source id="Rotation12-0-mesh-positions">
+          <float_array id="Rotation12-0-mesh-positions-array" count="204">0 7.649288 -1.480773 12 7.649288 1.480773 12 5.014399 -6.103348 0 0.1125574 -8.389837 12 -2.41003e-6 -7.49999 0 5.014399 6.103348 12 0.1125574 8.389837 0 -2.41003e-6 7.49999 0 -4.633731 2.670041 12 -4.633731 -2.670041 0 -4.180118 -3.083231 12 -0.010558 -5.114515 0 -0.01409614 -5.150459 12 -3.967068 3.463161 0 -0.010558 5.114515 12 -0.004743874 5.053984 0 -7.52239 -1.255678 0 -5.014977 0.8368778 0 3.711647 3.41703 0 -6.447945 4.212555 0 -4.10028 -3.191349 0 -3.44352 3.740658 0 -5.567497 -5.125542 0 -2.45697 -7.157562 0 -2.45697 7.157562 0 0.4290023 -5.178114 0 2.50087 -7.284675 0 0.4290023 5.178114 0 2.500866 7.284676 0 4.298622 -2.808372 0 6.335312 4.13903 0 5.014934 0.8371163 0 7.626483 0 0 6.335312 -4.13903 12 0.0105617 5.114521 0 0.004747509 5.053988 1.85578e-7 5.229752 2.12612 12 4.33108 2.995488 12 4.482984 -2.762979 -4.05226e-7 0.1191785 -5.803725 12 0.01409959 -5.150462 12 -7.52239 1.255678 12 -5.014977 0.8368778 12 4.10028 -3.191349 12 -6.447945 -4.212555 12 -4.74506 -1.629013 12 -3.44352 -3.740658 12 -5.567497 5.125542 12 -3.44352 3.74065 12 -2.45697 7.157562 12 0 5.134668 12 0 -5.134668 12 -2.45697 -7.157562 12 2.50087 7.284675 12 2.500866 -7.284676 12 3.44352 3.740658 12 6.335312 -4.13903 12 5.014977 0.8368778 12 7.626484 0 12 6.335312 4.13903 12 -0.004434347 -7.550416 0 -0.007121741 -7.580994 12 -6.707665 -4.644855 0 -5.950747 -5.194624 12 -5.950747 5.194624 0 -6.707665 4.644855 0 -0.004434347 7.550416 12 -0.007121682 7.580993</float_array>
+          <technique_common>
+            <accessor source="#Rotation12-0-mesh-positions-array" count="68" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Rotation12-0-mesh-normals">
+          <float_array id="Rotation12-0-mesh-normals-array" count="201">-0.0785253 0.9701064 -0.2296246 0.0785253 0.9701064 0.2296246 0.02517867 0.6827238 -0.7302428 -0.0826776 0.5803304 -0.8101735 0.07373446 0.2675622 -0.9607152 -0.02517867 0.6827238 0.7302428 0.0826776 0.5803304 0.8101735 -0.07373446 0.2675622 0.9607152 0.01123112 0.81954 0.572912 0.02453714 0.876289 -0.4811608 -0.01821988 0.8770269 0.4800957 -0.002777218 0.4674344 0.8840235 -0.01107835 0.4504914 0.8927121 -0.02362173 0.7879424 -0.6152958 0.02435392 0.4470688 -0.894168 -0.004852473 0.3725752 -0.9279894 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 -1 0 0 0.02395784 -0.4546502 -0.8903478 0.004608392 -0.4888296 -0.8723672 0.08160734 -0.9539883 -0.2885251 -0.02044767 -0.8227612 -0.5680193 -0.008728504 -0.86092 0.5086658 -0.05206608 -0.4705787 0.8808205 0.1146907 -0.7606269 0.6389779 1 0 -1.34352e-7 1 0 -1.77183e-7 1 0 -3.05639e-7 1 0 0 1 0 3.84118e-7 1 0 0 1 1.96057e-7 -1.26572e-7 1 0 0 1 0 6.8378e-7 1 0 -3.43985e-7 1 0 -1.34954e-7 1 9.14374e-7 -1.79613e-7 1 6.28455e-7 0 1 -5.48209e-7 2.33384e-7 1 0 0 1 0 -4.57203e-7 1 0 2.97987e-7 1 0 2.59583e-7 0.009186148 -0.8500426 -0.526634 -0.02185142 -0.790986 -0.6114439 0.01321488 -0.3813397 -0.9243406 -0.002410948 -0.3976902 0.9175167 -0.009186148 -0.8500426 0.526634 -0.01321488 -0.3813397 0.9243406 0.02185142 -0.790986 0.6114439 0.002410948 -0.3976902 -0.9175167</float_array>
+          <technique_common>
+            <accessor source="#Rotation12-0-mesh-normals-array" count="67" stride="3">
+              <param name="X" type="float"/>
+              <param name="Y" type="float"/>
+              <param name="Z" type="float"/>
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="Rotation12-0-mesh-vertices">
+          <input semantic="POSITION" source="#Rotation12-0-mesh-positions"/>
+        </vertices>
+        <polylist material="Material1-material" count="60">
+          <input semantic="VERTEX" source="#Rotation12-0-mesh-vertices" offset="0"/>
+          <input semantic="NORMAL" source="#Rotation12-0-mesh-normals" offset="1"/>
+          <vcount>3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 </vcount>
+          <p>0 0 1 1 2 2 3 3 0 0 2 2 4 4 3 3 2 2 5 5 1 1 0 0 5 5 6 6 1 1 5 5 7 7 6 6 10 8 8 9 9 10 9 10 11 11 12 12 12 12 10 8 9 10 8 9 13 13 9 10 13 13 8 9 14 14 15 15 13 13 14 14 28 16 18 16 27 16 19 17 17 17 16 17 16 18 20 18 22 18 32 19 31 19 30 19 18 20 28 20 30 20 33 21 29 21 32 21 27 22 21 22 24 22 25 23 26 23 23 23 20 24 23 24 22 24 20 25 25 25 23 25 17 26 20 26 16 26 21 27 17 27 19 27 21 28 19 28 24 28 27 29 24 29 28 29 31 30 18 30 30 30 29 31 31 31 32 31 29 32 33 32 26 32 29 33 26 33 25 33 34 34 35 35 36 36 37 37 36 36 38 38 40 39 38 38 39 40 39 40 38 38 36 36 37 37 34 34 36 36 44 41 45 41 41 41 41 42 42 42 47 42 57 43 59 43 55 43 58 44 43 44 56 44 55 45 53 45 50 45 54 46 43 46 51 46 43 44 54 44 56 44 59 47 57 47 58 47 51 48 46 48 52 48 50 49 53 49 49 49 48 50 49 50 47 50 48 51 50 51 49 51 42 52 48 52 47 52 45 53 42 53 41 53 46 54 45 54 44 54 46 55 44 55 52 55 51 56 52 56 54 56 57 57 43 57 58 57 55 58 59 58 53 58 62 59 63 60 61 61 66 62 65 63 67 64 64 65 67 64 65 63 64 65 65 63 62 59 62 59 65 63 63 60 62 59 61 61 60 66</p>
+        </polylist>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_controllers/>
+  <library_visual_scenes>
+    <visual_scene id="Scene" name="Scene">
+      <node id="node" name="node" type="NODE">
+        <matrix sid="transform">0.001 0 0 0 0 0.001 0 0 0 0 0.001 0 0 0 0 1</matrix>
+        <instance_geometry url="#Rotation12-0-mesh" name="node">
+          <bind_material>
+            <technique_common>
+              <instance_material symbol="Material1-material" target="#Material1-material"/>
+            </technique_common>
+          </bind_material>
+        </instance_geometry>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>
