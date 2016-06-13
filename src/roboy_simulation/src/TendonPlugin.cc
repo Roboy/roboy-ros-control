@@ -1,14 +1,3 @@
-
-#include <sstream>
-#include <gazebo/gazebo.hh>
-#include <gazebo/common/common.hh>
-#include <gazebo/physics/physics.hh>
-#include <ignition/math/Vector3.hh>
-#include <boost/bind.hpp>
-#include <math.h>
-#include <stdio.h>
-#include <algorithm> 
-
 #include "TendonPlugin.hh"
 
 using namespace gazebo;

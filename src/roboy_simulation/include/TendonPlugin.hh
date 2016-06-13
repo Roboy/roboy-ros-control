@@ -1,12 +1,12 @@
 #ifndef _GAZEBO_TENDON_PLUGIN_HH_
 #define _GAZEBO_TENDON_PLUGIN_HH_
 
-#include "gazebo/common/Plugin.hh"
-#include "gazebo/util/system.hh"
+#include <gazebo/common/Plugin.hh>
+#include <gazebo/util/system.hh>
 #include <sstream>
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
-#include <ignition/math/Vector3.hh>
+#include <gazebo/math/Vector3.hh>
 #include <gazebo/common/common.hh>
 #include <boost/bind.hpp>
 #include <math.h>

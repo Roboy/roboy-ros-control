@@ -8,8 +8,8 @@
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/util/system.hh>
-#include <ignition/math/Vector3.hh>
-#include <ignition/math/Pose3.hh>
+#include <gazebo/math/Vector3.hh>
+#include <gazebo/math/Pose.hh>
 // ros
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>

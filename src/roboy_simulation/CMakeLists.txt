@@ -8,9 +8,10 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(gazebo REQUIRED)
+find_package(gazebo 5 REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
+message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
 find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime)
