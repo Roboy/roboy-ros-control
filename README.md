@@ -1,21 +1,59 @@
 ## Description ##
-Ros hierarchy provides ros control hierarchy for roboy (v2.0) hardware via flexray hardware interface and gazebp simulation.
-If you have any questions feel free to contact one of the [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development) members.
+Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
+If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
 # Dependencies #
-ROS, for detailed description of installation see [here](http://wiki.ros.org/indigo/Installation/Ubuntu)
+git
 ```
 #!bash
-sudo apt-get install ros-indigo-desktop-full
-sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox
+sudo apt-get install git
+```
+ncurses
+```
+#!bash
 sudo apt-get install libncurses5-dev 
+```
+doxygen[OPTIONAL]
+```
+#!bash
 sudo apt-get install doxygen
 ```
+gcc>4.8(for c++11 support).
+remove all gcc related stuff, then following the instruction in [this](http://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-on-ubuntu) forum:
+```
+#!bash
+sudo apt-get remove gcc-*
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gcc-4.9 g++-4.9
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
+```
+[ROS jade](http://wiki.ros.org/jade/), for detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, since the simulation part depends on [sdformat v1.5](http://sdformat.org/spec?elem=sdf&ver=1.5), the following instructions will guide you through the installation. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
+### add the ros ros repo to your source
+```
+#!bash
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
+sudo apt-get update
+```
+### install ros desktop and control related stuff
+```
+#!bash
+sudo apt-get install ros-jade-desktop
+sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox
+```
+### install gazebo5 and ros related packages
+```
+#!bash
+sudo apt-get install ros-jade-gazebo-ros-pkgs
+sudo apt-get install gazebo5
+```
+### clone the repos
 project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
 git clone https://github.com/Roboy/ros_control
-cd ros_hierarchy
+cd ros_control
 git submodule init
 git submodule update
 ```
