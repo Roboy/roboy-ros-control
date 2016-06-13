@@ -83,23 +83,25 @@ Please follow the installation instructions for [flexrayusbinterface](https://gi
 Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
 ```
 #!bash
-cd path/to/ros_hierarchy/src/myomaster/patches
+cd path/to/ros_control/src/myomaster/patches
 diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
 sudo patch /usr/include/FreeImage.h < FreeImage.diff
 ```
 NOTE: in case you want to undo the patch run with -R switch:
 ```
 #!bash
-cd path/to/ros_hierarchy/src/myomaster/patches
+cd path/to/ros_control/src/myomaster/patches
 sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 ```
 ### Environmental variables and sourceing
-Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc:
+Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc (adjusting the paths to your system):
 ```
 #!bash
-source /opt/ros/jade/setup.bash
-source /usr/share/gazebo-5.3/setup.sh
+source /usr/share/gazebo-5.0/setup.sh
 export GAZEBO_MODEL_PATH=/path/to/ros_control/src/roboy_simulation:$GAZEBO_MODEL_PATH
+export GAZEBO_PLUGIN_PATH=/path/to/ros_control/devel/lib:$GAZEBO_PLUGIN_PATH
+source /opt/ros/jade/setup.bash
+source /path/to/ros_control/devel/setup.bash
 ```
 Then you can build with:
 ```
@@ -123,12 +125,10 @@ catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE
 exit
 ```
 #### If the build fails, complaining about missing headers,
-this is probably because ros cannot find the headers it just created. You need to source the devel/setup.bash. Use the following commands to add this to your bashrc.
+this is probably because ros cannot find the headers it just created. You need to source the devel/setup.bash:
 ```
 #!bash
-cd path/to/ros_control
-echo "source $(pwd)/devel/setup.bash" >> ~/.bashrc
-source ~/.bashrc
+source devel/setup.bash
 catkin_make
 ```
 # Run it
@@ -146,7 +146,7 @@ roslaunch myo_master roboy.launch
 roslaunch myo_master roboySim.launch
 ```
 ## Usage
-If you call for the controller types:
+Calling for controller types:
 ```
 #!bash
 rosservice call /controller_manager/list_controller_types
