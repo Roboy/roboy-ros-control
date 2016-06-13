@@ -39,12 +39,13 @@ sudo apt-get update
 ```
 #!bash
 sudo apt-get install ros-jade-desktop
-sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface
+sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
 ```
-#### install gazebo5
+#### install gazebo5 and gazebo-ros-pkgs
 ```
 #!bash
 sudo apt-get install gazebo5
+sudo apt-get install ros-jade-gazebo-ros-pkgs
 ```
 You should try to run gazebo now, to make sure its working. 
 ```
@@ -65,21 +66,6 @@ Now we need to tell gazebo where to find these models. This can be done by setti
 export GAZEBO_MODEL_PATH=~/.gazebo/models:$GAZEBO_MODEL_PATH
 ```
 If you run gazebo now it should pop up without complaints and show an empty world.
-#### building gazebo_ros_pkgs
-For some mysterious reason gazebo_ros_pkgs installation is degenrate, such that catkin_make will fail throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"'. But that won't stop us. We will build it from source. 
-```
-#!bash
-mkdir -p ~/ros_ws/src
-cd ~/ros_ws/src
-git clone https://github.com/ros-simulation/gazebo_ros_pkgs
-cd gazebo_ros_pkgs
-git checkout jade-devel
-cd ~/ros_ws
-sudo -s
-source /opt/ros/jade/setup.bash
-catkin_make_isolated --install --install-space /opt/ros/jade/ --only-pkg-with-deps gazebo_ros_pkgs
-exit
-```
 # Installation
 project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ## clone repos
@@ -113,7 +99,7 @@ Now this is very important. For both build and especially running the code succe
 #!bash
 source /opt/ros/jade/setup.bash
 source /usr/share/gazebo-5.3/setup.sh
-export GAZEBO_MODEL_PATH=/path/to/ros_control/src/roboy_simulation
+export GAZEBO_MODEL_PATH=/path/to/ros_control/src/roboy_simulation:$GAZEBO_MODEL_PATH
 ```
 Then you can build with:
 ```
@@ -121,7 +107,23 @@ Then you can build with:
 cd path/to/ros_control
 catkin_make
 ```
-If the build fails, this is because ros cannot find the headers. You need to source the setup.bash. Use the following commands to add this to your bashrc.
+#### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
+this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source. 
+```
+#!bash
+mkdir -p ~/ros_ws/src
+cd ~/ros_ws/src
+git clone https://github.com/ros-simulation/gazebo_ros_pkgs
+cd gazebo_ros_pkgs
+git checkout jade-devel
+cd ~/ros_ws
+sudo -s
+source /opt/ros/jade/setup.bash
+catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release
+exit
+```
+#### If the build fails, complaining about missing headers,
+this is probably because ros cannot find the headers it just created. You need to source the devel/setup.bash. Use the following commands to add this to your bashrc.
 ```
 #!bash
 cd path/to/ros_control
@@ -129,7 +131,8 @@ echo "source $(pwd)/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 catkin_make
 ```
-# Run it (real life) #
+# Run it
+## with real roboy
 ```
 #!bash
 cd path/to/ros_control
@@ -137,6 +140,12 @@ source devel/setup.bash
 roscore &
 roslaunch myo_master roboy.launch
 ```
+## with simulated roboy
+```
+#!bash
+roslaunch myo_master roboySim.launch
+```
+## Usage
 If you call for the controller types:
 ```
 #!bash
@@ -179,10 +188,6 @@ controller:
     resources: ['motor3']
 
 ```
-
-## Test with hardware ##
-please follow instructions in [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface), concerning library installation and udev rule.
-
 ## Documentation ##
 Generate a doxygen documentation using the following command:
 ```
