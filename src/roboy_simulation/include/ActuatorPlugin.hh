@@ -6,7 +6,7 @@
 #include <sstream>
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
-#include <ignition/math/Vector3.hh>
+#include <gazebo/math/Vector3.hh>
 #include <gazebo/common/common.hh>
 #include <boost/bind.hpp>
 #include <math.h>

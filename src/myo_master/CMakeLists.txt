@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(
