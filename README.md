@@ -2,22 +2,22 @@
 Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
 If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
 # Dependencies #
-git
+### git
 ```
 #!bash
 sudo apt-get install git
 ```
-ncurses
+### ncurses
 ```
 #!bash
 sudo apt-get install libncurses5-dev 
 ```
-doxygen[OPTIONAL]
+### doxygen[OPTIONAL]
 ```
 #!bash
 sudo apt-get install doxygen
 ```
-gcc>4.8(for c++11 support).
+### gcc>4.8(for c++11 support).
 remove all gcc related stuff, then following the instruction in [this](http://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-on-ubuntu) forum:
 ```
 #!bash
@@ -27,28 +27,62 @@ sudo apt-get update
 sudo apt-get install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 ```
-[ROS jade](http://wiki.ros.org/jade/), for detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, since the simulation part depends on [sdformat v1.5](http://sdformat.org/spec?elem=sdf&ver=1.5), the following instructions will guide you through the installation. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
-### add the ros ros repo to your source
+### [ROS jade](http://wiki.ros.org/jade/)
+For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, since the simulation part depends on [sdformat v1.5](http://sdformat.org/spec?elem=sdf&ver=1.5), the following instructions will guide you through the installation. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 0xB01FA116
 sudo apt-get update
 ```
-### install ros desktop and control related stuff
+#### install ros desktop and control related stuff
 ```
 #!bash
 sudo apt-get install ros-jade-desktop
-sudo apt-get install ros-indigo-controller-interface ros-indigo-controller-manager ros-indigo-control-toolbox
+sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface
 ```
-### install gazebo5 and ros related packages
+#### install gazebo5
 ```
 #!bash
-sudo apt-get install ros-jade-gazebo-ros-pkgs
 sudo apt-get install gazebo5
 ```
-### clone the repos
+You should try to run gazebo now, to make sure its working. 
+```
+#!bash
+source /usr/share/gazebo-5.0/setup.sh
+gazebo --verbose
+```
+If you seen an output like, 'waiting for namespace'...'giving up'. Gazebo hasn't been able to download the models. You will need to do this manually. Go to the osrf [bitbucket](https://bitbucket.org/osrf/gazebo_models/downloads), click download repository. Then unzip and move to gazebo models path:
+```
+#!bash
+cd /path/to/osrf-gazebo_models-*.zip
+unzip osrf-gazebo_models-*.zip -d gazebo_models
+mv gazebo_models/* ~/.gazebo/models
+```
+Now we need to tell gazebo where to find these models. This can be done by setting the GAZEBO_MODEL_PATH env variable. Add the following line to your ~/.bashrc:
+```
+#!bash
+export GAZEBO_MODEL_PATH=~/.gazebo/models:$GAZEBO_MODEL_PATH
+```
+If you run gazebo now it should pop up without complaints and show an empty world.
+#### building gazebo_ros_pkgs
+For some mysterious reason gazebo_ros_pkgs installation is degenrate, such that catkin_make will fail throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"'. But that won't stop us. We will build it from source. 
+```
+#!bash
+mkdir -p ~/ros_ws/src
+cd ~/ros_ws/src
+git clone https://github.com/ros-simulation/gazebo_ros_pkgs
+cd gazebo_ros_pkgs
+git checkout jade-devel
+cd ~/ros_ws
+sudo -s
+source /opt/ros/jade/setup.bash
+catkin_make_isolated --install --install-space /opt/ros/jade/ --only-pkg-with-deps gazebo_ros_pkgs
+exit
+```
+# Installation
 project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
+## clone repos
 The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
@@ -58,7 +92,7 @@ git submodule init
 git submodule update
 ```
 
-# Build #
+## Build
 Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
 Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
 ```
@@ -67,93 +101,45 @@ cd path/to/ros_hierarchy/src/myomaster/patches
 diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
 sudo patch /usr/include/FreeImage.h < FreeImage.diff
 ```
-Note: in case you want to undo the patch run with -R switch:
+NOTE: in case you want to undo the patch run with -R switch:
 ```
 #!bash
 cd path/to/ros_hierarchy/src/myomaster/patches
 sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 ```
+### Environmental variables and sourceing
+Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc:
+```
+#!bash
+source /opt/ros/jade/setup.bash
+source /usr/share/gazebo-5.3/setup.sh
+export GAZEBO_MODEL_PATH=/path/to/ros_control/src/roboy_simulation
+```
 Then you can build with:
 ```
 #!bash
-cd path/to/ros_hierarchy
-catkin_init_workspace
-rm CMakeLists.txt
+cd path/to/ros_control
 catkin_make
 ```
 If the build fails, this is because ros cannot find the headers. You need to source the setup.bash. Use the following commands to add this to your bashrc.
 ```
 #!bash
-cd path/to/ros_hierarchy
+cd path/to/ros_control
 echo "source $(pwd)/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 catkin_make
 ```
-
-# Run it #
+# Run it (real life) #
 ```
 #!bash
-
-cd path/to/ros_hierarchy
+cd path/to/ros_control
 source devel/setup.bash
 roscore &
 roslaunch myo_master roboy.launch
 ```
-The roboy.launch file loads 24 motors with corresponding joint controllers onto the ros parameter server. 
-The commandline will inform you that roboy is not ready. The program is waiting for a motor initialize request.
-This will typically come from the [GUI](https://devanthro.atlassian.net/wiki/display/RGIR/Roboy+GUI+in+ROS+Home).
-
-In general, we tried to make the whole system also controllable from the commandline via ROS [services](http://wiki.ros.org/rosservice) 
-and ROS [topics](http://wiki.ros.org/rostopic)
-```
-#!bash
-rosservice list
-```
-This should output (among possibly others) these services:
-```
-#!bash
-/roboy/initialize
-/controller_manager/list_controller_types
-/controller_manager/list_controllers
-/controller_manager/load_controller
-/controller_manager/reload_controller_libraries
-/controller_manager/switch_controller
-/controller_manager/unload_controller
-```
-The following command will request motors to be initialized via the /robo/initialize service:
-```
-#!bash
-rosservice call /roboy/initialize [PRESS TAB TWICE]
-```
-All services starting with the trailing /roboy give you access to the full functionality of our control hierarchy.
-You have probably already used the initialize service. 
-Pressing tab twice after the service will tab complete to the valid service message. If this does not work, ROS probably does not 
-know about the services yet. 
-Try sourceing the setup.bash (bear in mind, that you have to do that for every terminal you open, unless of course you add the 
-source command to your ~/.bashrc).:
-```
-#!bash
-source devel/setup.bash
-```
-Fill out the values as needed (should be self-explanatory).
-
-If you have initialized motors already, the rosservice list command will be augmented by new services for each motor:
-```
-#!bash
-/roboy/trajectory_motor0
-/roboy/trajectory_motor1
-/roboy/trajectory_motor3
-```
-Calling the trajectory service will request a trajectory, e.g. like this:
-```
-#!bash
-rosservice call /roboy/trajectory_motor0 [PRESS TAB TWICE]
-```
-
 If you call for the controller types:
 ```
 #!bash
-
 rosservice call /controller_manager/list_controller_types
 ```
 This should show our custom controller plugin:
@@ -201,7 +187,7 @@ please follow instructions in [flexrayusbinterface](https://github.com/Roboy/fle
 Generate a doxygen documentation using the following command:
 ```
 #!bash
-cd path/to/ros_hierarchy
+cd path/to/ros_control
 doxygen Doxyfile
 ```
 The documentation is put into the doc folder.
