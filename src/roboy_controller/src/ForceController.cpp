@@ -4,7 +4,7 @@
 #include <std_msgs/Float32.h>
 #include "common_utilities/ControllerState.h"
 #include "common_utilities/Steer.h"
-#include "common_utilities/SetTrajectory.h"
+#include "common_utilities/Trajectory.h"
 #include "CommonDefinitions.h"
 #include "spline.h"
 #include "timer.hpp"
@@ -29,7 +29,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			n.getParam("id", statusMsg.id);
 			ROS_INFO("ForceController %d for %s initialized", statusMsg.id, joint_name.c_str());
 			joint = hw->getHandle(joint_name);  // throws on failure
-			trajectory_srv = n.advertiseService("/roboy/trajectory_"+joint_name, &ForceController::trajectoryPreprocess, this);
+			trajectory_sub = n.subscribe("/roboy/trajectory_"+joint_name, 1, &ForceController::trajectoryPreprocess, this);
 			steer_sub = n.subscribe("/roboy/steer",1000, &ForceController::steer, this);
 			status_pub = n.advertise<common_utilities::ControllerState>("/roboy/status_"+joint_name, 1000);
 			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/eff", 1000);
@@ -99,8 +99,7 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 		double setpoint = 0;
 		string joint_name;
 		ros::NodeHandle n;
-		ros::ServiceServer trajectory_srv;
-		ros::Subscriber steer_sub;
+		ros::Subscriber steer_sub, trajectory_sub;
 		ros::Publisher  status_pub, trajectory_pub;
 		tk::spline spline_trajectory;
 		double trajectory_duration = 0;
@@ -109,38 +108,34 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 		std_msgs::Float32 eff_msg;
 		int32_t dt = 0;
 		common_utilities::ControllerState statusMsg;
-		bool trajectoryPreprocess(common_utilities::SetTrajectory::Request& req,
-									common_utilities::SetTrajectory::Response& res){
+		void trajectoryPreprocess( const common_utilities::Trajectory::ConstPtr& msg ){
 			steered = STOP_TRAJECTORY;
 			myStatus = PREPROCESS_TRAJECTORY;
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 
-			trajectory_duration = req.trajectory.waypoints.size()*req.trajectory.samplerate;
+			trajectory_duration = msg->waypoints.size()*msg->samplerate;
 			ROS_INFO("New trajectory [%d elements] at sampleRate %f, duration %f",
-					 (int)req.trajectory.waypoints.size(), req.trajectory.samplerate, trajectory_duration);
-			if(!req.trajectory.waypoints.empty()) {
+					 (int)msg->waypoints.size(), msg->samplerate, trajectory_duration);
+			if(!msg->waypoints.empty()) {
 				vector<double> x,y;
-				for(uint i=0; i<req.trajectory.waypoints.size(); i++){
-					x.push_back(i*req.trajectory.samplerate);
-					y.push_back(req.trajectory.waypoints[i]);
+				for(uint i=0; i<msg->waypoints.size(); i++){
+					x.push_back(i*msg->samplerate);
+					y.push_back(msg->waypoints[i]);
+					cout << msg->waypoints[i] << " ";
 				}
-
+				cout << endl;
 				spline_trajectory.set_points(x,y);
 				myStatus = ControllerState::TRAJECTORY_READY;
 				statusMsg.state = myStatus;
 				status_pub.publish(statusMsg);
 				dt = 0;
-				res.state = myStatus;
-				return true;
 			}else{
 				myStatus = ControllerState::TRAJECTORY_FAILED;
 				statusMsg.state = myStatus;
 				status_pub.publish(statusMsg);
-				res.state = myStatus;
 				dt = 0;
 				trajectory_duration = 0;
-				return false;
 			}
 		}
 };

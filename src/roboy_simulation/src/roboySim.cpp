@@ -3,6 +3,13 @@
 namespace gazebo_ros_control {
 
 	RoboySim::RoboySim() {
+
+        init_sub = nh.subscribe("/roboy/initialize", 1, &RoboySim::initializeControllers, this);
+        record_sub = nh.subscribe("/roboy/record", 1, &RoboySim::record, this);
+        recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
+        steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+        roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
+
 		roboyStateMsg.setPoint.resize(NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION);
 		roboyStateMsg.actuatorPos.resize(NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION);
 		roboyStateMsg.actuatorVel.resize(NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION);
@@ -17,6 +24,11 @@ namespace gazebo_ros_control {
 
 	RoboySim::~RoboySim() {
 		delete cm;
+	}
+
+	void RoboySim::initializeControllers( const common_utilities::Initialize::ConstPtr& msg )
+	{
+		return;
 	}
 
 	void RoboySim::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
@@ -107,10 +119,6 @@ namespace gazebo_ros_control {
 
 		urdf::Model urdf_model;
 		const urdf::Model *const urdf_model_ptr = urdf_model.initString(urdf_string) ? &urdf_model : NULL;
-
-		record_srv = nh.advertiseService("/roboy/record", &RoboySim::recordService, this);
-		steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
-		roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state", 1000);
 
 		if (!initSim(robot_namespace, nh, parent_model, urdf_model_ptr, transmissions)) {
 			ROS_FATAL_NAMED("gazebo_ros_control", "Could not initialize robot simulation interface");
@@ -428,26 +436,24 @@ namespace gazebo_ros_control {
 		return controller_loaded;
 	}
 
-	bool RoboySim::recordService(common_utilities::Record::Request &req,
-								 common_utilities::Record::Response &res) {
-//    currentState = Recording;
-//    std::vector<std::vector<float>> trajectories;
-//    recording = PLAY_TRAJECTORY;
-//    vector<int> controllers;
-//    vector<int> controlmode;
-//    for(auto controller:req.controllers){
-//        controllers.push_back(controller.id);
-//        controlmode.push_back(controller.controlmode);
-//    }
-//    float averageSamplingTime = flexray.recordTrajectories(req.sampleRate, trajectories, controllers, controlmode, &recording);
-//    res.trajectories.resize(req.controllers.size());
-//    for(uint m=0; m<req.controllers.size(); m++){
-//        res.trajectories[m].id = req.controllers[m].id;
-//        res.trajectories[m].waypoRoboySimints = trajectories[req.controllers[m].id];
-//        res.trajectories[m].samplerate = averageSamplingTime;
-//    }
-//    currentState = Controlloop;
-		return false;
+	void RoboySim::record( const common_utilities::Record::ConstPtr &msg ) {
+		std::vector<std::vector<float>> trajectories;
+		recording = PLAY_TRAJECTORY;
+		vector<int> controllers;
+		vector<int> controlmode;
+		for(auto controller:msg->controllers){
+			controllers.push_back(controller.id);
+			controlmode.push_back(controller.controlmode);
+		}
+//		float averageSamplingTime = flexray.recordTrajectories(msg->sampleRate, trajectories, controllers, controlmode, &recording);
+		common_utilities::RecordResult res;
+		res.trajectories.resize(msg->controllers.size());
+		for(uint m=0; m<msg->controllers.size(); m++){
+			res.trajectories[m].id = msg->controllers[m].id;
+			res.trajectories[m].waypoints = trajectories[msg->controllers[m].id];
+//			res.trajectories[m].samplerate = averageSamplingTime;
+		}
+		recordResult_pub.publish(res);
 	}
 
 	void RoboySim::steer_record(const common_utilities::Steer::ConstPtr &msg) {
@@ -664,7 +670,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No bemf_constant element found in myoMuscle '"
 														 << myoMuscle.name << "' motor element.");
-						continue;
+						return false;
 					}
 					// torque_constant
 					TiXmlElement *torque_constant_child = motor_child->FirstChildElement("torque_constant");
@@ -676,7 +682,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No torque_constant element found in myoMuscle '"
 														 << myoMuscle.name << "' motor element.");
-						continue;
+						return false;
 					}
 					// inductance
 					TiXmlElement *inductance_child = motor_child->FirstChildElement("inductance");
@@ -688,7 +694,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No inductance element found in myoMuscle '"
 														 << myoMuscle.name << "' motor element.");
-						continue;
+						return false;
 					}
 					// resistance
 					TiXmlElement *resistance_child = motor_child->FirstChildElement("resistance");
@@ -700,7 +706,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No resistance element found in myoMuscle '"
 														 << myoMuscle.name << "' motor element.");
-						continue;
+						return false;
 					}
 					// inertiaMoment
 					TiXmlElement *inertiaMoment_child = motor_child->FirstChildElement("inertiaMoment");
@@ -712,11 +718,11 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
 														 << myoMuscle.name << "' motor element.");
-						continue;
+						return false;
 					}
 				} else {
 					ROS_ERROR_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name << "'.");
-					continue;
+					return false;
 				}
 
 				TiXmlElement *gear_child = myoMuscle_it->FirstChildElement("gear");
@@ -731,7 +737,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No ratio element found in myoMuscle '"
 														 << myoMuscle.name << "' gear element.");
-						continue;
+						return false;
 					}
 					// ratio
 					TiXmlElement *efficiency_child = gear_child->FirstChildElement("efficiency");
@@ -743,7 +749,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No efficiency element found in myoMuscle '"
 														 << myoMuscle.name << "' gear element.");
-						continue;
+						return false;
 					}
 					// inertiaMoment
 					TiXmlElement *inertiaMoment_child = gear_child->FirstChildElement("inertiaMoment");
@@ -755,11 +761,11 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
 														 << myoMuscle.name << "' gear element.");
-						continue;
+						return false;
 					}
 				} else {
 					ROS_ERROR_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name << "'.");
-					continue;
+					return false;
 				}
 
 				TiXmlElement *spindle_child = myoMuscle_it->FirstChildElement("spindle");
@@ -774,12 +780,12 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No radius element found in myoMuscle '"
 														 << myoMuscle.name << "' spindle element.");
-						continue;
+						return false;
 					}
 				} else {
 					ROS_ERROR_STREAM_NAMED("parser",
 										   "No spindle element found in myoMuscle '" << myoMuscle.name << "'.");
-					continue;
+					return false;
 				}
 
 				TiXmlElement *SEE_child = myoMuscle_it->FirstChildElement("SEE");
@@ -794,7 +800,7 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No stiffness element found in myoMuscle '"
 														 << myoMuscle.name << "' SEE element.");
-						continue;
+						return false;
 					}
 					// length
 					TiXmlElement *length_child = SEE_child->FirstChildElement("length");
@@ -806,16 +812,16 @@ namespace gazebo_ros_control {
 					} else {
 						ROS_ERROR_STREAM_NAMED("parser", "No length element found in myoMuscle '"
 														 << myoMuscle.name << "' SEE element.");
-						continue;
+						return false;
 					}
 				} else {
 					ROS_ERROR_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name << "'.");
-					continue;
+					return false;
 				}
 
 			} else {
 				ROS_ERROR_STREAM_NAMED("parser", "No name attribute specified for myoMuscle.");
-				continue;
+				return false;
 			}
 		}
 		return true;
