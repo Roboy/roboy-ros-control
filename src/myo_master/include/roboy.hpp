@@ -61,22 +61,32 @@ public:
 	/**
 	 * This is the main loop
 	 */
-	void main_loop(controller_manager::ControllerManager *cm);
+	void main_loop(controller_manager::ControllerManager *ControllerManager);
 private:
 	/*
 	 * This function loads the controllers registered to the individual joint interfaces
-	 * @param controlmode Position, Velocity or Force
+	 * @param controllers names of controllers
 	 * @return success
 	 */
-	bool loadControllers(int controlmode);
+	bool loadControllers(vector<string> controllers);
 	/*
 	 * This function unloads the controllers registered to the individual joint interfaces
-	 * @param controlmode Position, Velocity or Force
+	 * @param controllers names of controllers
 	 * @return success
 	 */
-	bool unloadControllers(int controlmode);
-    bool startControllers(int controlmode);
-    bool stopControllers(int controlmode);
+	bool unloadControllers(vector<string> controllers);
+    /*
+	 * This function starts the controllers registered to the individual joint interfaces
+	 * @param controllers names of controllers
+	 * @return success
+	 */
+    bool startControllers(vector<string> controllers);
+    /*
+	 * This function stops the controllers registered to the individual joint interfaces
+	 * @param controllers names of controllers
+	 * @return success
+	 */
+    bool stopControllers(vector<string> controllers);
 	/**
 	 * SERVICE This function record the trajectories of the requested motors
 	 * @param req vector<int8> containing requested motor ids
@@ -98,7 +108,6 @@ private:
 	bool initialized = false;
 
 	hardware_interface::JointStateInterface jnt_state_interface;
-
 	hardware_interface::PositionJointInterface jnt_pos_interface;
 	hardware_interface::VelocityJointInterface jnt_vel_interface;
 	hardware_interface::EffortJointInterface jnt_eff_interface;
