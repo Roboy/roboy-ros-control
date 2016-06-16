@@ -5,6 +5,7 @@
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
+#include "common_utilities/RecordResult.h"
 #include <common_utilities/Steer.h>
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
@@ -55,6 +56,8 @@ namespace gazebo_ros_control {
 		 */
 		~RoboySim();
 
+		void initializeControllers( const common_utilities::Initialize::ConstPtr& msg );
+
 		/**
 		 * Overloaded Gazebo entry point
 		 */
@@ -99,8 +102,7 @@ namespace gazebo_ros_control {
 		 * @param req vector<int8> containing requested motor ids
 		 * @param res vector<ControllerStates> cf. CommonDefinitions.h
 		 */
-		bool recordService(common_utilities::Record::Request &req,
-						   common_utilities::Record::Response &res);
+		void record( const common_utilities::Record::ConstPtr& msg );
 
 		/**
 		 * SUBSCRIBER enables pause/resume and stop recording
@@ -140,9 +142,8 @@ namespace gazebo_ros_control {
 		hardware_interface::VelocityJointInterface jnt_vel_interface;
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
-		ros::ServiceServer init_srv, record_srv;
-		ros::Subscriber steer_recording_sub;
-		ros::Publisher roboy_pub;
+		ros::Subscriber steer_recording_sub, record_sub, init_sub;
+		ros::Publisher roboy_pub, recordResult_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
 
