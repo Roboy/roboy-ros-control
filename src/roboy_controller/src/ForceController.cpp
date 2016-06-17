@@ -35,8 +35,8 @@ class ForceController : public controller_interface::Controller<hardware_interfa
 			trajectory_pub = n.advertise<std_msgs::Float32>("/roboy/trajectory_"+joint_name+"/eff", 1000);
 			myStatus = ControllerState::INITIALIZED;
 			// wait for GUI subscriber
-//			while(status_pub.getNumSubscribers()==0)
-//				ROS_INFO_THROTTLE(1,"ForceController %s waiting for subscriber", joint_name.c_str());
+			while(status_pub.getNumSubscribers()==0)
+				ROS_INFO_THROTTLE(1,"ForceController %s waiting for subscriber", joint_name.c_str());
 			statusMsg.state = myStatus;
 			status_pub.publish(statusMsg);
 			// initialize spline to zero

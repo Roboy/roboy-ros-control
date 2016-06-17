@@ -35,7 +35,7 @@
 #include <urdf/model.h>
 //std
 #include <vector>
-#include <mutex>
+#include <thread>
 // muscle plugin
 #include "MusclePlugin.hh"
 
@@ -63,6 +63,15 @@ namespace gazebo_ros_control {
 		 */
 		void Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf);
 
+        /**
+         * dummy overload, our simulation is initialized in the initializeControllers callback
+         */
+        bool initSim(const string &robot_namespace,
+                     ros::NodeHandle model_nh,
+                     gazebo::physics::ModelPtr parent_model,
+                     const urdf::Model *const urdf_model,
+                     vector<transmission_interface::TransmissionInfo> transmissions){};
+
 		/**
 		 * Read from Simulation
 		 */
@@ -73,30 +82,36 @@ namespace gazebo_ros_control {
 		 */
 		void writeSim(ros::Time time, ros::Duration period);
 
-		bool initSim(const string &robot_namespace,
-					 ros::NodeHandle model_nh,
-					 gazebo::physics::ModelPtr parent_model,
-					 const urdf::Model *const urdf_model,
-					 vector<transmission_interface::TransmissionInfo> transmissions);
-
 		void Update();
 
 		// Called on world reset
 		void Reset();
 
 	private:
-		/*
-		 * This function loads the controllers registered to the individual joint interfaces
-		 * @param controlmode Position, Velocity or Force
-		 * @return success
-		 */
-		bool loadControllers(int controlmode);
-		/*
-		 * This function unloads the controllers registered to the individual joint interfaces
-		 * @param controlmode Position, Velocity or Force
-		 * @return success
-		 */
-		bool unloadControllers(int controlmode);
+        /*
+         * This function loads the controllers registered to the individual joint interfaces
+         * @param controllers names of controllers
+         * @return success
+         */
+        bool loadControllers(vector<string> controllers);
+        /*
+         * This function unloads the controllers registered to the individual joint interfaces
+         * @param controllers names of controllers
+         * @return success
+         */
+        bool unloadControllers(vector<string> controllers);
+        /*
+         * This function starts the controllers registered to the individual joint interfaces
+         * @param controllers names of controllers
+         * @return success
+         */
+        bool startControllers(vector<string> controllers);
+        /*
+         * This function stops the controllers registered to the individual joint interfaces
+         * @param controllers names of controllers
+         * @return success
+         */
+        bool stopControllers(vector<string> controllers);
 		/**
 		 * SERVICE This function record the trajectories of the requested motors
 		 * @param req vector<int8> containing requested motor ids
@@ -131,6 +146,7 @@ namespace gazebo_ros_control {
 		ros::NodeHandle nh;
 
 		//! Controller manager
+        thread *update_thread;
 		controller_manager::ControllerManager *cm = nullptr;
 		double *cmd,*pos, *vel, *eff;
 
@@ -170,6 +186,7 @@ namespace gazebo_ros_control {
 		ros::Subscriber e_stop_sub;  // Emergency stop subscriber
 
 		uint numberOfMyoMuscles;
+        urdf::Model urdf_model;
 
 		joint_limits_interface::EffortJointSaturationInterface ej_sat_interface;
 		joint_limits_interface::EffortJointSoftLimitsInterface ej_limits_interface;
@@ -178,7 +195,6 @@ namespace gazebo_ros_control {
 		joint_limits_interface::VelocityJointSaturationInterface vj_sat_interface;
 		joint_limits_interface::VelocityJointSoftLimitsInterface vj_limits_interface;
 
-		vector<string> joint_names;
 		vector<int> joint_types;
 		vector<double> joint_lower_limits;
 		vector<double> joint_upper_limits;

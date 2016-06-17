@@ -113,9 +113,8 @@ private:
 	hardware_interface::EffortJointInterface jnt_eff_interface;
 
     controller_manager::ControllerManager *cm = nullptr;
-	ros::ServiceClient cm_LoadController, cm_UnloadController, cm_ListController, cm_ListControllerTypes, cm_SwitchController;
 	ros::Subscriber steer_recording_sub, init_sub, record_sub;
-	ros::Publisher roboy_pub, recordResult_pub;
+	ros::Publisher recordResult_pub;
 
 	FlexRayHardwareInterface flexray;
 	common_utilities::RoboyState roboyStateMsg;
@@ -131,9 +130,7 @@ private:
 	//! state strings describing each state
 	std::map<ActionState, std::string> state_strings = {
 			{ WaitForInitialize,     "Waiting for initialization of controllers" },
-			{ LoadControllers,       "Loading controllers" },
 			{ Controlloop,           "Control loop" },
-			{ PublishState,           "Publish roboy state" },
 			{ Recording,             "Recording" }
 	};
 };
