@@ -6,18 +6,7 @@ Roboy::Roboy()
     init_sub = nh.subscribe("/roboy/initialize", 1, &Roboy::initializeControllers, this);
 	record_sub = nh.subscribe("/roboy/record", 1, &Roboy::record, this);
 	steer_recording_sub = nh.subscribe("/roboy/steer_record",1000, &Roboy::steer_record, this);
-	cm_LoadController = nh.serviceClient<controller_manager_msgs::LoadController>("/controller_manager/load_controller");
-    cm_UnloadController = nh.serviceClient<controller_manager_msgs::UnloadController>("/controller_manager/unload_controller");
-	cm_ListController = nh.serviceClient<controller_manager_msgs::ListControllers>("/controller_manager/list_controllers");
-	cm_ListControllerTypes = nh.serviceClient<controller_manager_msgs::ListControllerTypes>("/controller_manager/list_contoller_types");
-	cm_SwitchController = nh.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/switch_controller");
 	recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult",1000);
-	roboy_pub = nh.advertise<common_utilities::RoboyState>("/roboy/state",1000);
-	roboyStateMsg.setPoint.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
-	roboyStateMsg.actuatorPos.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
-	roboyStateMsg.actuatorVel.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
-	roboyStateMsg.tendonDisplacement.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
-	roboyStateMsg.actuatorCurrent.resize(NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION);
 
 	cmd = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
 	pos = new double[NUMBER_OF_GANGLIONS*NUMBER_OF_JOINTS_PER_GANGLION];
@@ -32,7 +21,6 @@ Roboy::~Roboy()
 void Roboy::initializeControllers( const common_utilities::Initialize::ConstPtr& msg )
 {
     initialized = false;
-    // allocate corresponding control arrays (4 motors can be connected to each ganglion)
     while(flexray.checkNumberOfConnectedGanglions()>6){
         ROS_ERROR_THROTTLE(5,"Flexray interface says %d ganglions are connected, check cabels and power", flexray.checkNumberOfConnectedGanglions());
     }
@@ -197,26 +185,6 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager)
 				prev_time = time;
 
 				rate.sleep();
-				break;
-			}
-			case PublishState: {
-				ROS_INFO_THROTTLE(10, "%s", state_strings[PublishState].c_str());
-				uint m = 0;
-				for(uint ganglion=0;ganglion<NUMBER_OF_GANGLIONS;ganglion++){
-					for(uint motor=0;motor<NUMBER_OF_JOINTS_PER_GANGLION;motor++){
-						if(ganglion<3)
-							roboyStateMsg.setPoint[m] = flexray.commandframe0->sp[motor];
-						else
-							roboyStateMsg.setPoint[m] = flexray.commandframe1->sp[motor];
-
-						roboyStateMsg.actuatorPos[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorPos*flexray.controlparams.radPerEncoderCount;
-						roboyStateMsg.actuatorVel[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorVel*flexray.controlparams.radPerEncoderCount;
-						roboyStateMsg.tendonDisplacement[m] = flexray.GanglionData[ganglion].muscleState[motor].tendonDisplacement;
-						roboyStateMsg.actuatorCurrent[m] = flexray.GanglionData[ganglion].muscleState[motor].actuatorCurrent;
-						m++;
-					}
-				}
-				roboy_pub.publish(roboyStateMsg);
 				break;
 			}
 			case Recording: {
