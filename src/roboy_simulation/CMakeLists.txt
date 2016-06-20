@@ -13,8 +13,18 @@ include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs)
-catkin_package(CATKIN_DEPENDS message_runtime)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs geometry_msgs message_generation)
+
+add_message_files(
+        DIRECTORY
+        msgs
+        FILES
+	Tendon.msg
+)
+
+generate_messages( DEPENDENCIES std_msgs geometry_msgs )
+
+catkin_package(CATKIN_DEPENDS message_runtime message_generation)
 
 include_directories(
 	${catkin_INCLUDE_DIRS} 
@@ -35,7 +45,8 @@ add_library(actuator_plugin SHARED src/ActuatorPlugin.cc)
 target_link_libraries(actuator_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${ARMADILLO_LIBRARIES} )
 
 add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
-target_link_libraries(tendon_visualizer ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+add_dependencies(tendon_visualizer roboy_simulation_gencpp)
+target_link_libraries(tendon_visualizer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
 add_library(roboySim SHARED src/roboySim.cpp)
 add_dependencies(roboySim common_utilities_gencpp)
