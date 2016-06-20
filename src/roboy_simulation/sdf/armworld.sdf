@@ -31,6 +31,7 @@
                         <size>.1 .1 .5</size>
                     </box>
                 </geometry>
+                <plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>
             </visual>
         </link>
 
@@ -111,7 +112,6 @@
                 <pose frame=''>0 0 0 0 -0 0</pose>
                 <cast_shadows>1</cast_shadows>
                 <transparency>0</transparency>
-                <plugin name="tendon_visualizer" filename="tendon_visualizer.so"/>
             </visual>
             <collision name='collision'>
                 <laser_retro>0</laser_retro>

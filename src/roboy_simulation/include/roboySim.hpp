@@ -25,6 +25,7 @@
 #include <joint_limits_interface/joint_limits_interface.h>
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include <joint_limits_interface/joint_limits_urdf.h>
+#include <roboy_simulation/Tendon.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -159,7 +160,7 @@ namespace gazebo_ros_control {
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
 		ros::Subscriber steer_recording_sub, record_sub, init_sub;
-		ros::Publisher roboy_pub, recordResult_pub;
+		ros::Publisher roboy_pub, recordResult_pub, tendon_visualizer_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
 

@@ -24,6 +24,7 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 
+#include "roboy_simulation/Tendon.h"
 
 namespace gazebo
 {
@@ -50,34 +51,31 @@ namespace gazebo
 
         private:
             /// \brief pointer to ros node
-            ros::NodeHandle* rosnode_;
+            ros::NodeHandle *nh;
 
             /// \brief store model name
-            std::string model_name_;
+            std::string model_name;
 
             /// \brief topic name
-            std::string topic_name_;
+            std::string topic_name;
 
             // /// \brief The visual pointer used to visualize the force.
-            VisualPtr visual_;
+            VisualPtr visual;
 
             // /// \brief The scene pointer.
-            ScenePtr scene_;
+            ScenePtr scene;
 
             /// \brief For example a line to visualize the force
-            DynamicLines *line;
-
-            /// \brief for setting ROS name space
-            std::string visual_namespace_;
+            DynamicLines *lines;
 
             /// \Subscribe to some force
-            ros::Subscriber force_sub_;
+            ros::Subscriber tendon_visualizer_sub;
 
             /// \brief Visualize the force
-            void VisualizeForceOnLink(const geometry_msgs::PointConstPtr &force_ms);
+            void VisualizeTendonAndForce(const roboy_simulation::TendonConstPtr &msg);
 
             // Pointer to the update event connection
-            event::ConnectionPtr update_connection_;
+            event::ConnectionPtr update_connection;
         };
     }
 }
