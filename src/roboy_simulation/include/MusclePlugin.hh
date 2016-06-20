@@ -75,7 +75,6 @@ namespace roboy_simulation {
 
 	struct MyoMuscleInfo{
 		string name;
-		vector<string> joint;
 		map<string,vector<math::Vector3>> viaPoints;
 		Motor motor;
 		Gear gear;
@@ -180,11 +179,10 @@ namespace roboy_simulation {
 					vector<math::Vector3> &viaPointInGobalFrame,
 					vector<math::Vector3> &force);
 		string name;
-		vector<string> joint;
 		map<string,vector<math::Vector3>> viaPoints;
 		map<string,math::Pose> linkPose;
 		PIDcontroller pid;
-		double cmd;
+		double cmd = 0;
 	private:
 		event::ConnectionPtr connection;
 		common::Time prevUpdateTime;

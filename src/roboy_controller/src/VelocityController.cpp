@@ -53,7 +53,7 @@ class VelocityController : public controller_interface::Controller<hardware_inte
 			trajectory_pub.publish(vel_msg);
 
 			if(steered == PLAY_TRAJECTORY) {
-				dt += period.nsec/1000000;
+				dt += period.nsec*1e-6f;
 				if (dt<trajectory_duration) {
 					setpoint = spline_trajectory(dt);
 				}else{
@@ -107,7 +107,7 @@ class VelocityController : public controller_interface::Controller<hardware_inte
 		int8_t myStatus = UNDEFINED;
 		int8_t steered = STOP_TRAJECTORY;
 		std_msgs::Float32 vel_msg;
-		int32_t dt = 0;
+		float dt = 0;
 		common_utilities::ControllerState statusMsg;
 		void trajectoryPreprocess(const common_utilities::Trajectory::ConstPtr& msg ){
 			steered = STOP_TRAJECTORY;

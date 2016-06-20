@@ -139,7 +139,6 @@ namespace roboy_simulation {
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
 
-		joint = myoMuscle.joint;
 		viaPoints = myoMuscle.viaPoints;
 		actuator.motor = myoMuscle.motor;
 		actuator.gear = myoMuscle.gear;
@@ -162,12 +161,15 @@ namespace roboy_simulation {
 
 		tendonType newTendon;
 
+        viaPointInGobalFrame.clear();
+
 		// get the position and orientation of the links
 		for (auto viaPoint:viaPoints) {
 			// absolute position + relative position=actual position of each via point
-			for (uint i = 0; i < viaPoint.second.size(); i++)
-				viaPointInGobalFrame.push_back(
-						linkPose[viaPoint.first].pos + linkPose[joint[i]].rot.RotateVector(viaPoint.second[i]));
+			for (uint i = 0; i < viaPoint.second.size(); i++) {
+                viaPointInGobalFrame.push_back(
+                        linkPose[viaPoint.first].pos + linkPose[viaPoint.first].rot.RotateVector(viaPoint.second[i]));
+            }
 		}
 
 		tendon.GetTendonInfo(viaPointInGobalFrame, &newTendon);
@@ -197,20 +199,15 @@ namespace roboy_simulation {
 			dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
 					  actuator.spindle.radius * actuator.elasticForce /
 					  (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-		}, x, time.sec, period.sec);
-
-		// gzdbg << "electric current: "
-		// 	  << x[0]
-		// 	  << "\t"
-		// 	  << "speed: "
-		// 	  << x[1]
-		// 	  << "\n";
+		}, x, time.nsec*1e-9, period.nsec*1e-9);
 
 		actuator.motor.current = x[0];
 		actuator.spindle.angVel = x[1];
 
 		actuatorForce = tendon.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
 												  actuator.spindle.radius);
+
+        ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
 		// calculate general force (elastic+actuator)
 		for (auto viaPoint:viaPoints) {
