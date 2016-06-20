@@ -111,6 +111,7 @@
                 <pose frame=''>0 0 0 0 -0 0</pose>
                 <cast_shadows>1</cast_shadows>
                 <transparency>0</transparency>
+                <plugin name="tendon_visualizer" filename="tendon_visualizer.so"/>
             </visual>
             <collision name='collision'>
                 <laser_retro>0</laser_retro>
@@ -151,42 +152,25 @@
         </joint>
 
 
-        <!--<joint name="armholder_ground" type="revolute">-->
-        <!--<parent>world</parent>-->
-        <!--<child>arm_holder</child>-->
-        <!--<axis>-->
-        <!--<limit>-->
-        <!--<lower>0</lower>-->
-        <!--<upper>0</upper>-->
-        <!--</limit>-->
-        <!--<xyz>0 1 0</xyz>-->
-        <!--</axis>-->
-        <!--</joint>-->
-
-        <!--<plugin name='muscle_plugin' filename='libmuscle_plugin.so'>-->
-
-        <!--</plugin>-->
-
-        <!--<plugin name="tendon_plugin" filename="libtendon_plugin.so">-->
-        <!--<motor>-->
-        <!--<torque_constant>1</torque_constant>-->
-        <!--</motor>-->
-        <!--<spindle>-->
-        <!--<radius>0.005</radius>-->
-        <!--</spindle>-->
-        <!--<SEE>-->
-        <!--<stiffness>100000.0 2.0 3.0 4.0</stiffness>-->
-        <!--<length0>0.35</length0>-->
-        <!--</SEE>-->
-        <!--</plugin>-->
+        <joint name="armholder_ground" type="revolute">
+            <parent>world</parent>
+            <child>arm_holder</child>
+            <axis>
+                <limit>
+                    <lower>0</lower>
+                    <upper>0</upper>
+                </limit>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
 
         <plugin name="roboySim" filename="libroboySim.so">
             <myoMuscle name="elbow">
-                <joint name="upper_arm">
+                <link name="upper_arm">
                     <viaPoint>0.0 -0.1 0.0</viaPoint>
                     <viaPoint>0.0 -0.11 0.0</viaPoint>
                     <viaPoint>0.0 0.0 0.0</viaPoint>
-                </joint>
+                </link>
                 <motor>
                     <bemf_constant>0.001488</bemf_constant> <!--V/rpm-->
                     <torque_constant>14.2</torque_constant> <!--mNm/A-->

@@ -32,7 +32,6 @@ void Roboy::initializeControllers( const common_utilities::Initialize::ConstPtr&
         uint ganglion = msg->controllers[i].ganglion;
         uint motor = msg->controllers[i].motor;
 
-
         // connect and register the joint state interface
         start_controllers.push_back(resource);
 		hardware_interface::JointStateHandle state_handle(resource, &pos[msg->controllers[i].id], &vel[msg->controllers[i].id], &eff[msg->controllers[i].id]);
@@ -179,7 +178,6 @@ void Roboy::main_loop(controller_manager::ControllerManager *ControllerManager)
 				const ros::Duration period = time - prev_time;
 
 				read();
-                cm->update(time, period);
 				write();
 
 				prev_time = time;

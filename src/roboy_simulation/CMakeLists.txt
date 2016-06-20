@@ -34,6 +34,9 @@ target_link_libraries(tendon_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 add_library(actuator_plugin SHARED src/ActuatorPlugin.cc)
 target_link_libraries(actuator_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${ARMADILLO_LIBRARIES} )
 
+add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
+target_link_libraries(tendon_visualizer ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
 add_library(roboySim SHARED src/roboySim.cpp)
 add_dependencies(roboySim common_utilities_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
