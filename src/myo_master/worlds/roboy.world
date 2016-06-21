@@ -20,22 +20,5 @@
                 <view_controller>orbit</view_controller>
             </camera>
         </gui>
-
-        <model name="help">
-            <pose>0 0 0 0 0 0</pose>
-            <static>true</static>
-            <link name='arm_holder'>
-                <gravity>0</gravity>
-                <pose>0 0 0 0 0 0</pose>
-                <visual name='visual'>
-                    <geometry>
-                        <box>
-                            <size>.1 .1 .1</size>
-                        </box>
-                    </geometry>
-                    <plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>
-                </visual>
-            </link>
-        </model>
     </world>
 </sdf>

@@ -379,8 +379,8 @@ namespace gazebo_ros_control {
         ROS_DEBUG("read simulation");
         // update muscle plugins
         force.clear();
+        viaPointInGobalFrame.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            viaPointInGobalFrame.clear();
             for(auto link : sim_muscles[muscle]->linkPose){
                 sim_muscles[muscle]->linkPose[link.first] = parent_model->GetLink(link.first)->GetWorldPose();
                     ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link.first].pos.x,
@@ -406,16 +406,16 @@ namespace gazebo_ros_control {
 
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-            for (auto viaPoint:sim_muscles[muscle]->viaPoints) {
-                physics::LinkPtr link = parent_model->GetLink(viaPoint.first);
-                for (uint i = 0; i < viaPoint.second.size(); i++) {
-                    link->AddForceAtWorldPosition(-force[j], viaPointInGobalFrame[j]);
-                    link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j + 1]);
-                    ROS_INFO_THROTTLE(1,"force: %f %f %f", force[j].x, force[j].y, force[j].z);
+            for(auto viaPoint = sim_muscles[muscle]->viaPoints.begin();
+                viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
+                physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
+                for (uint i = 0; i < viaPoint->second.size(); i++) {
+                    link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j]);
+                    ROS_INFO_THROTTLE(1,"force on %s: %.4f %.4f %.4f at %.4f %.4f %.4f", viaPoint->first.c_str(),
+                                      force[j].x, force[j].y, force[j].z,
+                                      viaPointInGobalFrame[j].x, viaPointInGobalFrame[j].y, viaPointInGobalFrame[j].z);
                     j++;
                 }
-                if (j == viaPointInGobalFrame.size() - 1)
-                    break;
             }
         }
     }

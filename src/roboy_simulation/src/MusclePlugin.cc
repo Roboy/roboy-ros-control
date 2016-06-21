@@ -164,11 +164,11 @@ namespace roboy_simulation {
         viaPointInGobalFrame.clear();
 
 		// get the position and orientation of the links
-		for (auto viaPoint:viaPoints) {
+        for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
 			// absolute position + relative position=actual position of each via point
-			for (uint i = 0; i < viaPoint.second.size(); i++) {
+			for (uint i = 0; i < viaPoint->second.size(); i++) {
                 viaPointInGobalFrame.push_back(
-                        linkPose[viaPoint.first].pos + linkPose[viaPoint.first].rot.RotateVector(viaPoint.second[i]));
+                        linkPose[viaPoint->first].pos + linkPose[viaPoint->first].rot.RotateVector(viaPoint->second[i]));
             }
 		}
 
@@ -210,9 +210,9 @@ namespace roboy_simulation {
         ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
 		// calculate general force (elastic+actuator)
-		for (auto viaPoint:viaPoints) {
+        for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
 			//remove elastic force, this is to be discussed
-			for (uint i = 0; i < viaPoint.second.size(); i++)
+			for (uint i = 0; i < viaPoint->second.size(); i++)
 				force.push_back(tendon.CalculateForce(actuator.elasticForce, actuatorForce, newTendon.Orientation[i]));
 //			this->links[i]->AddForceAtWorldPosition(-force, viaPointPos[i]);
 //			this->links[i + 1]->AddForceAtWorldPosition(force, viaPointPos[i + 1]);
