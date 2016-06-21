@@ -56,7 +56,7 @@ namespace gazebo_ros_control {
             try {
                 if (!*joint) {
                     ROS_ERROR_STREAM("You are trying to initialize a controller for " << resource <<
-                                     "which is not in the gazebo model. Update your sdf file!");
+                                     " which is not in the gazebo model. Update your sdf/urdf files!");
                     continue;
                 } else {
                     ROS_INFO("Loading Muscle Plugin");
@@ -381,11 +381,12 @@ namespace gazebo_ros_control {
         force.clear();
         viaPointInGobalFrame.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            for(auto link : sim_muscles[muscle]->linkPose){
-                sim_muscles[muscle]->linkPose[link.first] = parent_model->GetLink(link.first)->GetWorldPose();
-                    ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link.first].pos.x,
-                                      sim_muscles[muscle]->linkPose[link.first].pos.y,
-                                      sim_muscles[muscle]->linkPose[link.first].pos.z);
+            for(auto link = sim_muscles[muscle]->linkPose.begin();
+                link != sim_muscles[muscle]->linkPose.end(); ++link) {
+                sim_muscles[muscle]->linkPose[link->first] = parent_model->GetLink(link->first)->GetWorldPose();
+                    ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link->first].pos.x,
+                                      sim_muscles[muscle]->linkPose[link->first].pos.y,
+                                      sim_muscles[muscle]->linkPose[link->first].pos.z);
             }
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
             roboy_simulation::Tendon msg;
@@ -406,14 +407,21 @@ namespace gazebo_ros_control {
 
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-            for(auto viaPoint = sim_muscles[muscle]->viaPoints.begin();
-                viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
+            ROS_INFO_THROTTLE(1,"this muscle has %d links with viapoints", sim_muscles[muscle]->viaPoints.size());
+            for(auto viaPoint = sim_muscles[muscle]->viaPoints.begin(); viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
+
+
                 physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
+
+
+                ROS_INFO_THROTTLE(1,"link %s, has %d viapoints", viaPoint->first.c_str(), viaPoint->second.size());
+
                 for (uint i = 0; i < viaPoint->second.size(); i++) {
+
                     link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j]);
-                    ROS_INFO_THROTTLE(1,"force on %s: %.4f %.4f %.4f at %.4f %.4f %.4f", viaPoint->first.c_str(),
-                                      force[j].x, force[j].y, force[j].z,
-                                      viaPointInGobalFrame[j].x, viaPointInGobalFrame[j].y, viaPointInGobalFrame[j].z);
+//                    ROS_DEBUG("force on %s: %.4f %.4f %.4f at %.4f %.4f %.4f", viaPoint->first.c_str(),
+//                                      force[j].x, force[j].y, force[j].z,
+//                                      viaPointInGobalFrame[j].x, viaPointInGobalFrame[j].y, viaPointInGobalFrame[j].z);
                     j++;
                 }
             }
@@ -694,6 +702,7 @@ namespace gazebo_ros_control {
                     string linkname = link_child_it->Attribute("name");
                     if (!linkname.empty()) {
                         TiXmlElement *viaPoint_child_it = NULL;
+                        vector<math::Vector3> viaPoints;
                         for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                              viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
                             float x, y, z;
@@ -701,9 +710,10 @@ namespace gazebo_ros_control {
                                 ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                                 return false;
                             } else {
-                                myoMuscle.viaPoints[linkname].push_back(math::Vector3(x, y, z));
+                                viaPoints.push_back(math::Vector3(x, y, z));
                             }
                         }
+                        myoMuscle.viaPoints[linkname] = viaPoints;
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                                              << myoMuscle.name << "' link element.");
