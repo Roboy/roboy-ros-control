@@ -407,14 +407,10 @@ namespace gazebo_ros_control {
 
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-            ROS_INFO_THROTTLE(1,"this muscle has %d links with viapoints", sim_muscles[muscle]->viaPoints.size());
+//            ROS_INFO_THROTTLE(1,"this muscle has %d links with viapoints", sim_muscles[muscle]->viaPoints.size());
             for(auto viaPoint = sim_muscles[muscle]->viaPoints.begin(); viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
-
-
                 physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
-
-
-                ROS_INFO_THROTTLE(1,"link %s, has %d viapoints", viaPoint->first.c_str(), viaPoint->second.size());
+//                ROS_INFO_THROTTLE(1,"link %s, has %d viapoints", viaPoint->first.c_str(), viaPoint->second.size());
 
                 for (uint i = 0; i < viaPoint->second.size(); i++) {
 
