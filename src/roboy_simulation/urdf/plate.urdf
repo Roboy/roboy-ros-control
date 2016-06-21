@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+<robot name="plate">
+  <joint name="plate__motor0" type="fixed">
+    <parent link="plate__plate"/>
+    <child link="plate__weight"/>
+    <origin rpy="0  0  0" xyz="1.018  0     0.517"/>
+    <axis xyz="0  1  0"/>
+    <limit effort="0.0" lower="0.0" upper="0.0" velocity="0.0"/>
+  </joint>
+  <link name="plate__plate">
+    <inertial>
+      <mass value="13.4708"/>
+      <origin rpy="0  0  0" xyz="0.07517  0       0.41243"/>
+      <inertia ixx="0.480204" ixy="-3.06614e-06" ixz="0.0113382" iyy="0.472612" iyz="-6.11694e-06" izz="0.341787"/>
+    </inertial>
+    <collision name="plate__plate_collision">
+      <origin rpy="0  0  0" xyz="0  0  0"/>
+      <geometry>
+        <mesh filename="package://PATHTOMESHES/cad/plate.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <visual name="plate__plate_visual">
+      <origin rpy="0  0  0" xyz="0  0  0"/>
+      <geometry>
+        <mesh filename="package://PATHTOMESHES/cad/plate.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+  </link>
+  <link name="plate__weight">
+    <inertial>
+      <mass value="10"/>
+      <origin rpy="0  0  0" xyz="-1.018  0    -0.517"/>
+      <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <collision name="plate__collision">
+      <origin rpy="0  0  0" xyz="-1.018  0    -0.517"/>
+      <geometry>
+        <box size=".1 .1 .1"/>
+      </geometry>
+    </collision>
+    <visual name="plate__visual">
+      <origin rpy="0  0  0" xyz="-1.018  0    -0.517"/>
+      <geometry>
+        <box size=".1 .1 .1"/>
+      </geometry>
+    </visual>
+  </link>
+</robot>
