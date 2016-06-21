@@ -39,7 +39,7 @@
             <gravity>1</gravity>
             <pose>0 0 0.2 0 0 0</pose>
             <inertial>
-                <mass>10</mass>
+                <mass>.1</mass>
                 <pose frame=''>0 0 0 0 0 0</pose>
                 <inertia>
                     <ixx>1</ixx>
@@ -79,16 +79,16 @@
             </axis>
         </joint>
 
-        <joint name="motor0" type="continuous">
+        <joint name="motor0" type="prismatic">
             <pose>0 0 0 0 0 0</pose>
             <child>weight</child>
-            <parent>world</parent>
+            <parent>plate</parent>
             <axis>
                 <limit>
                     <lower>-1000</lower>
                     <upper>1000</upper>
                 </limit>
-                <xyz>0 0 1</xyz>
+                <xyz>0.060 0 0.510</xyz>
             </axis>
         </joint>
 
