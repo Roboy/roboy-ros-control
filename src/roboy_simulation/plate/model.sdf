@@ -1,0 +1,37 @@
+<sdf version='1.5'>
+  <model name='plate'>
+    <link name='plate'>
+      <pose frame=''>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.0751723 -4.02734e-06 0.412435 0 -0 0</pose>
+        <mass>13.4708</mass>
+        <inertia>
+          <ixx>0.480204</ixx>
+          <ixy>-3.06614e-06</ixy>
+          <ixz>0.0113382</ixz>
+          <iyy>0.472612</iyy>
+          <iyz>-6.11694e-06</iyz>
+          <izz>0.341787</izz>
+        </inertia>
+      </inertial>
+      <collision name='plate_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://plate/cad/plate.STL</uri>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name='plate_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://plate/cad/plate.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>
