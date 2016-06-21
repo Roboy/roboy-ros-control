@@ -8,7 +8,7 @@ namespace gazebo_ros_control {
         recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
         steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
 
-        tendon_visualizer_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1000);
+        tendon_visualizer_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -382,19 +382,28 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             viaPointInGobalFrame.clear();
             for(auto link : sim_muscles[muscle]->linkPose){
-                sim_muscles[muscle]->linkPose[link.first] = parent_model->GetLink(link.first)->GetWorldCoGPose();
-//                    ROS_INFO_THROTTLE(1, "%f %f %f", sim_muscles[muscle]->linkPose[link.first].pos.x,
-//                                      sim_muscles[muscle]->linkPose[link.first].pos.y,
-//                                      sim_muscles[muscle]->linkPose[link.first].pos.z);
+                sim_muscles[muscle]->linkPose[link.first] = parent_model->GetLink(link.first)->GetWorldPose();
+                    ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link.first].pos.x,
+                                      sim_muscles[muscle]->linkPose[link.first].pos.y,
+                                      sim_muscles[muscle]->linkPose[link.first].pos.z);
             }
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
+            roboy_simulation::Tendon msg;
+            for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
+                geometry_msgs::Vector3 vp;
+                vp.x = viaPointInGobalFrame[i].x;
+                vp.y = viaPointInGobalFrame[i].y;
+                vp.z = viaPointInGobalFrame[i].z;
+                msg.viaPoints.push_back(vp);
+            }
+            tendon_visualizer_pub.publish(msg);
         }
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
         ROS_DEBUG("write simulation");
         // apply the calculated forces
-        roboy_simulation::Tendon msg;
+
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
             for (auto viaPoint:sim_muscles[muscle]->viaPoints) {
@@ -402,17 +411,13 @@ namespace gazebo_ros_control {
                 for (uint i = 0; i < viaPoint.second.size(); i++) {
                     link->AddForceAtWorldPosition(-force[j], viaPointInGobalFrame[j]);
                     link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j + 1]);
-                    ROS_INFO_THROTTLE(1,"%f %f %f", force[j].x, force[j].y, force[j].z);
-                    geometry_msgs::Vector3 vp;
-                    vp.x = viaPointInGobalFrame[j].x; vp.y = viaPointInGobalFrame[j].y; vp.z = viaPointInGobalFrame[j].z;
-                    msg.viaPoints.push_back(vp);
+                    ROS_INFO_THROTTLE(1,"force: %f %f %f", force[j].x, force[j].y, force[j].z);
                     j++;
                 }
                 if (j == viaPointInGobalFrame.size() - 1)
                     break;
             }
         }
-        tendon_visualizer_pub.publish(msg);
     }
 
     void RoboySim::Update() {

@@ -31,7 +31,6 @@
                         <size>.1 .1 .5</size>
                     </box>
                 </geometry>
-                <plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>
             </visual>
         </link>
 
@@ -167,9 +166,10 @@
         <plugin name="roboySim" filename="libroboySim.so">
             <myoMuscle name="elbow">
                 <link name="upper_arm">
-                    <viaPoint>0.0 -0.1 0.0</viaPoint>
-                    <viaPoint>0.0 -0.11 0.0</viaPoint>
                     <viaPoint>0.0 0.0 0.0</viaPoint>
+                </link>
+                <link name="hand">
+                    <viaPoint>0.0 0.5 0.0</viaPoint>
                 </link>
                 <motor>
                     <bemf_constant>0.001488</bemf_constant> <!--V/rpm-->
