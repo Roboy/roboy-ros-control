@@ -20,7 +20,7 @@ namespace gazebo {
         ////////////////////////////////////////////////////////////////////////////////
         // Load the plugin
         void TendonVisualizer::Load(VisualPtr _parent, sdf::ElementPtr _sdf) {
-            this->visual = _parent;
+            visual = _parent;
             // start ros node
             if (!ros::isInitialized()) {
                 int argc = 0;
@@ -31,15 +31,16 @@ namespace gazebo {
 
             ROS_INFO("TENDON IS HERE");
 
-            this->nh = new ros::NodeHandle;
+            nh = new ros::NodeHandle;
 
-            this->tendon_visualizer_sub = this->nh->subscribe("/visual/tendon", 1,
+            tendon_visualizer_sub = nh->subscribe("/visual/tendon", 1,
                                                               &TendonVisualizer::VisualizeTendonAndForce, this);
 
             // Listen to the update event. This event is broadcast every
             // simulation iteration.
-            this->update_connection = event::Events::ConnectRender(
+            update_connection = event::Events::ConnectRender(
                     boost::bind(&TendonVisualizer::UpdateChild, this));
+            
         }
 
         //////////////////////////////////////////////////////////////////////////////////
@@ -51,21 +52,28 @@ namespace gazebo {
         //////////////////////////////////////////////////////////////////////////////////
         // VisualizeForceOnLink
         void TendonVisualizer::VisualizeTendonAndForce(const roboy_simulation::TendonConstPtr &msg) {
-            this->visual->DeleteDynamicLine(this->lines);
-            this->lines = this->visual->CreateDynamicLine(RENDERING_LINE_STRIP);
-            math::Pose worldPose = this->visual->GetWorldPose();
+            visual->DeleteDynamicLine(tendon);
+            tendon = visual->CreateDynamicLine(RENDERING_LINE_STRIP);
             for (uint i = 0; i < msg->viaPoints.size(); i++) {
-                this->lines->AddPoint(
-                        math::Vector3(
-                                msg->viaPoints[i].x,
-                                msg->viaPoints[i].y,
-                                msg->viaPoints[i].z
-                        )
-                );
+                // tendon viapoints
+                math::Vector3 vp = math::Vector3(msg->viaPoints[i].x,msg->viaPoints[i].y,msg->viaPoints[i].z);
+                tendon->AddPoint(vp);
+                // force vectors
+//                this->force_vector->AddPoint(vp);
+//                math::Vector3 f = math::Vector3(msg->force[i].x,msg->force[i].y,msg->force[i].z);
+//                math::Vector3 force_normalized = f.Normalize();
+//                this->force_vector->AddPoint( vp + force_normalized);
+//                double norm = f.GetLength();
+//                std::string text(norm);
+//                this->force_text->SetText()
             }
-            this->lines->setMaterial("Gazebo/Purple");
-            this->lines->setVisibilityFlags(GZ_VISIBILITY_GUI);
-            this->visual->SetVisible(true);
+            tendon->setMaterial("Gazebo/Purple");
+            tendon->setVisibilityFlags(GZ_VISIBILITY_GUI);
+
+//            this->force->setMaterial("Gazebo/Green");
+//            this->force->setVisibilityFlags(GZ_VISIBILITY_GUI);
+
+            visual->SetVisible(true);
         }
 
         // Register this plugin within the simulator
