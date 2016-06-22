@@ -377,6 +377,19 @@ namespace gazebo_ros_control {
         last_write_sim_time_ros = ros::Time();
     }
 
+    math::Vector3 RoboySim::calculateCOM(){
+        physics::Link_V links = parent_model->GetLinks();
+        double mass_total = 0;
+        math::Vector3 COM(0,0,0);
+        for(auto link:links){
+            double m = link->GetInertial()->GetMass();
+            mass_total += m;
+            math::Pose p = link->GetWorldCoGPose();
+            COM += p.pos*m;
+        }
+        return COM/mass_total;
+    }
+
     bool RoboySim::loadControllers(vector<string> controllers) {
         bool controller_loaded = true;
         for (auto controller : controllers) {
