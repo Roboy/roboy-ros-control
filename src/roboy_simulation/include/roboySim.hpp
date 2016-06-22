@@ -73,22 +73,20 @@ namespace gazebo_ros_control {
                      const urdf::Model *const urdf_model,
                      vector<transmission_interface::TransmissionInfo> transmissions){};
 
-		/**
-		 * Read from Simulation
-		 */
+		/** Read from Simulation */
 		void readSim(ros::Time time, ros::Duration period);
 
-		/**
-		 * Write to Simulation
-		 */
+		/** Write to Simulation */
 		void writeSim(ros::Time time, ros::Duration period);
 
+        /** Called at each sim step */
 		void Update();
 
-		// Called on world reset
+        /** Called on world reset */
 		void Reset();
-
 	private:
+        /** calculates the COM */
+        math::Vector3 calculateCOM();
         /*
          * This function loads the controllers registered to the individual joint interfaces
          * @param controllers names of controllers
