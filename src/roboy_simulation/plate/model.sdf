@@ -31,7 +31,7 @@
                         <uri>model://plate/cad/plate.STL</uri>
                     </mesh>
                 </geometry>
-                <plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>
+                <!--<plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>-->
             </visual>
         </link>
 
