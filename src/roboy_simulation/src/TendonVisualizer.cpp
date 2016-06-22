@@ -40,7 +40,7 @@ namespace gazebo {
             // simulation iteration.
             update_connection = event::Events::ConnectRender(
                     boost::bind(&TendonVisualizer::UpdateChild, this));
-            
+
         }
 
         //////////////////////////////////////////////////////////////////////////////////
