@@ -9,6 +9,8 @@
 #include "gazebo/common/Events.hh"
 
 #include "gazebo/rendering/DynamicLines.hh"
+#include "gazebo/rendering/MovableText.hh"
+#include "gazebo/rendering/ArrowVisual.hh"
 #include "gazebo/rendering/RenderTypes.hh"
 #include "gazebo/rendering/Visual.hh"
 #include "gazebo/rendering/Scene.hh"
@@ -18,7 +20,6 @@
 #include <ros/ros.h>
 
 #include <geometry_msgs/Point.h>
-// if you want some positions of the model use this....
 #include <gazebo_msgs/ModelStates.h>
 
 #include <boost/thread.hpp>
@@ -65,8 +66,9 @@ namespace gazebo
             // /// \brief The scene pointer.
             ScenePtr scene;
 
-            /// \brief For example a line to visualize the force
-            DynamicLines *lines;
+            DynamicLines *tendon;
+
+            MovableText *force_text;
 
             /// \Subscribe to some force
             ros::Subscriber tendon_visualizer_sub;

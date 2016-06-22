@@ -205,9 +205,11 @@ namespace gazebo_ros_control {
         ros::Duration gazebo_period(parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize());
 
         // Decide the plugin control period
+        control_period = ros::Duration(0.1);
         if (sdf_->HasElement("controlPeriod")) {
             control_period = ros::Duration(sdf_->Get<double>("controlPeriod"));
 
+            ROS_INFO_STREAM_NAMED("gazebo_ros_control", "Desired controller update period: " << control_period );
             // Check the period against the simulation period
             if (control_period < gazebo_period) {
                 ROS_ERROR_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
@@ -276,105 +278,6 @@ namespace gazebo_ros_control {
         ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
     }
 
-//    bool RoboySim::initSim(const std::string &robot_namespace,
-//                           ros::NodeHandle model_nh,
-//                           gazebo::physics::ModelPtr parent_model,
-//                           const urdf::Model *const urdf_model,
-//                           std::vector<transmission_interface::TransmissionInfo> transmissions) {
-//
-//        ROS_INFO("initializing simulation");
-//
-//        // load a muscleplugin for every transmission
-//        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
-//                                   ("roboy_simulation",
-//                                    "roboy_simulation::MusclePlugin"));
-//
-//        // getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
-//        // parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
-//        const ros::NodeHandle joint_limit_nh(model_nh);
-//
-//        // Resize vectors to our DOF
-//        gazebo::physics::Joint_V joints = parent_model->GetJoints();
-//        numberOfMyoMuscles = myoMuscles.size();
-//        joint_types.resize(numberOfMyoMuscles);
-//        joint_lower_limits.resize(numberOfMyoMuscles);
-//        joint_upper_limits.resize(numberOfMyoMuscles);
-//        joint_effort_limits.resize(numberOfMyoMuscles);
-//        joint_control_methods.resize(numberOfMyoMuscles);
-//        pid_controllers.resize(numberOfMyoMuscles);
-//
-//        sim_muscles.clear();
-//
-//        for(uint i=0; i<numberOfMyoMuscles; i++){
-//            try
-//            {
-//                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
-//                sim_muscles.back()->Init(myoMuscles[i]);
-//
-//                // Get the gazebo joint that corresponds to the robot joint.
-//                gazebo::physics::JointPtr joint = joints[i];
-//                joint_names[i] = joint->GetName();
-//                ROS_INFO_NAMED("initSim", "init joint: %s", joint_names[i].c_str());
-//                if (!joint) {
-//                    ROS_ERROR_STREAM("This robot has a joint named \"" << joint_names[i]
-//                                     << "\" which is not in the gazebo model.");
-//                    return false;
-//                }
-//                sim_joints.push_back(joint);
-//
-//                // connect and register the joint state interface
-//                hardware_interface::JointStateHandle state_handle(joint_names[i], &pos[i], &vel[i], &eff[i]);
-//                jnt_state_interface.registerHandle(state_handle);
-//
-//                hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(joint_names[i]),
-//                                                             &sim_muscles.back()->cmd);
-//
-//                registerJointLimits(joint_names[i], joint_handle, joint_control_methods[i],
-//                                    joint_limit_nh, urdf_model,
-//                                    &joint_types[i], &joint_lower_limits[i], &joint_upper_limits[i],
-//                                    &joint_effort_limits[i]);
-//
-//                if (joint_control_methods[i] != FORCE_CONTROL) {
-//                    // Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
-//                    // joint->SetParam("vel") to control the joint.
-//                    const ros::NodeHandle nh(model_nh, "/gazebo_ros_control/pid_gains/" +
-//                                                       joint_names[i]);
-//                    if (pid_controllers[i].init(nh, true)) {
-//                        switch (joint_control_methods[i]) {
-//                            case POSITION_CONTROL:
-//                                joint_control_methods[i] = POSITION_CONTROL;
-//                                break;
-//                            case VELOCITY_CONTROL:
-//                                joint_control_methods[i] = VELOCITY_CONTROL;
-//                                break;
-//                        }
-//                    }
-//                    else {
-//                        // joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
-//                        // going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
-//                        // going to be called.
-//#if GAZEBO_MAJOR_VERSION > 2
-//                        joint->SetParam("fmax", 0, joint_effort_limits[i]);
-//#else
-//                        joint->SetMaxForce(0, joint_effort_limits[i]);
-//#endif
-//                    }
-//                }
-//            }
-//            catch(pluginlib::PluginlibException& ex)
-//            {
-//                //handle the class failing to load
-//                ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
-//            }
-//        }
-//
-//        // Initialize the emergency stop code.
-//        e_stop_active = false;
-//        last_e_stop_active = false;
-//
-//        return true;
-//    }
-
     void RoboySim::readSim(ros::Time time, ros::Duration period) {
         ROS_DEBUG("read simulation");
         // update muscle plugins
@@ -391,11 +294,15 @@ namespace gazebo_ros_control {
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
             roboy_simulation::Tendon msg;
             for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
-                geometry_msgs::Vector3 vp;
+                geometry_msgs::Vector3 vp, f;
                 vp.x = viaPointInGobalFrame[i].x;
                 vp.y = viaPointInGobalFrame[i].y;
                 vp.z = viaPointInGobalFrame[i].z;
+                f.x = force[i].x;
+                f.y = force[i].y;
+                f.z = force[i].z;
                 msg.viaPoints.push_back(vp);
+                msg.force.push_back(f);
             }
             tendon_visualizer_pub.publish(msg);
         }
