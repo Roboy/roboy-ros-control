@@ -377,15 +377,25 @@ namespace gazebo_ros_control {
         last_write_sim_time_ros = ros::Time();
     }
 
-    math::Vector3 RoboySim::calculateCOM(){
+    math::Vector3 RoboySim::calculateCOM(int type){
         physics::Link_V links = parent_model->GetLinks();
         double mass_total = 0;
         math::Vector3 COM(0,0,0);
         for(auto link:links){
             double m = link->GetInertial()->GetMass();
             mass_total += m;
-            math::Pose p = link->GetWorldCoGPose();
-            COM += p.pos*m;
+            switch(type) {
+                case POSITION: {
+                    math::Pose p = link->GetWorldCoGPose();
+                    COM += p.pos * m;
+                    break;
+                }
+                case VELOCITY: {
+                    math::Vector3 v = link->GetWorldCoGLinearVel();
+                    COM += v * m;
+                    break;
+                }
+            }
         }
         return COM/mass_total;
     }

@@ -86,7 +86,7 @@ namespace gazebo_ros_control {
 		void Reset();
 	private:
         /** calculates the COM */
-        math::Vector3 calculateCOM();
+        math::Vector3 calculateCOM(int type = POSITION);
         /*
          * This function loads the controllers registered to the individual joint interfaces
          * @param controllers names of controllers
@@ -206,5 +206,10 @@ namespace gazebo_ros_control {
 		vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 		vector<math::Vector3> viaPointInGobalFrame, force;
+
+        enum{
+            POSITION = 0,
+            VELOCITY
+        };
 	};
 }
