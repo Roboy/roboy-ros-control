@@ -23,9 +23,8 @@
           <!--args="$(find roboy_simulation)/sdf/armworld.sdf $(find roboy_simulation)/urdf/armworld.urdf"/>-->
 
     <!-- Load the urdf into the ROS Parameter Server -->
-    <param name="robot_description" textfile="$(find roboy_simulation)/urdf/armworld.urdf"/>
+    <param name="robot_description" textfile="$(find roboy_simulation)/urdf/legs_with_muscles_simplified.urdf"/>
 
-    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot-->
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_simulation)/sdf/armworld.sdf -model arm"/>
+          args="-sdf -file $(find roboy_simulation)/legs_with_muscles_simplified/model.sdf -model legs"/>
 </launch>
