@@ -37,30 +37,30 @@ namespace roboy_simulation {
 	const int linkNumber = 3; //later read this number from some table or .txt files
 
 	struct Motor {
-		double current;
-		double torqueConst;
-		double resistance;
-		double inductance;
-		double voltage;
-		double BEMFConst; // back electromagnetic force constant
-		double inertiaMoment;
+		double current = 0.0;
+		double torqueConst = 1.0;
+		double resistance = 0.797;
+		double inductance = 0.118;
+		double voltage = 0.0;
+		double BEMFConst = 0.001488; // back electromagnetic force constant
+		double inertiaMoment = 4.09;
 	};
 
 	struct Gear {
-		double inertiaMoment;
-		double ratio;
-		double efficiency; // gear efficciency
+		double inertiaMoment = 0.4;
+		double ratio = 53;
+		double efficiency = 0.59; // gear efficciency
 		double appEfficiency; // approximated efficiency
 	};
 
 	struct Spindle {
-		double angVel; // angular velocity of the spindle
-		double radius;
+		double angVel = 0.0; // angular velocity of the spindle
+		double radius = 0.005;
 	};
 
 	struct SEE {
-		double stiffness;
-		double length;
+		double stiffness = 1.0;
+		double length = 0.1;
 		double lengthRest;
 	};
 

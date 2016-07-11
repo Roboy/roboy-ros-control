@@ -209,7 +209,7 @@ namespace gazebo_ros_control {
         if (sdf_->HasElement("controlPeriod")) {
             control_period = ros::Duration(sdf_->Get<double>("controlPeriod"));
 
-            ROS_INFO_STREAM_NAMED("gazebo_ros_control", "Desired controller update period: " << control_period );
+            ROS_INFO_STREAM_NAMED("gazebo_ros_control", "Desired controller update period: " << control_period);
             // Check the period against the simulation period
             if (control_period < gazebo_period) {
                 ROS_ERROR_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
@@ -272,7 +272,7 @@ namespace gazebo_ros_control {
 
         urdf_model.initString(urdf_string);
 
-        // Listen to the update event. This event is broadcast every simulation iteration.
+        // Listen to the update event. This event is broadcast every simulation iteration.ros control
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
 
         ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
@@ -284,12 +284,12 @@ namespace gazebo_ros_control {
         force.clear();
         viaPointInGobalFrame.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            for(auto link = sim_muscles[muscle]->linkPose.begin();
-                link != sim_muscles[muscle]->linkPose.end(); ++link) {
+            for (auto link = sim_muscles[muscle]->linkPose.begin();
+                 link != sim_muscles[muscle]->linkPose.end(); ++link) {
                 sim_muscles[muscle]->linkPose[link->first] = parent_model->GetLink(link->first)->GetWorldPose();
-                    ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link->first].pos.x,
-                                      sim_muscles[muscle]->linkPose[link->first].pos.y,
-                                      sim_muscles[muscle]->linkPose[link->first].pos.z);
+                ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link->first].pos.x,
+                                  sim_muscles[muscle]->linkPose[link->first].pos.y,
+                                  sim_muscles[muscle]->linkPose[link->first].pos.z);
             }
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
             roboy_simulation::Tendon msg;
@@ -315,7 +315,8 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
 //            ROS_INFO_THROTTLE(1,"this muscle has %d links with viapoints", sim_muscles[muscle]->viaPoints.size());
-            for(auto viaPoint = sim_muscles[muscle]->viaPoints.begin(); viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
+            for (auto viaPoint = sim_muscles[muscle]->viaPoints.begin();
+                 viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
                 physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
 //                ROS_INFO_THROTTLE(1,"link %s, has %d viapoints", viaPoint->first.c_str(), viaPoint->second.size());
 
@@ -377,14 +378,14 @@ namespace gazebo_ros_control {
         last_write_sim_time_ros = ros::Time();
     }
 
-    math::Vector3 RoboySim::calculateCOM(int type){
+    math::Vector3 RoboySim::calculateCOM(int type) {
         physics::Link_V links = parent_model->GetLinks();
         double mass_total = 0;
-        math::Vector3 COM(0,0,0);
-        for(auto link:links){
+        math::Vector3 COM(0, 0, 0);
+        for (auto link:links) {
             double m = link->GetInertial()->GetMass();
             mass_total += m;
-            switch(type) {
+            switch (type) {
                 case POSITION: {
                     math::Pose p = link->GetWorldCoGPose();
                     COM += p.pos * m;
@@ -397,7 +398,7 @@ namespace gazebo_ros_control {
                 }
             }
         }
-        return COM/mass_total;
+        return COM / mass_total;
     }
 
     bool RoboySim::loadControllers(vector<string> controllers) {
@@ -644,9 +645,10 @@ namespace gazebo_ros_control {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                                              << myoMuscle.name << "' link element.");
                             return false;
-                        }else{
+                        } else {
                             for (auto viaPoint : myoMuscle.viaPoints[linkname]) {
-                                ROS_INFO("%s viaPoint: %lf %lf %lf", linkname.c_str(), viaPoint.x, viaPoint.y, viaPoint.z);
+                                ROS_INFO("%s viaPoint: %lf %lf %lf", linkname.c_str(), viaPoint.x, viaPoint.y,
+                                         viaPoint.z);
                             }
                         }
                     } else {
@@ -719,8 +721,8 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_ERROR_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name << "'.");
-                    return false;
+                    ROS_INFO_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name <<
+                                                    "', using default parameters");
                 }
 
                 TiXmlElement *gear_child = myoMuscle_it->FirstChildElement("gear");
@@ -762,8 +764,8 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_ERROR_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name << "'.");
-                    return false;
+                    ROS_INFO_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name <<
+                                                    "', using default parameters");
                 }
 
                 TiXmlElement *spindle_child = myoMuscle_it->FirstChildElement("spindle");
@@ -781,9 +783,9 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_ERROR_STREAM_NAMED("parser",
-                                           "No spindle element found in myoMuscle '" << myoMuscle.name << "'.");
-                    return false;
+                    ROS_INFO_STREAM_NAMED("parser",
+                                          "No spindle element found in myoMuscle '" << myoMuscle.name <<
+                                          "', using default parameters");
                 }
 
                 TiXmlElement *SEE_child = myoMuscle_it->FirstChildElement("SEE");
@@ -813,12 +815,13 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_ERROR_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name << "'.");
-                    return false;
+                    ROS_INFO_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name <<
+                                                    "', using default parameters");
                 }
 
             } else {
-                ROS_ERROR_STREAM_NAMED("parser", "No name attribute specified for myoMuscle.");
+                ROS_ERROR_STREAM_NAMED("parser",
+                                       "No name attribute specified for myoMuscle, please name the muscle in sdf file");
                 return false;
             }
             myoMuscles.push_back(myoMuscle);
