@@ -205,33 +205,33 @@
         </joint>
 
         <plugin name="roboySim" filename="libroboySim.so">
-            <myoMuscle name="elbow">
+            <myoMuscle name="hip">
                 <link name="hip">
                     <viaPoint>0.0 0.0 0.0</viaPoint>
                 </link>
                 <link name="thigh_left">
                     <viaPoint>0.0 0.5 0.0</viaPoint>
                 </link>
-                <motor>
-                    <bemf_constant>0.001488</bemf_constant> <!--V/rpm-->
-                    <torque_constant>14.2</torque_constant> <!--mNm/A-->
-                    <inductance>0.118</inductance> <!--mH-->
-                    <resistance>0.797</resistance> <!--Ohm-->
-                    <inertiaMoment>4.09</inertiaMoment> <!--gcm^2-->
-                </motor>
-                <gear>
-                    <ratio>53</ratio>
-                    <efficiency>0.59</efficiency>
-                    <inertiaMoment>0.4</inertiaMoment> <!--gcm^2-->
-                </gear>
-                <spindle>
-                    <radius>0.005</radius> <!--m-->
-                </spindle>
-                <SEE>
-                    <stiffness>1.0</stiffness>
-                    <!-- <length>0.5</length> -->
-                    <length>0.1</length>
-                </SEE>
+                <!--<motor>-->
+                    <!--<bemf_constant>0.001488</bemf_constant> &lt;!&ndash;V/rpm&ndash;&gt;-->
+                    <!--<torque_constant>14.2</torque_constant> &lt;!&ndash;mNm/A&ndash;&gt;-->
+                    <!--<inductance>0.118</inductance> &lt;!&ndash;mH&ndash;&gt;-->
+                    <!--<resistance>0.797</resistance> &lt;!&ndash;Ohm&ndash;&gt;-->
+                    <!--<inertiaMoment>4.09</inertiaMoment> &lt;!&ndash;gcm^2&ndash;&gt;-->
+                <!--</motor>-->
+                <!--<gear>-->
+                    <!--<ratio>53</ratio>-->
+                    <!--<efficiency>0.59</efficiency>-->
+                    <!--<inertiaMoment>0.4</inertiaMoment> &lt;!&ndash;gcm^2&ndash;&gt;-->
+                <!--</gear>-->
+                <!--<spindle>-->
+                    <!--<radius>0.005</radius> &lt;!&ndash;m&ndash;&gt;-->
+                <!--</spindle>-->
+                <!--<SEE>-->
+                    <!--<stiffness>1.0</stiffness>-->
+                    <!--&lt;!&ndash; <length>0.5</length> &ndash;&gt;-->
+                    <!--<length>0.1</length>-->
+                <!--</SEE>-->
             </myoMuscle>
         </plugin>
     </model>
