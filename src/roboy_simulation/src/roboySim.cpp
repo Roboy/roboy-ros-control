@@ -8,7 +8,8 @@ namespace gazebo_ros_control {
         recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
         steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
 
-        tendon_visualizer_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
+        visualizeTendon_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
+        visualizeCOM_pub = nh.advertise<geometry_msgs::Vector3>("/visual/COM", 1);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -304,7 +305,7 @@ namespace gazebo_ros_control {
                 msg.viaPoints.push_back(vp);
                 msg.force.push_back(f);
             }
-            tendon_visualizer_pub.publish(msg);
+            visualizeTendon_pub.publish(msg);
         }
     }
 

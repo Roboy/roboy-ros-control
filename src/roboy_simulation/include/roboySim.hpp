@@ -40,6 +40,8 @@
 #include <thread>
 // muscle plugin
 #include "MusclePlugin.hh"
+// tendon msg
+#include "roboy_simulation/Tendon.h"
 
 using namespace std;
 using namespace gazebo;
@@ -159,7 +161,7 @@ namespace gazebo_ros_control {
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
 		ros::Subscriber steer_recording_sub, record_sub, init_sub;
-		ros::Publisher roboy_pub, recordResult_pub, tendon_visualizer_pub;
+		ros::Publisher roboy_pub, recordResult_pub, visualizeTendon_pub, visualizeCOM_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
 

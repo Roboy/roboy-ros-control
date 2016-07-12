@@ -31,6 +31,7 @@
                         <uri>model://legs_with_muscles_simplified/cad/hip.STL</uri>
                     </mesh>
                 </geometry>
+                <plugin name="tendon_visualizer" filename="libtendon_visualizer.so"/>
             </visual>
         </link>
         <link name='thigh_left'>
@@ -102,7 +103,7 @@
                 </geometry>
             </visual>
         </link>
-        <joint name='groin_left' type='revolute'>
+        <joint name='motor0' type='revolute'>
             <child>thigh_left</child>
             <parent>hip</parent>
             <axis>
@@ -187,7 +188,7 @@
                 </geometry>
             </visual>
         </link>
-        <joint name='groin_right' type='revolute'>
+        <joint name='motor1' type='revolute'>
             <child>thigh_right</child>
             <parent>hip</parent>
             <axis>
@@ -204,13 +205,27 @@
             </axis>
         </joint>
 
+        <!--this is fixing the legs to the ground-->
+        <joint name="fixtoworld" type="prismatic">
+            <pose> 0 0 0 0 0 0</pose>
+            <child>hip</child>
+            <parent>world</parent>
+            <axis>
+                <limit>
+                    <lower>0.2</lower>
+                    <upper>0.2</upper>
+                </limit>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+
         <plugin name="roboySim" filename="libroboySim.so">
-            <myoMuscle name="hip">
+            <myoMuscle name="groin_left">
                 <link name="hip">
                     <viaPoint>0.0 0.0 0.0</viaPoint>
                 </link>
                 <link name="thigh_left">
-                    <viaPoint>0.0 0.5 0.0</viaPoint>
+                    <viaPoint>0.0 0.1 0.0</viaPoint>
                 </link>
                 <!--<motor>-->
                     <!--<bemf_constant>0.001488</bemf_constant> &lt;!&ndash;V/rpm&ndash;&gt;-->
@@ -232,6 +247,14 @@
                     <!--&lt;!&ndash; <length>0.5</length> &ndash;&gt;-->
                     <!--<length>0.1</length>-->
                 <!--</SEE>-->
+            </myoMuscle>
+            <myoMuscle name="groin_right">
+                <link name="hip">
+                    <viaPoint>0.0 0.0 0.0</viaPoint>
+                </link>
+                <link name="thigh_right">
+                    <viaPoint>0.0 0.1 0.0</viaPoint>
+                </link>
             </myoMuscle>
         </plugin>
     </model>

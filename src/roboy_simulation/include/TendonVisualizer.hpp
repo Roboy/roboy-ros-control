@@ -21,6 +21,7 @@
 
 #include <geometry_msgs/Point.h>
 #include <gazebo_msgs/ModelStates.h>
+#include <std_msgs/Bool.h>
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -66,15 +67,28 @@ namespace gazebo
             // /// \brief The scene pointer.
             ScenePtr scene;
 
-            DynamicLines *tendon;
+            DynamicLines *tendon, *force;
 
             MovableText *force_text;
 
             /// \Subscribe to some force
-            ros::Subscriber tendon_visualizer_sub;
+            ros::Subscriber tendon_sub, COM_sub, visualizeTendon_sub, visualizeForce_sub, visualizeCOM_sub;
 
-            /// \brief Visualize the force
-            void VisualizeTendonAndForce(const roboy_simulation::TendonConstPtr &msg);
+            bool visualizeTendon_flag = false, visualizeForce_flag = false, visualizeCOM_flag = false;
+
+            /// \brief Render the tendons
+            void RenderTendon(const roboy_simulation::TendonConstPtr &msg);
+            /// \brief Render the forces
+            void RenderForce(const roboy_simulation::TendonConstPtr &msg);
+            /// \brief Render the COM
+            void RenderCOM(const geometry_msgs::Vector3ConstPtr &msg);
+
+            /// \brief Render the tendons
+            void VisualizeTendon(const std_msgs::BoolConstPtr &msg);
+            /// \brief Render the forces
+            void VisualizeForce(const std_msgs::BoolConstPtr &msg);
+            /// \brief Render the COM
+            void VisualizeCOM(const std_msgs::BoolConstPtr &msg);
 
             // Pointer to the update event connection
             event::ConnectionPtr update_connection;
