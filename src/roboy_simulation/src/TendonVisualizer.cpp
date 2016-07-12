@@ -65,7 +65,6 @@ namespace gazebo {
                 }
                 tendon->setMaterial("Gazebo/Purple");
                 tendon->setVisibilityFlags(GZ_VISIBILITY_GUI);
-                visual->SetVisible(true);
             }
             if(visualizeForce_flag){
                 visual->DeleteDynamicLine(force);
@@ -73,14 +72,13 @@ namespace gazebo {
                 for (uint i = 0; i < msg->viaPoints.size(); i++) {
                     // tendon viapoints
                     math::Vector3 vp = math::Vector3(msg->viaPoints[i].x,msg->viaPoints[i].y,msg->viaPoints[i].z);
-                    tendon->AddPoint(vp);
+                    force->AddPoint(vp);
                     math::Vector3 f = math::Vector3(msg->force[i].x,msg->force[i].y,msg->force[i].z);
 //                math::Vector3 force_normalized = f.Normalize();
                     force->AddPoint( vp + f);
                 }
-                tendon->setMaterial("Gazebo/Purple");
-                tendon->setVisibilityFlags(GZ_VISIBILITY_GUI);
-                visual->SetVisible(true);
+                force->setMaterial("Gazebo/Green");
+                force->setVisibilityFlags(GZ_VISIBILITY_GUI);
             }
         }
 
@@ -90,9 +88,13 @@ namespace gazebo {
 
         void TendonVisualizer::VisualizeTendon(const std_msgs::BoolConstPtr &msg){
             visualizeTendon_flag = msg->data;
+            if(!visualizeTendon_flag)
+                visual->DeleteDynamicLine(tendon);
         }
         void TendonVisualizer::VisualizeForce(const std_msgs::BoolConstPtr &msg){
             visualizeForce_flag = msg->data;
+            if(!visualizeTendon_flag)
+                visual->DeleteDynamicLine(force);
         }
         void TendonVisualizer::VisualizeCOM(const std_msgs::BoolConstPtr &msg){
             visualizeCOM_flag = msg->data;
