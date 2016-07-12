@@ -284,6 +284,7 @@ namespace gazebo_ros_control {
         // update muscle plugins
         force.clear();
         viaPointInGobalFrame.clear();
+        roboy_simulation::Tendon msg;
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             for (auto link = sim_muscles[muscle]->linkPose.begin();
                  link != sim_muscles[muscle]->linkPose.end(); ++link) {
@@ -293,7 +294,6 @@ namespace gazebo_ros_control {
                                   sim_muscles[muscle]->linkPose[link->first].pos.z);
             }
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
-            roboy_simulation::Tendon msg;
             for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
                 geometry_msgs::Vector3 vp, f;
                 vp.x = viaPointInGobalFrame[i].x;
@@ -305,8 +305,8 @@ namespace gazebo_ros_control {
                 msg.viaPoints.push_back(vp);
                 msg.force.push_back(f);
             }
-            visualizeTendon_pub.publish(msg);
         }
+        visualizeTendon_pub.publish(msg);
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
