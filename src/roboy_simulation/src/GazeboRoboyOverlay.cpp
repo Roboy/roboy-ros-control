@@ -5,7 +5,6 @@ using namespace gazebo;
 // Register this plugin with the simulator
 GZ_REGISTER_GUI_PLUGIN(GazeboRoboyOverlay)
 
-/////////////////////////////////////////////////
 GazeboRoboyOverlay::GazeboRoboyOverlay()
         : GUIPlugin() {
     this->counter = 0;
@@ -23,12 +22,17 @@ GazeboRoboyOverlay::GazeboRoboyOverlay()
     // Create the layout that sits inside the frame
     QVBoxLayout *frameLayout = new QVBoxLayout();
 
-    // Create a push button, and connect it to the OnButton function
-    QPushButton *button = new QPushButton(tr("Spawn Sphere"));
-    connect(button, SIGNAL(clicked()), this, SLOT(OnButton()));
+    QCheckBox *visualizeTendon = new QCheckBox(tr("show tendon"));
+    connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
+    frameLayout->addWidget(visualizeTendon);
 
-    // Add the button to the frame's layout
-    frameLayout->addWidget(button);
+    QCheckBox *visualizeForce = new QCheckBox(tr("show force"));
+    connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
+    frameLayout->addWidget(visualizeForce);
+
+    QCheckBox *visualizeCOM = new QCheckBox(tr("show COM"));
+    connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
+    frameLayout->addWidget(visualizeCOM);
 
     // Add frameLayout to the frame
     mainFrame->setLayout(frameLayout);
@@ -44,19 +48,31 @@ GazeboRoboyOverlay::GazeboRoboyOverlay()
 
     // Position and resize this widget
     this->move(10, 10);
-    this->resize(120, 30);
+    this->resize(120, 90);
 
     // Create a node for transportation
     this->node = transport::NodePtr(new transport::Node());
     this->node->Init();
     this->factoryPub = this->node->Advertise<msgs::Factory>("~/factory");
+
+    if (!ros::isInitialized()) {
+        int argc = 0;
+        char **argv = NULL;
+        ros::init(argc, argv, "GazeboRoboyOverlay",
+                  ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+    }
+
+    nh = new ros::NodeHandle;
+
+    visualizeTendon_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeTendon", 1);
+    visualizeForce_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeForce", 1);
+    visualizeCOM_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeCOM", 1);
 }
 
-/////////////////////////////////////////////////
 GazeboRoboyOverlay::~GazeboRoboyOverlay() {
+    delete nh;
 }
 
-/////////////////////////////////////////////////
 void GazeboRoboyOverlay::OnButton() {
     msgs::Model model;
     model.set_name("plugin_unit_sphere_" + std::to_string(this->counter++));
@@ -74,4 +90,31 @@ void GazeboRoboyOverlay::OnButton() {
     msgs::Factory msg;
     msg.set_sdf(newModelStr.str());
     this->factoryPub->Publish(msg);
+}
+
+void GazeboRoboyOverlay::showTendon(){
+    static bool showTendonFlag = false;
+    showTendonFlag = !showTendonFlag;
+    std_msgs::Bool msg;
+    msg.data = showTendonFlag;
+    visualizeTendon_pub.publish(msg);
+    ros::spinOnce();
+}
+
+void GazeboRoboyOverlay::showForce(){
+    static bool showForceFlag = false;
+    showForceFlag = !showForceFlag;
+    std_msgs::Bool msg;
+    msg.data = showForceFlag;
+    visualizeForce_pub.publish(msg);
+    ros::spinOnce();
+}
+
+void GazeboRoboyOverlay::showCOM(){
+    static bool showCOMFlag = false;
+    showCOMFlag = !showCOMFlag;
+    std_msgs::Bool msg;
+    msg.data = showCOMFlag;
+    visualizeCOM_pub.publish(msg);
+    ros::spinOnce();
 }

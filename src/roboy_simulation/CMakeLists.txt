@@ -60,4 +60,4 @@ target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_L
 
 QT4_WRAP_CPP(headers_MOC include/GazeboRoboyOverlay.hpp)
 add_library(GazeboRoboyOverlay SHARED ${headers_MOC} src/GazeboRoboyOverlay.cpp)
-target_link_libraries(GazeboRoboyOverlay ${GAZEBO_LIBRARIES} ${QT_LIBRARIES} ${PROTOBUF_LIBRARIES})
+target_link_libraries(GazeboRoboyOverlay ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${QT_LIBRARIES} ${PROTOBUF_LIBRARIES})

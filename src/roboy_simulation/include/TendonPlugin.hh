@@ -30,9 +30,9 @@
   ///  </model>
   ///
   /// \brief This plugin calculates the forces from the electric motor and the elastics element,
-  /// that are connected to the tendon. 
+  /// that are connected to the tendon.
   /// The plugin also applies this force to the points of fixation and insertion of the tendon.
- 
+
 namespace gazebo
 {
   

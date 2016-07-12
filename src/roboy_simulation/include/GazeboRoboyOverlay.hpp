@@ -14,6 +14,7 @@
 #include <ros/advertise_options.h>
 #include <ros/ros.h>
 #include <geometry_msgs/Point.h>
+#include <std_msgs/Bool.h>
 
 // boost
 #include <boost/thread.hpp>
@@ -33,16 +34,20 @@ namespace gazebo {
     Q_OBJECT
 
     public:
-
         GazeboRoboyOverlay();
         virtual ~GazeboRoboyOverlay();
 
     protected slots:
         void OnButton();
+        void showTendon();
+        void showForce();
+        void showCOM();
 
     private:
         unsigned int counter;
         transport::NodePtr node;
         transport::PublisherPtr factoryPub;
+        ros::NodeHandle *nh;
+        ros::Publisher visualizeTendon_pub, visualizeForce_pub, visualizeCOM_pub;
     };
 }
