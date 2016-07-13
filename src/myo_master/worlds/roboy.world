@@ -10,9 +10,9 @@
         </include>
 
         <!-- A ground plane -->
-        <include>
-            <uri>model://ground_plane</uri>
-        </include>
+        <!--<include>-->
+            <!--<uri>model://ground_plane</uri>-->
+        <!--</include>-->
 
         <!-- Focus camera on tall pendulum -->
         <gui fullscreen='0'>
