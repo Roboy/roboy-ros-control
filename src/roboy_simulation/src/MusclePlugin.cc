@@ -161,7 +161,7 @@ namespace roboy_simulation {
 
 		tendonType newTendon;
 
-        viaPointInGobalFrame.clear();
+        vector<math::Vector3> vpg;
 
 		// get the position and orientation of the links
         for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
@@ -169,10 +169,11 @@ namespace roboy_simulation {
 			for (uint i = 0; i < viaPoint->second.size(); i++) {
                 viaPointInGobalFrame.push_back(
                         linkPose[viaPoint->first].pos + linkPose[viaPoint->first].rot.RotateVector(viaPoint->second[i]));
+                vpg.push_back(viaPointInGobalFrame.back());
             }
 		}
 
-		tendon.GetTendonInfo(viaPointInGobalFrame, &newTendon);
+		tendon.GetTendonInfo(vpg, &newTendon);
 
 		// extract info from linkPose
 		tendon.see.length = newTendon.Vector[0].GetLength() + newTendon.Vector[1].GetLength();
@@ -216,18 +217,6 @@ namespace roboy_simulation {
 				force.push_back(tendon.CalculateForce(actuator.elasticForce, actuatorForce, newTendon.Orientation[i]));
 //			this->links[i]->AddForceAtWorldPosition(-force, viaPointPos[i]);
 //			this->links[i + 1]->AddForceAtWorldPosition(force, viaPointPos[i + 1]);
-
-			//update position and orientation, somehow double not accepted, must use double instead. for pricision maybe
-			// TODO: the following would not compile under ros jade and gazebo 5.3, check whats wrong
-//	    msgs::Set(visualMsg[i].mutable_pose(),ignition::math::Pose3d(
-//	    		ignition::math::Vector3d(newTendon.MidPoint[i][0], newTendon.MidPoint[i][1], newTendon.MidPoint[i][2]),
-//	    		ignition::math::Vector3d(newTendon.Roll[i],newTendon.Pitch[i],0)));
-//			msgs::Geometry *geomMsg = visualMsg[i].mutable_geometry();
-
-//			//update length
-//			geomMsg->mutable_cylinder()->set_length(newTendon.Vector[i].GetLength());
-//			visPub->Publish(visualMsg[i]);//show updated visual
-
 		}
 	}
 }
