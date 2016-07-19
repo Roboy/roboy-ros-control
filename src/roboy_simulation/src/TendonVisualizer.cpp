@@ -57,7 +57,7 @@ namespace gazebo {
         void TendonVisualizer::RenderTendon(const roboy_simulation::TendonConstPtr &msg) {
             if(visualizeTendon_flag) {
                 visual->DeleteDynamicLine(tendon);
-                tendon = visual->CreateDynamicLine(RENDERING_LINE_STRIP);
+                tendon = visual->CreateDynamicLine(RENDERING_LINE_LIST);
                 for (uint i = 0; i < msg->viaPoints.size(); i++) {
                     // tendon viapoints
                     math::Vector3 vp = math::Vector3(msg->viaPoints[i].x, msg->viaPoints[i].y, msg->viaPoints[i].z);
