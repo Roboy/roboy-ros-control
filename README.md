@@ -93,6 +93,13 @@ NOTE: in case you want to undo the patch run with -R switch:
 cd path/to/ros_control/src/myomaster/patches
 sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
 ```
+### installation of gazebo qt overlay
+Add the following lines in the file ~/.gazebo/gui.ini:
+```
+#!bash
+[overlay_plugins]
+filenames=libGazeboRoboyOverlay.so
+```
 ### Environmental variables and sourceing
 Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc (adjusting the paths to your system):
 ```
@@ -106,6 +113,7 @@ source /path/to/ros_control/devel/setup.bash
 Then you can build with:
 ```
 #!bash
+source ~/.bashrc
 cd path/to/ros_control
 catkin_make
 ```
@@ -137,19 +145,12 @@ catkin_make
 #!bash
 cd path/to/ros_control
 source devel/setup.bash
-roscore &
 roslaunch myo_master roboy.launch
 ```
 ## with simulated roboy
-### installation of gazebo qt overlay
-Add the following lines in the file ~/.gazebo/gui.ini:
 ```
 #!bash
-[overlay_plugins]
-filenames=libGazeboRoboyOverlay.so
-```
-```
-#!bash
+
 roslaunch myo_master roboySim.launch
 ```
 ## Usage
