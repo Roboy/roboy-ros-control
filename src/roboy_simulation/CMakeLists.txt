@@ -55,7 +55,7 @@ add_dependencies(tendon_visualizer roboy_simulation_gencpp)
 target_link_libraries(tendon_visualizer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
 add_library(roboySim SHARED src/roboySim.cpp)
-add_dependencies(roboySim common_utilities_gencpp roboySim_gencpp)
+add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
 QT4_WRAP_CPP(headers_MOC include/GazeboRoboyOverlay.hpp)
