@@ -38,7 +38,6 @@ namespace gazebo {
         virtual ~GazeboRoboyOverlay();
 
     protected slots:
-        void OnButton();
         void showTendon();
         void showForce();
         void showCOM();
