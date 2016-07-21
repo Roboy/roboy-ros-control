@@ -141,6 +141,13 @@ roscore &
 roslaunch myo_master roboy.launch
 ```
 ## with simulated roboy
+### installation of gazebo qt overlay
+Add the following lines in the file ~/.gazebo/gui.ini:
+```
+#!bash
+[overlay_plugins]
+filenames=libGazeboRoboyOverlay.so
+```
 ```
 #!bash
 roslaunch myo_master roboySim.launch
