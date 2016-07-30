@@ -13,6 +13,7 @@
 #include "gazebo/rendering/ArrowVisual.hh"
 #include "gazebo/rendering/RenderTypes.hh"
 #include "gazebo/rendering/Visual.hh"
+#include "gazebo/rendering/COMVisual.hh"
 #include "gazebo/rendering/Scene.hh"
 
 #include <ros/callback_queue.h>
@@ -70,6 +71,8 @@ namespace gazebo
             DynamicLines *tendon, *force;
 
             MovableText *force_text;
+
+            COMVisualPtr COM;
 
             /// \Subscribe to some force
             ros::Subscriber tendon_sub, COM_sub, visualizeTendon_sub, visualizeForce_sub, visualizeCOM_sub;
