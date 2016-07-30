@@ -308,6 +308,12 @@ namespace gazebo_ros_control {
             msg.force.push_back(f);
         }
         visualizeTendon_pub.publish(msg);
+        math::Vector3 comPosition = calculateCOM(POSITION);
+        geometry_msgs::Vector3 com;
+        com.x = comPosition.x;
+        com.y = comPosition.y;
+        com.z = comPosition.z;
+        visualizeCOM_pub.publish(com);
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {

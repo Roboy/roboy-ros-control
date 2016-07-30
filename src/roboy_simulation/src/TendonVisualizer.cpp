@@ -43,6 +43,13 @@ namespace gazebo {
             update_connection = event::Events::ConnectRender(
                     boost::bind(&TendonVisualizer::UpdateChild, this));
 
+            // create a default link message
+            gazebo::msgs::LinkPtr linkDefaultMsg;
+            linkDefaultMsg.reset(new gazebo::msgs::Link);
+
+            COM = COMVisualPtr( new COMVisual("COM", visual));
+            COM->Load(linkDefaultMsg);
+
             ROS_INFO("Tendonvisualizer initialized");
         }
 
@@ -83,7 +90,16 @@ namespace gazebo {
         }
 
         void TendonVisualizer::RenderCOM(const geometry_msgs::Vector3ConstPtr &msg){
-
+            if(visualizeCOM_flag) {
+//                math::Vector3 pos = math::Vector3(0,0,1);
+//                COM->SetWorldPosition(pos);
+//                math::Vector3 scale = math::Vector3(1,1,1);
+//                COM->SetScale(scale);
+//                COM->ShowCOM(true);
+//                COM->SetVisibilityFlags(GZ_VISIBILITY_GUI);
+//                COM->SetMaterial("Gazebo/Green");
+//                COM->ShowBoundingBox();
+            }
         }
 
         void TendonVisualizer::VisualizeTendon(const std_msgs::BoolConstPtr &msg){
@@ -98,6 +114,10 @@ namespace gazebo {
         }
         void TendonVisualizer::VisualizeCOM(const std_msgs::BoolConstPtr &msg){
             visualizeCOM_flag = msg->data;
+            if(!visualizeCOM_flag) {
+                COM->ShowCOM(false);
+                COM->ToggleVisible();
+            }
         }
 
         // Register this plugin within the simulator
