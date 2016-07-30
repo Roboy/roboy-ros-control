@@ -73,25 +73,6 @@ GazeboRoboyOverlay::~GazeboRoboyOverlay() {
     delete nh;
 }
 
-void GazeboRoboyOverlay::OnButton() {
-    msgs::Model model;
-    model.set_name("plugin_unit_sphere_" + std::to_string(this->counter++));
-    msgs::Set(model.mutable_pose(), ignition::math::Pose3d(0, 0, 1.5, 0, 0, 0));
-    const double mass = 1.0;
-    const double radius = 0.5;
-    msgs::AddSphereLink(model, mass, radius);
-
-    std::ostringstream newModelStr;
-    newModelStr << "<sdf version='" << SDF_VERSION << "'>"
-    << msgs::ModelToSDF(model)->ToString("")
-    << "</sdf>";
-
-    // Send the model to the gazebo server
-    msgs::Factory msg;
-    msg.set_sdf(newModelStr.str());
-    this->factoryPub->Publish(msg);
-}
-
 void GazeboRoboyOverlay::showTendon(){
     static bool showTendonFlag = false;
     showTendonFlag = !showTendonFlag;
