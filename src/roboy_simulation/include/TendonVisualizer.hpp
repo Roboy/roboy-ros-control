@@ -77,21 +77,13 @@ namespace gazebo
             /// \Subscribe to some force
             ros::Subscriber tendon_sub, COM_sub, visualizeTendon_sub, visualizeForce_sub, visualizeCOM_sub;
 
-            bool visualizeTendon_flag = false, visualizeForce_flag = false, visualizeCOM_flag = false;
+            bool visualizeTendon_flag = false;
 
             /// \brief Render the tendons
             void RenderTendon(const roboy_simulation::TendonConstPtr &msg);
-            /// \brief Render the forces
-            void RenderForce(const roboy_simulation::TendonConstPtr &msg);
-            /// \brief Render the COM
-            void RenderCOM(const geometry_msgs::Vector3ConstPtr &msg);
 
             /// \brief Render the tendons
             void VisualizeTendon(const std_msgs::BoolConstPtr &msg);
-            /// \brief Render the forces
-            void VisualizeForce(const std_msgs::BoolConstPtr &msg);
-            /// \brief Render the COM
-            void VisualizeCOM(const std_msgs::BoolConstPtr &msg);
 
             // Pointer to the update event connection
             event::ConnectionPtr update_connection;

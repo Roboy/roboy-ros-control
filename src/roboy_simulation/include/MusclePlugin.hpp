@@ -13,6 +13,7 @@
 // ros
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
+#include <CommunicationData.h>
 // boost
 #include <boost/numeric/odeint.hpp>
 #include <boost/bind.hpp>

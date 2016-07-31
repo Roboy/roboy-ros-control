@@ -1,5 +1,4 @@
-#include <CommunicationData.h>
-#include "MusclePlugin.hh"
+#include "MusclePlugin.hpp"
 
 namespace roboy_simulation {
 

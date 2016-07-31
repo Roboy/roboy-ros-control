@@ -7,9 +7,10 @@ namespace gazebo_ros_control {
         record_sub = nh.subscribe("/roboy/record", 1, &RoboySim::record, this);
         recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
         steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+        roboy_visualization_control_sub = nh.subscribe("/roboy/visualization_control", 10, &RoboySim::visualization_control, this);
 
         visualizeTendon_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
-        visualizeCOM_pub = nh.advertise<geometry_msgs::Vector3>("/visual/COM", 1);
+        marker_visualization_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -63,8 +64,8 @@ namespace gazebo_ros_control {
                     ROS_INFO("Loading Muscle Plugin");
                     sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
                     sim_muscles.back()->Init(myoMuscles[i]);
+                    sim_joints.push_back(*joint);
                 }
-                sim_joints.push_back(*joint);
             }
             catch (pluginlib::PluginlibException &ex) {
                 //handle the class failing to load
@@ -273,7 +274,7 @@ namespace gazebo_ros_control {
 
         urdf_model.initString(urdf_string);
 
-        // Listen to the update event. This event is broadcast every simulation iteration.ros control
+        // Listen to the update event. This event is broadcast every simulation iteration.
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
 
         ROS_INFO_NAMED("gazebo_ros_control", "Loaded gazebo_ros_control.");
@@ -294,26 +295,13 @@ namespace gazebo_ros_control {
             }
             sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
         }
-        // publish tendon and force
-        roboy_simulation::Tendon msg;
-        for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
-            geometry_msgs::Vector3 vp, f;
-            vp.x = viaPointInGobalFrame[i].x;
-            vp.y = viaPointInGobalFrame[i].y;
-            vp.z = viaPointInGobalFrame[i].z;
-            f.x = force[i].x;
-            f.y = force[i].y;
-            f.z = force[i].z;
-            msg.viaPoints.push_back(vp);
-            msg.force.push_back(f);
-        }
-        visualizeTendon_pub.publish(msg);
+        if(visualizeTendon)
+            publishTendon();
+        if(visualizeForce)
+            publishForce();
+
         math::Vector3 comPosition = calculateCOM(POSITION);
-        geometry_msgs::Vector3 com;
-        com.x = comPosition.x;
-        com.y = comPosition.y;
-        com.z = comPosition.z;
-        visualizeCOM_pub.publish(com);
+
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
@@ -354,7 +342,8 @@ namespace gazebo_ros_control {
             last_update_sim_time_ros = sim_time_ros;
 
             // Update the robot simulation with the state of the gazebo model
-            readSim(sim_time_ros, sim_period);
+            if(initialized)
+                readSim(sim_time_ros, sim_period);
 
             // Compute the controller commands
             bool reset_ctrlrs;
@@ -376,7 +365,8 @@ namespace gazebo_ros_control {
 
         // Update the gazebo model with the result of the controller
         // computation
-        writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
+        if(initialized)
+            writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
         last_write_sim_time_ros = sim_time_ros;
     }
 
@@ -384,6 +374,96 @@ namespace gazebo_ros_control {
         // Reset timing variables to not pass negative update periods to controllers on world reset
         last_update_sim_time_ros = ros::Time();
         last_write_sim_time_ros = ros::Time();
+    }
+
+    void RoboySim::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg){
+        switch (msg->control){
+            case Tendon:{
+                visualizeTendon = msg->value;
+                break;
+            }
+            case COM:{
+                visualizeCOM = msg->value;
+                break;
+            }
+            case Force:{
+                visualizeForce = msg->value;
+                break;
+            }
+        }
+    }
+
+    void RoboySim::publishTendon(){
+        visualization_msgs::Marker line_list;
+        line_list.header.frame_id = "world";
+        line_list.header.stamp = ros::Time::now();
+        line_list.ns = "tendon";
+        line_list.action = visualization_msgs::Marker::ADD;
+        line_list.pose.orientation.w = 1.0;
+        line_list.id = 0;
+        line_list.type = visualization_msgs::Marker::LINE_LIST;
+        line_list.scale.x = 0.003;
+        // Line list is red
+        line_list.color.r = 1.0;
+        line_list.color.a = 1.0;
+
+        roboy_simulation::Tendon msg;
+        for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
+            geometry_msgs::Vector3 vp;
+            vp.x = viaPointInGobalFrame[i].x;
+            vp.y = viaPointInGobalFrame[i].y;
+            vp.z = viaPointInGobalFrame[i].z;
+            msg.viaPoints.push_back(vp);
+
+            geometry_msgs::Point p;
+            p.x = viaPointInGobalFrame[i].x;
+            p.y = viaPointInGobalFrame[i].y;
+            p.z = viaPointInGobalFrame[i].z;
+            line_list.points.push_back(p);
+        }
+        visualizeTendon_pub.publish(msg);
+        marker_visualization_pub.publish(line_list);
+    }
+
+    void RoboySim::publishCOM(){
+
+    }
+
+    void RoboySim::publishForce(){
+        visualization_msgs::Marker arrow;
+        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+        arrow.header.frame_id = "world";
+        arrow.ns = "force";
+        arrow.type = visualization_msgs::Marker::ARROW;
+        arrow.color.r = 0.0f;
+        arrow.color.g = 1.0f;
+        arrow.color.b = 0.0f;
+        arrow.color.a = 1.0;
+        arrow.lifetime = ros::Duration();
+        arrow.scale.x = 0.005;
+        arrow.scale.y = 0.005;
+        arrow.scale.z = 0.1;
+
+        for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
+            arrow.id = i;
+            if(fabs(force[i].GetSquaredLength())>0.0) {
+                arrow.action = visualization_msgs::Marker::ADD;
+                arrow.header.stamp = ros::Time::now();
+                arrow.points.clear();
+                geometry_msgs::Point p;
+                p.x = viaPointInGobalFrame[i].x;
+                p.y = viaPointInGobalFrame[i].y;
+                p.z = viaPointInGobalFrame[i].z;
+                arrow.points.push_back(p);
+                p.x += force[i].x;
+                p.y += force[i].y;
+                p.z += force[i].z;
+                arrow.points.push_back(p);
+            }else{
+                arrow.action = visualization_msgs::Marker::DELETE;
+            }
+            marker_visualization_pub.publish(arrow);
+        }
     }
 
     math::Vector3 RoboySim::calculateCOM(int type) {

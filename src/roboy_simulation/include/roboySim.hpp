@@ -25,8 +25,8 @@
 #include <joint_limits_interface/joint_limits_interface.h>
 #include <joint_limits_interface/joint_limits_rosparam.h>
 #include <joint_limits_interface/joint_limits_urdf.h>
-#include <roboy_simulation/Tendon.h>
 #include <geometry_msgs/Vector3.h>
+#include <visualization_msgs/Marker.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -39,9 +39,10 @@
 #include <vector>
 #include <thread>
 // muscle plugin
-#include "MusclePlugin.hh"
-// tendon msg
+#include "MusclePlugin.hpp"
+// messages
 #include "roboy_simulation/Tendon.h"
+#include "roboy_simulation/VisualizationControl.h"
 
 using namespace std;
 using namespace gazebo;
@@ -88,6 +89,14 @@ namespace gazebo_ros_control {
         /** Called on world reset */
 		void Reset();
 	private:
+        void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
+
+        void publishTendon();
+
+        void publishCOM();
+
+        void publishForce();
+
         /** calculates the COM */
         math::Vector3 calculateCOM(int type = POSITION);
         /*
@@ -160,8 +169,8 @@ namespace gazebo_ros_control {
 		hardware_interface::VelocityJointInterface jnt_vel_interface;
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
-		ros::Subscriber steer_recording_sub, record_sub, init_sub;
-		ros::Publisher roboy_pub, recordResult_pub, visualizeTendon_pub, visualizeCOM_pub;
+		ros::Subscriber steer_recording_sub, record_sub, init_sub, roboy_visualization_control_sub;
+		ros::Publisher roboy_pub, recordResult_pub, visualizeTendon_pub, marker_visualization_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
 
@@ -214,5 +223,13 @@ namespace gazebo_ros_control {
             POSITION = 0,
             VELOCITY
         };
-	};
+
+        enum{
+            Tendon,
+            COM,
+            Force
+        }visualization;
+
+        bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false;
+    };
 }
