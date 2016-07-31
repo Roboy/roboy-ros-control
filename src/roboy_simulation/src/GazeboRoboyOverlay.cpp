@@ -26,14 +26,6 @@ GazeboRoboyOverlay::GazeboRoboyOverlay()
     connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
     frameLayout->addWidget(visualizeTendon);
 
-    QCheckBox *visualizeForce = new QCheckBox(tr("show force"));
-    connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
-    frameLayout->addWidget(visualizeForce);
-
-    QCheckBox *visualizeCOM = new QCheckBox(tr("show COM"));
-    connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
-    frameLayout->addWidget(visualizeCOM);
-
     // Add frameLayout to the frame
     mainFrame->setLayout(frameLayout);
 
@@ -79,23 +71,5 @@ void GazeboRoboyOverlay::showTendon(){
     std_msgs::Bool msg;
     msg.data = showTendonFlag;
     visualizeTendon_pub.publish(msg);
-    ros::spinOnce();
-}
-
-void GazeboRoboyOverlay::showForce(){
-    static bool showForceFlag = false;
-    showForceFlag = !showForceFlag;
-    std_msgs::Bool msg;
-    msg.data = showForceFlag;
-    visualizeForce_pub.publish(msg);
-    ros::spinOnce();
-}
-
-void GazeboRoboyOverlay::showCOM(){
-    static bool showCOMFlag = false;
-    showCOMFlag = !showCOMFlag;
-    std_msgs::Bool msg;
-    msg.data = showCOMFlag;
-    visualizeCOM_pub.publish(msg);
     ros::spinOnce();
 }

@@ -32,11 +32,8 @@ namespace gazebo {
             nh = new ros::NodeHandle;
 
             tendon_sub = nh->subscribe("/visual/tendon", 1, &TendonVisualizer::RenderTendon, this);
-            COM_sub = nh->subscribe("/visual/COM", 1, &TendonVisualizer::RenderCOM, this);
 
             visualizeTendon_sub = nh->subscribe("/visual/visualizeTendon", 1, &TendonVisualizer::VisualizeTendon, this);
-            visualizeForce_sub = nh->subscribe("/visual/visualizeForce", 1, &TendonVisualizer::VisualizeForce, this);
-            visualizeCOM_sub = nh->subscribe("/visual/visualizeCOM", 1, &TendonVisualizer::VisualizeCOM, this);
 
             // Listen to the update event. This event is broadcast every
             // simulation iteration.
@@ -73,51 +70,12 @@ namespace gazebo {
                 tendon->setMaterial("Gazebo/Purple");
                 tendon->setVisibilityFlags(GZ_VISIBILITY_GUI);
             }
-            if(visualizeForce_flag){
-                visual->DeleteDynamicLine(force);
-                force = visual->CreateDynamicLine(RENDERING_LINE_LIST);
-                for (uint i = 0; i < msg->viaPoints.size(); i++) {
-                    // tendon viapoints
-                    math::Vector3 vp = math::Vector3(msg->viaPoints[i].x,msg->viaPoints[i].y,msg->viaPoints[i].z);
-                    force->AddPoint(vp);
-                    math::Vector3 f = math::Vector3(msg->force[i].x,msg->force[i].y,msg->force[i].z);
-//                math::Vector3 force_normalized = f.Normalize();
-                    force->AddPoint( vp + f);
-                }
-                force->setMaterial("Gazebo/Green");
-                force->setVisibilityFlags(GZ_VISIBILITY_GUI);
-            }
-        }
-
-        void TendonVisualizer::RenderCOM(const geometry_msgs::Vector3ConstPtr &msg){
-            if(visualizeCOM_flag) {
-//                math::Vector3 pos = math::Vector3(0,0,1);
-//                COM->SetWorldPosition(pos);
-//                math::Vector3 scale = math::Vector3(1,1,1);
-//                COM->SetScale(scale);
-//                COM->ShowCOM(true);
-//                COM->SetVisibilityFlags(GZ_VISIBILITY_GUI);
-//                COM->SetMaterial("Gazebo/Green");
-//                COM->ShowBoundingBox();
-            }
         }
 
         void TendonVisualizer::VisualizeTendon(const std_msgs::BoolConstPtr &msg){
             visualizeTendon_flag = msg->data;
             if(!visualizeTendon_flag)
                 visual->DeleteDynamicLine(tendon);
-        }
-        void TendonVisualizer::VisualizeForce(const std_msgs::BoolConstPtr &msg){
-            visualizeForce_flag = msg->data;
-            if(!visualizeTendon_flag)
-                visual->DeleteDynamicLine(force);
-        }
-        void TendonVisualizer::VisualizeCOM(const std_msgs::BoolConstPtr &msg){
-            visualizeCOM_flag = msg->data;
-            if(!visualizeCOM_flag) {
-                COM->ShowCOM(false);
-                COM->ToggleVisible();
-            }
         }
 
         // Register this plugin within the simulator

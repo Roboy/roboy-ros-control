@@ -39,8 +39,6 @@ namespace gazebo {
 
     protected slots:
         void showTendon();
-        void showForce();
-        void showCOM();
 
     private:
         unsigned int counter;

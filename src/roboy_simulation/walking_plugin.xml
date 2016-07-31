@@ -1,0 +1,9 @@
+<library path="libroboy_rviz">
+  <class name="WalkingPlugin"
+         type="WalkingPlugin"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget for roboy legs simulation
+    </description>
+  </class>
+</library>

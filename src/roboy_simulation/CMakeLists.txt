@@ -19,13 +19,14 @@ include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs geometry_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs geometry_msgs message_generation rviz)
 
 add_message_files(
         DIRECTORY
         msgs
         FILES
-	Tendon.msg
+	    Tendon.msg
+        VisualizationControl.msg
 )
 
 generate_messages( DEPENDENCIES std_msgs geometry_msgs )
@@ -41,14 +42,8 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED src/MusclePlugin.cc)
+add_library(muscle_plugin SHARED src/MusclePlugin.cpp)
 target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
-
-add_library(tendon_plugin SHARED src/TendonPlugin.cc)
-target_link_libraries(tendon_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
-
-add_library(actuator_plugin SHARED src/ActuatorPlugin.cc)
-target_link_libraries(actuator_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${ARMADILLO_LIBRARIES} )
 
 add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
 add_dependencies(tendon_visualizer roboy_simulation_gencpp)
@@ -61,3 +56,8 @@ target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_L
 QT4_WRAP_CPP(headers_MOC include/GazeboRoboyOverlay.hpp)
 add_library(GazeboRoboyOverlay SHARED ${headers_MOC} src/GazeboRoboyOverlay.cpp)
 target_link_libraries(GazeboRoboyOverlay ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${QT_LIBRARIES} ${PROTOBUF_LIBRARIES})
+
+qt4_wrap_cpp(MOC_FILES include/walking_plugin.hpp )
+add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
+add_dependencies(roboy_rviz roboy_simulation_gencpp)
+target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})
