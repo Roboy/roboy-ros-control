@@ -299,8 +299,8 @@ namespace gazebo_ros_control {
             publishTendon();
         if(visualizeForce)
             publishForce();
-
-        math::Vector3 comPosition = calculateCOM(POSITION);
+        if(visualizeCOM)
+            publishCOM();
 
     }
 
@@ -426,7 +426,29 @@ namespace gazebo_ros_control {
     }
 
     void RoboySim::publishCOM(){
-
+        visualization_msgs::Marker sphere;
+        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+        sphere.header.frame_id = "world";
+        sphere.ns = "force";
+        sphere.type = visualization_msgs::Marker::SPHERE;
+        sphere.color.r = 0.0f;
+        sphere.color.g = 0.0f;
+        sphere.color.b = 1.0f;
+        sphere.color.a = 1.0;
+        sphere.lifetime = ros::Duration();
+        sphere.scale.x = 0.1;
+        sphere.scale.y = 0.1;
+        sphere.scale.z = 0.1;
+        sphere.action = visualization_msgs::Marker::ADD;
+        sphere.header.stamp = ros::Time::now();
+        sphere.points.clear();
+        geometry_msgs::Point p;
+        math::Vector3 comPosition = calculateCOM(POSITION);
+        p.x = comPosition.x;
+        p.y = comPosition.y;
+        p.z = comPosition.z;
+        sphere.points.push_back(p);
+        marker_visualization_pub.publish(sphere);
     }
 
     void RoboySim::publishForce(){
