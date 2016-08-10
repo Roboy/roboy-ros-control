@@ -31,4 +31,6 @@
     <!-- the following two nodes transform gazebo link_states to rviz marker/tf -->
     <include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />
     <include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />
+
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
 </launch>
