@@ -204,3 +204,18 @@ cd path/to/ros_control
 doxygen Doxyfile
 ```
 The documentation is put into the doc folder.
+
+# docker 
+This repo is build into a docker image. Please follow the [docker install instructions](https://docs.docker.com/engine/installation/) for your system.
+You can run eg the simulation with the following commands:
+```
+#!bash
+xhost +local:root
+docker run -it --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" letrend/ros_control:devel roslaunch myo_master roboySim.launch
+```
+The xhost command enables GUI rendering, please check this [page](http://wiki.ros.org/docker/Tutorials/GUI) for alternatives.
+The docker run command downloads the image and runs the following commands. Once you are done, disable xhost with:
+```
+#!bash
+xhost -local:root
+```
