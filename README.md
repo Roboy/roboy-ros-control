@@ -207,6 +207,7 @@ The documentation is put into the doc folder.
 
 # docker 
 This repo is build into a docker image. Please follow the [docker install instructions](https://docs.docker.com/engine/installation/) for your system.
+## usage
 You can run eg the simulation with the following commands:
 ```
 #!bash
@@ -218,4 +219,11 @@ The docker run command downloads the image and runs the following commands. Once
 ```
 #!bash
 xhost -local:root
+```
+## build
+You can also build your own docker image, using the Dockerfile in the repo with the following command:
+```
+#!bash
+cd path/to/ros_control
+docker build -t ros_control .
 ```
