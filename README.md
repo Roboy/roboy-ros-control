@@ -80,18 +80,18 @@ git submodule update
 
 ## Build
 Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
-Additionally you need to patch two typedefs of the gazebo stuff, because they are incompatible with ftd2xx.h (or rather with the WinTypes.h, ftd2xx.h uses).
+Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
 ```
 #!bash
 cd path/to/ros_control/src/myomaster/patches
-diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff
-sudo patch /usr/include/FreeImage.h < FreeImage.diff
+diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff
+sudo patch /usr/include/WinTypes.h < WinTypes.diff
 ```
 NOTE: in case you want to undo the patch run with -R switch:
 ```
 #!bash
 cd path/to/ros_control/src/myomaster/patches
-sudo patch -R /usr/include/FreeImage.h < FreeImage.diff
+sudo patch -R /usr/include/WinTypes.h < WinTypes.diff
 ```
 ### installation of gazebo qt overlay
 Add the following lines in the file ~/.gazebo/gui.ini:
