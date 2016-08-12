@@ -31,7 +31,6 @@ override_dh_auto_configure:
 		-DCATKIN_BUILD_BINARY_PACKAGE="1" \
 		-DCMAKE_INSTALL_PREFIX="/opt/ros/indigo" \
 		-DCMAKE_PREFIX_PATH="/opt/ros/indigo"
-	dpkg -i ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx_1.1.12_amd64.deb
 
 override_dh_auto_build:
 	# In case we're installing to a non-standard location, look for a setup.sh
