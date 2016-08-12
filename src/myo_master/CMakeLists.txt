@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(myo_master)
 
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../flexrayusbinterface/cmake)
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/devel/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/devel/${PROJECT_NAME})
 
@@ -13,6 +15,8 @@ SET(CMAKE_BUILD_TYPE Debug)
 find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
 catkin_package(CATKIN_DEPENDS message_runtime)
 
+find_package(libftd2xx)
+
 include_directories(
 	${catkin_INCLUDE_DIRS} 
 	include/ 
@@ -24,4 +28,4 @@ include_directories(
 #==============================================================================
 add_executable(multiJoint src/main.cpp src/roboy.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
 add_dependencies(multiJoint common_utilities_gencpp)
-target_link_libraries(multiJoint ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} -lftd2xx)
+target_link_libraries(multiJoint ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libftd2xx_LIBRARY} -ldl -lpthread)

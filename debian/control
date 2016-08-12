@@ -2,12 +2,12 @@ Source: roboy-ros-control
 Section: misc
 Priority: extra
 Maintainer: Simon Trendel <simon.trendel@tum.de>
-Build-Depends: debhelper (>= 9.0.0), ros-indigo-angles, ros-indigo-catkin, ros-indigo-message-generation, ros-indigo-message-runtime, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-std-msgs, ros-indigo-urdf, ros-indigo-genmsg, ros-indigo-rospy, ros-control
+Build-Depends: debhelper (>= 9.0.0), ros-indigo-angles, ros-indigo-catkin, ros-indigo-message-generation, ros-indigo-message-runtime, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-std-msgs, ros-indigo-urdf, ros-indigo-genmsg, ros-indigo-rospy, ros-indigo-std-srvs, ros-control
 Homepage: 
 Standards-Version: 3.9.5
 
 Package: roboy-ros-control
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, ros-indigo-angles, ros-indigo-catkin, ros-indigo-message-generation, ros-indigo-message-runtime, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-std-msgs, ros-indigo-urdf, ros-indigo-genmsg, ros-indigo-rospy, ros-control
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-indigo-angles, ros-indigo-catkin, ros-indigo-message-generation, ros-indigo-message-runtime, ros-indigo-pluginlib, ros-indigo-roscpp, ros-indigo-std-msgs, ros-indigo-urdf, ros-indigo-genmsg, ros-indigo-rospy, ros-indigo-std-srvs, ros-control
 Description: package for controlling roboy with myo_muscles
  via flexray usb interface
