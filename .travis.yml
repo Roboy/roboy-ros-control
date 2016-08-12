@@ -1,0 +1,32 @@
+# Use ubuntu trusty (14.04) with sudo privileges.
+dist: trusty
+sudo: required
+language:
+  - generic
+cache:
+  - apt
+
+env:
+  global:
+    - ROS_CI_DESKTOP="`lsb_release -cs`"  # e.g. [precise|trusty|...]
+    - ROS_PARALLEL_JOBS='-j8 -l6'
+
+script:
+  - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update -qq
+  - mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/ros_control && cd ros_control && git checkout travis_integration && git submodule init && git submodule update
+  - cd ~/workspace/ros_control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb && cd ~/workspace/ros_control/src/myo_master/patches && diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff && sudo patch /usr/include/WinTypes.h < WinTypes.diff
+  - sudo apt-get install -y ros-jade-desktop
+  - sudo apt-get install -y ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
+  - sudo bash -c 'curl -ssL http://get.gazebosim.org | sh'
+  - sudo apt-get install -y ros-jade-driver-base ros-jade-polled-camera ros-jade-camera-info-manager
+  - mkdir -p ~/ros_ws/src && cd ~/ros_ws/src && git clone https://github.com/ros-simulation/gazebo_ros_pkgs && cd gazebo_ros_pkgs && git checkout jade-devel
+  - cd ~/ros_ws/src &&  git clone https://github.com/andreasBihlmaier/gazebo2rviz.git && git clone https://github.com/andreasBihlmaier/pysdf
+  - cd ~/ros_ws && sudo bash -c 'source /opt/ros/jade/setup.bash && catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release'
+  - source /opt/ros/jade/setup.bash
+  - cd ~/workspace/ros_control
+  - catkin_make --pkg common_utilities
+  - source devel/setup.bash
+  - catkin_make
+  - source devel/setup.bash
