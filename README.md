@@ -17,6 +17,7 @@ sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo-ros-control
 sudo add-apt-repository -y ppa:letrend/ros-indigo-pysdf
 sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo2rviz
 sudo add-apt-repository -y ppa:letrend/roboy-ros-control
+sudo apt-get update
 ```
 ### install gazebo5
 If you dont have gazebo5 already installed on you system:
