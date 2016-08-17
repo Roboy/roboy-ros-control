@@ -2,7 +2,8 @@
 Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
 If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
 # Installation from launchpad ppa
-## add the ppas to your apt source list
+Please note, that this version assumes [ROS indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) to be installed on your system.
+### add the ppas to your apt source list
 ```
 #!bash
 sudo add-apt-repository -y ppa:letrend/ros-indigo-controller-interface
@@ -17,15 +18,28 @@ sudo add-apt-repository -y ppa:letrend/ros-indigo-pysdf
 sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo2rviz
 sudo add-apt-repository -y ppa:letrend/roboy-ros-control
 ```
-## install
+### install gazebo5
+If you dont have gazebo5 already installed on you system:
 ```
 #!bash
-sudo add-get install ros-indigo-gazebo-ros
-sudo add-get install ros-indigo-pysdf
-sudo add-get install ros-indigo-gazebo2rviz
-sudo add-get install roboy-ros-control
+sudo apt-get install gazebo5 libgazebo5-dev
 ```
-
+### install
+```
+#!bash
+sudo apt-get install ros-indigo-gazebo-ros
+sudo apt-get install ros-indigo-pysdf
+sudo apt-get install ros-indigo-gazebo2rviz
+sudo apt-get install roboy-ros-control
+```
+NOTE: if the installation of ros-indigo-gazebo-ros falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros/+packages) with the Ubuntu Software Center and install it.
+### symlink to meshes
+For gazebo to find the meshes, create a symlink:
+```
+#!bash
+mkdir ~/.gazebo/models
+ln -s /opt/ros/indigo/share/roboy_simulation/legs_with_muscles_simplified ~/.gazebo/models/
+```
 # Building from source #
 The following instructions guide you through the process of building this repo from source.
 ## Dependencies
@@ -71,7 +85,7 @@ sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager r
 #### install gazebo5 and gazebo-ros-pkgs
 ```
 #!bash
-sudo apt-get install libgazebo5-dev
+sudo apt-get install gazebo5 libgazebo5-dev 
 sudo apt-get install ros-jade-gazebo-ros-pkgs
 ```
 You should try to run gazebo now, to make sure its working. 
