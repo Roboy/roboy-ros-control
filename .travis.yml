@@ -15,7 +15,7 @@ script:
   - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
   - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
   - sudo apt-get update -qq
-  - mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/ros_control && cd ros_control && git checkout travis_integration && git submodule init && git submodule update
+  - mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/ros_control && cd ros_control && git checkout develop && git submodule init && git submodule update
   - cd ~/workspace/ros_control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb && cd ~/workspace/ros_control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h && sudo cp WinTypes.h /usr/include/
   - sudo apt-get install -y ros-jade-desktop
   - sudo apt-get install -y ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
