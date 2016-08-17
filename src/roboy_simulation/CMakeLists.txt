@@ -84,3 +84,8 @@ install(DIRECTORY
 	urdf/	
  	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
 )
+
+install(DIRECTORY 
+	legs_with_muscles_simplified/	
+ 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/legs_with_muscles_simplified
+)

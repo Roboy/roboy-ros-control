@@ -32,6 +32,8 @@ override_dh_auto_configure:
 		-DCMAKE_INSTALL_PREFIX="/opt/ros/indigo" \
 		-DCMAKE_PREFIX_PATH="/opt/ros/indigo"
 	tar -xf ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6.tgz -C ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6 --strip-components=1
+	wget https://syncandshare.lrz.de/dl/fiF921kgykJu1gBJdY4Zv1y2/.zip
+	unzip .zip && tar -xf legs_with_muscles_simplified.tgz -C ${CURDIR}/src/roboy_simulation
 
 override_dh_auto_build:
 	# In case we're installing to a non-standard location, look for a setup.sh
