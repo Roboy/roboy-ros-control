@@ -1,6 +1,31 @@
 ## Description ##
 Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
 If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
+# Installation from launchpad ppa
+## add the ppas to your apt source list
+```
+#!bash
+sudo add-apt-repository -y ppa:letrend/ros-indigo-controller-interface
+sudo add-apt-repository -y ppa:letrend/ros-indigo-controller-manager
+sudo add-apt-repository -y ppa:letrend/ros-indigo-hardware-interface
+sudo add-apt-repository -y ppa:letrend/ros-indigo-control-toolbox
+sudo add-apt-repository -y ppa:letrend/ros-indigo-transmission-interface
+sudo add-apt-repository -y ppa:letrend/ros-indigo-joint-limits-interface
+sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo-ros
+sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo-ros-control
+sudo add-apt-repository -y ppa:letrend/ros-indigo-pysdf
+sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo2rviz
+sudo add-apt-repository -y ppa:letrend/roboy-ros-control
+```
+## install
+```
+#!bash
+sudo add-get install ros-indigo-gazebo-ros
+sudo add-get install ros-indigo-pysdf
+sudo add-get install ros-indigo-gazebo2rviz
+sudo add-get install roboy-ros-control
+```
+
 # Building from source #
 The following instructions guide you through the process of building this repo from source.
 ## Dependencies
