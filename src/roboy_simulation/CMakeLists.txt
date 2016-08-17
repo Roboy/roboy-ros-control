@@ -61,3 +61,21 @@ qt4_wrap_cpp(MOC_FILES include/walking_plugin.hpp )
 add_library(roboy_rviz src/walking_plugin.cpp ${MOC_FILES})
 add_dependencies(roboy_rviz roboy_simulation_gencpp)
 target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})
+#==============================================================================
+# Installation
+#==============================================================================
+install(TARGETS
+	muscle_plugin
+	tendon_visualizer
+	roboySim
+	GazeboRoboyOverlay
+	roboy_rviz    
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+install(FILES 
+	package.xml
+	muscle_plugin.xml
+	walking_plugin.xml
+ 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)

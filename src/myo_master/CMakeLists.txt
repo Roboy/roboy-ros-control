@@ -29,3 +29,26 @@ include_directories(
 add_executable(multiJoint src/main.cpp src/roboy.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
 add_dependencies(multiJoint common_utilities_gencpp)
 target_link_libraries(multiJoint ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libftd2xx_LIBRARY} -ldl -lpthread)
+
+#==============================================================================
+# Installation
+#==============================================================================
+install( TARGETS    	
+	multiJoint
+	DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(FILES 
+	package.xml
+  	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+install(DIRECTORY 
+	launch/
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+
+install(DIRECTORY 
+	worlds/
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/worlds
+)
