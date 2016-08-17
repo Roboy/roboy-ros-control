@@ -120,6 +120,9 @@ catkin_make --pkg common_utilities
 source devel/setup.bash
 catkin_make
 ```
+## Downloading the meshes
+The simulation uses meshes which you can download with this [link](https://syncandshare.lrz.de/dl/fiF921kgykJu1gBJdY4Zv1y2/.zip). Then extract them to path/to/ros_control/src/roboy_simulation.
+
 #### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
 this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source. 
 ```
