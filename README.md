@@ -1,7 +1,9 @@
 ## Description ##
 Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
 If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
-# Dependencies #
+# Building from source #
+The following instructions guide you through the process of building this repo from source.
+## Dependencies
 ### git
 ```
 #!bash
@@ -44,7 +46,7 @@ sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager r
 #### install gazebo5 and gazebo-ros-pkgs
 ```
 #!bash
-sudo apt-get install gazebo5
+sudo apt-get install libgazebo5-dev
 sudo apt-get install ros-jade-gazebo-ros-pkgs
 ```
 You should try to run gazebo now, to make sure its working. 
@@ -66,20 +68,19 @@ Now we need to tell gazebo where to find these models. This can be done by setti
 export GAZEBO_MODEL_PATH=~/.gazebo/models:$GAZEBO_MODEL_PATH
 ```
 If you run gazebo now it should pop up without complaints and show an empty world.
-# Installation
-project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
+
 ## clone repos
-The repos can be cloned with the folowing commands, where the submodule commands attempt to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
+The project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
+The repos can be cloned with the folowing commands, where the submodule command attempts to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
 git clone https://github.com/Roboy/ros_control
 cd ros_control
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
-
 ## Build
 Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
+### patching WinTypes.h
 Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
 ```
 #!bash
@@ -115,6 +116,8 @@ Then you can build with:
 #!bash
 source ~/.bashrc
 cd path/to/ros_control
+catkin_make --pkg common_utilities
+source devel/setup.bash
 catkin_make
 ```
 #### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
