@@ -28,12 +28,12 @@ sudo apt-get install gazebo5 libgazebo5-dev
 ### install
 ```
 #!bash
-sudo apt-get install ros-indigo-gazebo-ros
+sudo apt-get install ros-indigo-gazebo-ros-control
 sudo apt-get install ros-indigo-pysdf
 sudo apt-get install ros-indigo-gazebo2rviz
 sudo apt-get install roboy-ros-control
 ```
-NOTE: if the installation of ros-indigo-gazebo-ros falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros/+packages) with the Ubuntu Software Center and install it.
+NOTE: if the installation of ros-indigo-gazebo-ros-control falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros-control is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros-control/+packages) with the Ubuntu Software Center and install it.
 ### symlink to meshes
 For gazebo to find the meshes, create a symlink:
 ```
