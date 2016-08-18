@@ -47,6 +47,8 @@ Because pysdf expects a catkin_ws folder, we need to create one:
 #!bash
 mkdir -p ~/catkin_ws/src
 ```
+### rviz
+For rviz to show the model, you need to change the 'Fixed Frame' to 'world', then under 'Add' you need to add a 'Marker'. Under 'Panels'->'Add new Panel'->'WalkingPlugin' you cann add a Panel with which to steer the different visualizations.
 # Building from source #
 The following instructions guide you through the process of building this repo from source.
 ## Dependencies
