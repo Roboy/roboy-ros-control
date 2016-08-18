@@ -41,6 +41,12 @@ For gazebo to find the meshes, create a symlink:
 mkdir ~/.gazebo/models
 ln -s /opt/ros/indigo/share/roboy_simulation/legs_with_muscles_simplified ~/.gazebo/models/
 ```
+### pysdf
+Because pysdf expects a catkin_ws folder, we need to create one:
+```
+#!bash
+mkdir -p ~/catkin_ws/src
+```
 # Building from source #
 The following instructions guide you through the process of building this repo from source.
 ## Dependencies
