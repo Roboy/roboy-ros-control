@@ -510,7 +510,40 @@ namespace gazebo_ros_control {
         }
         return COM / mass_total;
     }
-
+    vector<double> RoboySim::calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag){
+        vector<double> angle;
+        for(auto compare : _linkpair) {
+            physics::LinkPtr link1;
+            link1 = parent_model->GetLink(compare.first);
+            physics::LinkPtr link2;
+            link2 = parent_model->GetLink(compare.second);
+            math::Pose p1= link1->GetWorldCoGPose();
+            math::Pose p2= link2->GetWorldCoGPose();
+            math::Vector3 Euler1=p1.rot.GetAsEuler();
+            math::Vector3 Euler2=p2.rot.GetAsEuler();
+            switch (flag){
+                case 1: angle.push_back(Euler1.y-Euler2.y);      /** sagittal */
+                    break;
+                case 2: angle.push_back(Euler1.x-Euler2.x);      /** coronal */
+                    break;
+                case 3: angle.push_back(Euler1.z-Euler2.z);      /** traversal */
+                    break;
+            }
+        }
+    return angle;
+    }
+    map<string,math::Vector3> RoboySim::calculateTrunk(){
+        physics::LinkPtr trunk = parent_model->GetLink("hip");
+        math::Pose p = trunk->GetWorldCoGPose();
+        math::Vector3 Euler = p.rot.GetAsEuler();
+        math::Vector3 velocity = trunk->GetWorldCoGLinearVel();
+        map<string,math::Vector3> r;
+        string a("Velocity");
+        string b("Angle");
+        r.insert({a,velocity});
+        r.insert({b,Euler});
+        return r;
+    }
     bool RoboySim::loadControllers(vector<string> controllers) {
         bool controller_loaded = true;
         for (auto controller : controllers) {
