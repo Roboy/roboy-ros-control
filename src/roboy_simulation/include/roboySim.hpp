@@ -104,6 +104,15 @@ namespace gazebo_ros_control {
          * @param controllers names of controllers
          * @return success
          */
+        /** Calculate the Angle between links*/
+        vector<double> calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag);
+        /*
+         * This function will calculate the angles between several link-pairs
+         */
+        map<string,math::Vector3> calculateTrunk();
+        /*
+         * This function will calculate the angles and velocity of the trunk
+         */
         bool loadControllers(vector<string> controllers);
         /*
          * This function unloads the controllers registered to the individual joint interfaces
