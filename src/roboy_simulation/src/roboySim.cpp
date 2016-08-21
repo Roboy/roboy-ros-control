@@ -3,14 +3,24 @@
 namespace gazebo_ros_control {
 
     RoboySim::RoboySim() {
-        init_sub = nh.subscribe("/roboy/initialize", 1, &RoboySim::initializeControllers, this);
-        record_sub = nh.subscribe("/roboy/record", 1, &RoboySim::record, this);
-        recordResult_pub = nh.advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
-        steer_recording_sub = nh.subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
-        roboy_visualization_control_sub = nh.subscribe("/roboy/visualization_control", 10, &RoboySim::visualization_control, this);
 
-        visualizeTendon_pub = nh.advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
-        marker_visualization_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+        if (!ros::isInitialized()) {
+            int argc = 0;
+            char **argv = NULL;
+            ros::init(argc, argv, "RoboySim",
+                      ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+        }
+
+        nh = new ros::NodeHandle;
+
+        init_sub = nh->subscribe("/roboy/initialize", 1, &RoboySim::initializeControllers, this);
+        record_sub = nh->subscribe("/roboy/record", 1, &RoboySim::record, this);
+        recordResult_pub = nh->advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
+        steer_recording_sub = nh->subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+        roboy_visualization_control_sub = nh->subscribe("/roboy/visualization_control", 10, &RoboySim::visualization_control, this);
+
+        visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
+        marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1000);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -19,6 +29,7 @@ namespace gazebo_ros_control {
     }
 
     RoboySim::~RoboySim() {
+        delete nh;
         delete cm;
         delete[] cmd, pos, vel, eff;
         update_thread->join();
@@ -31,65 +42,48 @@ namespace gazebo_ros_control {
 
         // getJointLimits() searches joint_limit_nh for joint limit parameters. The format of each
         // parameter's name is "joint_limits/<joint name>". An example is "joint_limits/axle_joint".
-        const ros::NodeHandle joint_limit_nh(nh);
-
-        // Resize vectors to our DOF
-        gazebo::physics::Joint_V joints = parent_model->GetJoints();
+        const ros::NodeHandle joint_limit_nh(*nh);
 
         vector<string> start_controllers;
         for (uint i = 0; i < msg->controllers.size(); i++) {
-            string resource = msg->controllers[i].resource;
-            uint ganglion = msg->controllers[i].ganglion;
-            uint motor = msg->controllers[i].motor;
+            char name[20];
+            sprintf(name, "motor%d", msg->controllers[i].id);
 
             // connect and register the joint state interface
-            start_controllers.push_back(resource);
-            hardware_interface::JointStateHandle state_handle(resource, &pos[msg->controllers[i].id],
+            start_controllers.push_back(name);
+            hardware_interface::JointStateHandle state_handle(name, &pos[msg->controllers[i].id],
                                                               &vel[msg->controllers[i].id],
                                                               &eff[msg->controllers[i].id]);
             jnt_state_interface.registerHandle(state_handle);
 
-            // Get the gazebo joint that corresponds to the robot joint.
-            auto joint = std::find_if(joints.begin(), joints.end(),
-                                      [&resource](gazebo::physics::JointPtr joint) -> bool {
-                                          return resource.compare(joint->GetName()) == 0;
-                                      });
-
             try {
-                if (!*joint) {
-                    ROS_ERROR_STREAM("You are trying to initialize a controller for " << resource <<
-                                     " which is not in the gazebo model. Update your sdf/urdf files!");
-                    continue;
-                } else {
-                    ROS_INFO("Loading Muscle Plugin");
-                    sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
-                    sim_muscles.back()->Init(myoMuscles[i]);
-                    sim_joints.push_back(*joint);
-                }
+                ROS_INFO("Loading Muscle Plugin");
+                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
+                sim_muscles.back()->Init(myoMuscles[i]);
             }
             catch (pluginlib::PluginlibException &ex) {
                 //handle the class failing to load
                 ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
             }
 
-            hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(resource),
+            hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(name),
                                                          &sim_muscles.back()->cmd);
 
             switch ((uint) msg->controllers[i].controlmode) {
                 case 1: {
-                    ROS_INFO("%s position controller ganglion %d motor %d", resource.c_str(), ganglion, motor);
+                    ROS_INFO("%s position controller", name);
                     // connect and register the joint position interface
                     jnt_pos_interface.registerHandle(joint_handle);
                     break;
                 }
                 case 2: {
-                    ROS_INFO("%s velocity controller ganglion %d motor %d", resource.c_str(), ganglion, motor);
+                    ROS_INFO("%s velocity controller", name);
                     // connect and register the joint position interface
                     jnt_vel_interface.registerHandle(joint_handle);
                     break;
                 }
                 case 3: {
-                    ROS_INFO("%s force controller ganglion %d motor %d", resource.c_str(), ganglion, motor);
+                    ROS_INFO("%s force controllers", name);
                     // connect and register the joint position interface
                     jnt_eff_interface.registerHandle(joint_handle);
                     break;
@@ -98,37 +92,6 @@ namespace gazebo_ros_control {
                     ROS_WARN(
                             "The requested controlMode is not available, choose [1]PositionController [2]VelocityController [3]ForceController");
                     break;
-            }
-
-            registerJointLimits(resource, joint_handle, joint_control_methods[i],
-                                joint_limit_nh, &urdf_model,
-                                &joint_types[i], &joint_lower_limits[i], &joint_upper_limits[i],
-                                &joint_effort_limits[i]);
-
-            if (joint_control_methods[i] != FORCE_CONTROL) {
-                // Initialize the PID controller. If no PID gain values are found, use joint->SetAngle() or
-                // joint->SetParam("vel") to control the joint.
-                const ros::NodeHandle joint_nh(nh, "/roboy/pid_gains/" + resource);
-                if (pid_controllers[i].init(joint_nh, true)) {
-                    switch (joint_control_methods[i]) {
-                        case POSITION_CONTROL:
-                            joint_control_methods[i] = POSITION_CONTROL;
-                            break;
-                        case VELOCITY_CONTROL:
-                            joint_control_methods[i] = VELOCITY_CONTROL;
-                            break;
-                    }
-                }
-                else {
-                    // joint->SetParam("fmax") must be called if joint->SetAngle() or joint->SetParam("vel") are
-                    // going to be called. joint->SetParam("fmax") must *not* be called if joint->SetForce() is
-                    // going to be called.
-#if GAZEBO_MAJOR_VERSION > 2
-                    (*joint)->SetParam("fmax", 0, joint_effort_limits[i]);
-#else
-                    (*joint)->SetMaxForce(0, joint_effort_limits[i]);
-#endif
-                }
             }
         }
 
@@ -231,28 +194,20 @@ namespace gazebo_ros_control {
                                    << control_period);
         }
 
-        // Get parameters/settings for controllers from ROS param server
-        nh = ros::NodeHandle(robot_namespace);
-
         // Create the controller manager
         ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
-        cm = new controller_manager::ControllerManager(this, nh);
+        cm = new controller_manager::ControllerManager(this, *nh);
 
         // Initialize the emergency stop code.
         e_stop_active = false;
         last_e_stop_active = false;
         if (sdf_->HasElement("eStopTopic")) {
             const std::string e_stop_topic = sdf_->GetElement("eStopTopic")->Get<std::string>();
-            e_stop_sub = nh.subscribe(e_stop_topic, 1, &RoboySim::eStopCB, this);
+            e_stop_sub = nh->subscribe(e_stop_topic, 1, &RoboySim::eStopCB, this);
         }
 
         ROS_INFO_NAMED("gazebo_ros_control", "Starting gazebo_ros_control plugin in namespace: %s",
                        robot_namespace.c_str());
-
-        // Read urdf from ros parameter server then
-        // setup actuators and mechanism control node.
-        // This call will block if ROS is not properly initialized.
-        const std::string urdf_string = getURDF(robot_description);
 
         ROS_INFO_NAMED("gazebo_ros_control", "Parsing myoMuscles");
         if (!parseMyoMuscleSDF(sdf_->ToString(""), myoMuscles))
@@ -260,19 +215,10 @@ namespace gazebo_ros_control {
         numberOfMyoMuscles = myoMuscles.size();
         ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
-        joint_types.resize(numberOfMyoMuscles);
-        joint_lower_limits.resize(numberOfMyoMuscles);
-        joint_upper_limits.resize(numberOfMyoMuscles);
-        joint_effort_limits.resize(numberOfMyoMuscles);
-        joint_control_methods.resize(numberOfMyoMuscles);
-        pid_controllers.resize(numberOfMyoMuscles);
-
         // class laoder for loading muscle plugins
         class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
                                    ("roboy_simulation",
                                     "roboy_simulation::MusclePlugin"));
-
-        urdf_model.initString(urdf_string);
 
         // Listen to the update event. This event is broadcast every simulation iteration.
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
@@ -307,21 +253,13 @@ namespace gazebo_ros_control {
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
         ROS_DEBUG("write simulation");
         // apply the calculated forces
-
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-//            ROS_INFO_THROTTLE(1,"this muscle has %d links with viapoints", sim_muscles[muscle]->viaPoints.size());
             for (auto viaPoint = sim_muscles[muscle]->viaPoints.begin();
                  viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
                 physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
-//                ROS_INFO_THROTTLE(1,"link %s, has %d viapoints", viaPoint->first.c_str(), viaPoint->second.size());
-
                 for (uint i = 0; i < viaPoint->second.size(); i++) {
-
                     link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j]);
-//                    ROS_DEBUG("force on %s: %.4f %.4f %.4f at %.4f %.4f %.4f", viaPoint->first.c_str(),
-//                                      force[j].x, force[j].y, force[j].z,
-//                                      viaPointInGobalFrame[j].x, viaPointInGobalFrame[j].y, viaPointInGobalFrame[j].z);
                     j++;
                 }
             }
@@ -620,17 +558,17 @@ namespace gazebo_ros_control {
         // search and wait for robot_description on param server
         while (urdf_string.empty()) {
             std::string search_param_name;
-            if (nh.searchParam(param_name, search_param_name)) {
+            if (nh->searchParam(param_name, search_param_name)) {
                 ROS_INFO_ONCE_NAMED("gazebo_ros_control", "gazebo_ros_control plugin is waiting for model"
                         " URDF in parameter [%s] on the ROS param server.", search_param_name.c_str());
 
-                nh.getParam(search_param_name, urdf_string);
+                nh->getParam(search_param_name, urdf_string);
             }
             else {
                 ROS_INFO_ONCE_NAMED("gazebo_ros_control", "gazebo_ros_control plugin is waiting for model"
                         " URDF in parameter [%s] on the ROS param server.", robot_description.c_str());
 
-                nh.getParam(param_name, urdf_string);
+                nh->getParam(param_name, urdf_string);
             }
 
             usleep(100000);
@@ -643,108 +581,6 @@ namespace gazebo_ros_control {
 
     void RoboySim::eStopCB(const std_msgs::BoolConstPtr &e_stop_active) {
 
-    }
-
-    void RoboySim::registerJointLimits(const std::string &joint_name,
-                                       const hardware_interface::JointHandle &joint_handle,
-                                       const int ctrl_method,
-                                       const ros::NodeHandle &joint_limit_nh,
-                                       const urdf::Model *const urdf_model,
-                                       int *const joint_type, double *const lower_limit,
-                                       double *const upper_limit, double *const effort_limit) {
-        *joint_type = urdf::Joint::UNKNOWN;
-        *lower_limit = -std::numeric_limits<double>::max();
-        *upper_limit = std::numeric_limits<double>::max();
-        *effort_limit = std::numeric_limits<double>::max();
-
-        joint_limits_interface::JointLimits limits;
-        bool has_limits = false;
-        joint_limits_interface::SoftJointLimits soft_limits;
-        bool has_soft_limits = false;
-
-        if (urdf_model != NULL) {
-            const boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_model->getJoint(joint_name);
-            if (urdf_joint != NULL) {
-                *joint_type = urdf_joint->type;
-                // Get limits from the URDF file.
-                if (joint_limits_interface::getJointLimits(urdf_joint, limits))
-                    has_limits = true;
-                if (joint_limits_interface::getSoftJointLimits(urdf_joint, soft_limits))
-                    has_soft_limits = true;
-            }
-        }
-        // Get limits from the parameter server.
-        if (joint_limits_interface::getJointLimits(joint_name, joint_limit_nh, limits))
-            has_limits = true;
-
-        if (!has_limits)
-            return;
-
-        if (*joint_type == urdf::Joint::UNKNOWN) {
-            // Infer the joint type.
-
-            if (limits.has_position_limits) {
-                *joint_type = urdf::Joint::REVOLUTE;
-            }
-            else {
-                if (limits.angle_wraparound)
-                    *joint_type = urdf::Joint::CONTINUOUS;
-                else
-                    *joint_type = urdf::Joint::PRISMATIC;
-            }
-        }
-
-        if (limits.has_position_limits) {
-            *lower_limit = limits.min_position;
-            *upper_limit = limits.max_position;
-        }
-        if (limits.has_effort_limits)
-            *effort_limit = limits.max_effort;
-
-        if (has_soft_limits) {
-            switch (ctrl_method) {
-                case FORCE_CONTROL: {
-                    const joint_limits_interface::EffortJointSoftLimitsHandle
-                            limits_handle(joint_handle, limits, soft_limits);
-                    ej_limits_interface.registerHandle(limits_handle);
-                }
-                    break;
-                case POSITION_CONTROL: {
-                    const joint_limits_interface::PositionJointSoftLimitsHandle
-                            limits_handle(joint_handle, limits, soft_limits);
-                    pj_limits_interface.registerHandle(limits_handle);
-                }
-                    break;
-                case VELOCITY_CONTROL: {
-                    const joint_limits_interface::VelocityJointSoftLimitsHandle
-                            limits_handle(joint_handle, limits, soft_limits);
-                    vj_limits_interface.registerHandle(limits_handle);
-                    break;
-                }
-            }
-        }
-        else {
-            switch (ctrl_method) {
-                case FORCE_CONTROL: {
-                    const joint_limits_interface::EffortJointSaturationHandle
-                            sat_handle(joint_handle, limits);
-                    ej_sat_interface.registerHandle(sat_handle);
-                }
-                    break;
-                case POSITION_CONTROL: {
-                    const joint_limits_interface::PositionJointSaturationHandle
-                            sat_handle(joint_handle, limits);
-                    pj_sat_interface.registerHandle(sat_handle);
-                }
-                    break;
-                case VELOCITY_CONTROL: {
-                    const joint_limits_interface::VelocityJointSaturationHandle
-                            sat_handle(joint_handle, limits);
-                    vj_sat_interface.registerHandle(sat_handle);
-                    break;
-                }
-            }
-        }
     }
 
     bool RoboySim::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo> &myoMuscles) {

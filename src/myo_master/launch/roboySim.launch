@@ -18,13 +18,6 @@
         <arg name="headless" value="$(arg headless)"/>
     </include>
 
-    <!--&lt;!&ndash;&lt;!&ndash; Run a python script to convert the sdf file to urdf &ndash;&gt;&ndash;&gt;-->
-    <!--<node name="sdf2urdf" pkg="pysdf" type="sdf2urdf.py" output="screen"-->
-          <!--args="$(find roboy_simulation)/legs_with_muscles_simplified/model.sdf $(find roboy_simulation)/urdf/legs_with_muscles_simplified.urdf"/>-->
-
-    <!-- Load the urdf into the ROS Parameter Server -->
-    <param name="robot_description" textfile="$(find roboy_simulation)/urdf/legs_with_muscles_simplified.urdf"/>
-
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-sdf -file $(find roboy_simulation)/legs_with_muscles_simplified/model.sdf -model legs_with_muscles_simplified"/>
 

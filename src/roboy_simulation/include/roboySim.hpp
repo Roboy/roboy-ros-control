@@ -149,21 +149,10 @@ namespace gazebo_ros_control {
 
 		void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
 
-		// Register the limits of the joint specified by joint_name and joint_handle. The limits are
-		// retrieved from joint_limit_nh. If urdf_model is not NULL, limits are retrieved from it also.
-		// Return the joint's type, lower position limit, upper position limit, and effort limit.
-		void registerJointLimits(const string &joint_name,
-								 const hardware_interface::JointHandle &joint_handle,
-								 const int ctrl_method,
-								 const ros::NodeHandle &joint_limit_nh,
-								 const urdf::Model *const urdf_model,
-								 int *const joint_type, double *const lower_limit,
-								 double *const upper_limit, double *const effort_limit);
-
 		bool parseMyoMuscleSDF(const string &sdf, vector<roboy_simulation::MyoMuscleInfo>& myoMuscles);
 
 		//! ros node handle
-		ros::NodeHandle nh;
+		ros::NodeHandle *nh;
 
 		//! Controller manager
         thread *update_thread;

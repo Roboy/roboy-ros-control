@@ -56,9 +56,7 @@ GazeboRoboyOverlay::GazeboRoboyOverlay()
 
     nh = new ros::NodeHandle;
 
-    visualizeTendon_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeTendon", 1);
-    visualizeForce_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeForce", 1);
-    visualizeCOM_pub = nh->advertise<std_msgs::Bool>("/visual/visualizeCOM", 1);
+    visualizeTendon_pub = nh->advertise<roboy_simulation::VisualizationControl>("/roboy/visualization_control", 1);
 }
 
 GazeboRoboyOverlay::~GazeboRoboyOverlay() {
@@ -66,10 +64,11 @@ GazeboRoboyOverlay::~GazeboRoboyOverlay() {
 }
 
 void GazeboRoboyOverlay::showTendon(){
-    static bool showTendonFlag = false;
-    showTendonFlag = !showTendonFlag;
-    std_msgs::Bool msg;
-    msg.data = showTendonFlag;
+    static bool visualizeTendon = false;
+    visualizeTendon = !visualizeTendon;
+    roboy_simulation::VisualizationControl msg;
+    msg.control = Tendon;
+    msg.value = visualizeTendon;
     visualizeTendon_pub.publish(msg);
     ros::spinOnce();
 }

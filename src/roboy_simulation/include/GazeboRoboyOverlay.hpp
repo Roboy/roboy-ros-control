@@ -14,7 +14,7 @@
 #include <ros/advertise_options.h>
 #include <ros/ros.h>
 #include <geometry_msgs/Point.h>
-#include <std_msgs/Bool.h>
+#include "roboy_simulation/VisualizationControl.h"
 
 // boost
 #include <boost/thread.hpp>
@@ -46,5 +46,11 @@ namespace gazebo {
         transport::PublisherPtr factoryPub;
         ros::NodeHandle *nh;
         ros::Publisher visualizeTendon_pub, visualizeForce_pub, visualizeCOM_pub;
+
+        enum{
+            Tendon,
+            COM,
+            Force
+        }visualization;
     };
 }

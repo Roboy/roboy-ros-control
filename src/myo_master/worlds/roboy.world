@@ -11,7 +11,7 @@
 
         <!-- A ground plane -->
         <include>
-            <uri>model://asphalt_plane</uri>
+            <uri>model://ground_plane</uri>
         </include>
 
         <!-- Focus camera on tall pendulum -->
