@@ -20,7 +20,7 @@ namespace gazebo_ros_control {
         roboy_visualization_control_sub = nh->subscribe("/roboy/visualization_control", 10, &RoboySim::visualization_control, this);
 
         visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
-        marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1000);
+        marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -332,13 +332,20 @@ namespace gazebo_ros_control {
     }
 
     void RoboySim::publishTendon(){
+        static bool add = true;
         visualization_msgs::Marker line_list;
         line_list.header.frame_id = "world";
         line_list.header.stamp = ros::Time::now();
         line_list.ns = "tendon";
-        line_list.action = visualization_msgs::Marker::ADD;
+        if(add) {
+            line_list.action = visualization_msgs::Marker::ADD;
+            add = false;
+        }else{
+            line_list.action = visualization_msgs::Marker::MODIFY;
+        }
+
         line_list.pose.orientation.w = 1.0;
-        line_list.id = 0;
+        line_list.id = 1000;
         line_list.type = visualization_msgs::Marker::LINE_LIST;
         line_list.scale.x = 0.003;
         // Line list is red
@@ -364,6 +371,7 @@ namespace gazebo_ros_control {
     }
 
     void RoboySim::publishCOM(){
+        static bool add = true;
         visualization_msgs::Marker sphere;
         // Set the frame ID and timestamp.  See the TF tutorials for information on these.
         sphere.header.frame_id = "world";
@@ -377,9 +385,15 @@ namespace gazebo_ros_control {
         sphere.scale.x = 0.1;
         sphere.scale.y = 0.1;
         sphere.scale.z = 0.1;
-        sphere.action = visualization_msgs::Marker::ADD;
+        if(add) {
+            sphere.action = visualization_msgs::Marker::ADD;
+            add = false;
+        }else{
+            sphere.action = visualization_msgs::Marker::MODIFY;
+        }
         sphere.header.stamp = ros::Time::now();
         sphere.points.clear();
+        sphere.id = 1001;
         geometry_msgs::Point p;
         math::Vector3 comPosition = calculateCOM(POSITION);
         p.x = comPosition.x;
@@ -390,6 +404,7 @@ namespace gazebo_ros_control {
     }
 
     void RoboySim::publishForce(){
+        static bool add = true;
         visualization_msgs::Marker arrow;
         // Set the frame ID and timestamp.  See the TF tutorials for information on these.
         arrow.header.frame_id = "world";
@@ -403,11 +418,18 @@ namespace gazebo_ros_control {
         arrow.scale.x = 0.005;
         arrow.scale.y = 0.005;
         arrow.scale.z = 0.1;
+        arrow.id = 1002;
+        if(add) {
+            arrow.action = visualization_msgs::Marker::ADD;
+            add = false;
+        }else{
+            arrow.action = visualization_msgs::Marker::MODIFY;
+        }
 
         for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
             arrow.id = i;
             if(fabs(force[i].GetSquaredLength())>0.0) {
-                arrow.action = visualization_msgs::Marker::ADD;
+
                 arrow.header.stamp = ros::Time::now();
                 arrow.points.clear();
                 geometry_msgs::Point p;
@@ -421,6 +443,7 @@ namespace gazebo_ros_control {
                 arrow.points.push_back(p);
             }else{
                 arrow.action = visualization_msgs::Marker::DELETE;
+                add = true;
             }
             marker_visualization_pub.publish(arrow);
         }

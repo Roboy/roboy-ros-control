@@ -1,13 +1,11 @@
 #pragma once
-
+// gazebo
 #include "gazebo/physics/physics.hh"
 #include "gazebo/transport/TransportTypes.hh"
 #include "gazebo/msgs/MessageTypes.hh"
-
 #include "gazebo/common/Time.hh"
 #include "gazebo/common/Plugin.hh"
 #include "gazebo/common/Events.hh"
-
 #include "gazebo/rendering/DynamicLines.hh"
 #include "gazebo/rendering/MovableText.hh"
 #include "gazebo/rendering/ArrowVisual.hh"
@@ -15,18 +13,17 @@
 #include "gazebo/rendering/Visual.hh"
 #include "gazebo/rendering/COMVisual.hh"
 #include "gazebo/rendering/Scene.hh"
-
+// ros
 #include <ros/callback_queue.h>
 #include <ros/advertise_options.h>
 #include <ros/ros.h>
-
 #include <geometry_msgs/Point.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <std_msgs/Bool.h>
-
+// boost
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-
+// messages
 #include "roboy_simulation/Tendon.h"
 
 namespace gazebo

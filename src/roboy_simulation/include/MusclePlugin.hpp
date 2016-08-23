@@ -40,8 +40,8 @@ namespace roboy_simulation {
 	struct Motor {
 		double current = 0.0;
 		double torqueConst = 1.0;
-		double resistance = 0.797;
-		double inductance = 0.118;
+		double resistance = 100.0;
+		double inductance = 100.0;
 		double voltage = 0.0;
 		double BEMFConst = 0.001488; // back electromagnetic force constant
 		double inertiaMoment = 4.09;
