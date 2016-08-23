@@ -394,12 +394,11 @@ namespace gazebo_ros_control {
         sphere.header.stamp = ros::Time::now();
         sphere.points.clear();
         sphere.id = 1001;
-        geometry_msgs::Point p;
-        math::Vector3 comPosition = calculateCOM(POSITION);
-        p.x = comPosition.x;
-        p.y = comPosition.y;
-        p.z = comPosition.z;
-        sphere.points.push_back(p);
+        math::Vector3 comPosition;
+        calculateCOM(POSITION, comPosition);
+        sphere.pose.position.x = comPosition.x;
+        sphere.pose.position.y = comPosition.y;
+        sphere.pose.position.z = comPosition.z;
         marker_visualization_pub.publish(sphere);
     }
 
@@ -449,11 +448,13 @@ namespace gazebo_ros_control {
         }
     }
 
-    math::Vector3 RoboySim::calculateCOM(int type) {
+    void RoboySim::calculateCOM(int type, math::Vector3 &COM) {
         physics::Link_V links = parent_model->GetLinks();
         double mass_total = 0;
-        math::Vector3 COM(0, 0, 0);
+        COM = math::Vector3(0, 0, 0);
         for (auto link:links) {
+            if(link->GetName().compare("halterung")==0)
+                continue;
             double m = link->GetInertial()->GetMass();
             mass_total += m;
             switch (type) {
@@ -469,7 +470,7 @@ namespace gazebo_ros_control {
                 }
             }
         }
-        return COM / mass_total;
+        COM /= mass_total;
     }
     vector<double> RoboySim::calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag){
         vector<double> angle;
@@ -573,33 +574,6 @@ namespace gazebo_ros_control {
                 }
                 break;
         }
-    }
-
-    std::string RoboySim::getURDF(std::string param_name) const {
-        std::string urdf_string;
-
-        // search and wait for robot_description on param server
-        while (urdf_string.empty()) {
-            std::string search_param_name;
-            if (nh->searchParam(param_name, search_param_name)) {
-                ROS_INFO_ONCE_NAMED("gazebo_ros_control", "gazebo_ros_control plugin is waiting for model"
-                        " URDF in parameter [%s] on the ROS param server.", search_param_name.c_str());
-
-                nh->getParam(search_param_name, urdf_string);
-            }
-            else {
-                ROS_INFO_ONCE_NAMED("gazebo_ros_control", "gazebo_ros_control plugin is waiting for model"
-                        " URDF in parameter [%s] on the ROS param server.", robot_description.c_str());
-
-                nh->getParam(param_name, urdf_string);
-            }
-
-            usleep(100000);
-        }
-        ROS_INFO_STREAM_NAMED("gazebo_ros_control",
-                              "Recieved urdf " << param_name.c_str() << " from param server, parsing...");
-
-        return urdf_string;
     }
 
     void RoboySim::eStopCB(const std_msgs::BoolConstPtr &e_stop_active) {
@@ -723,7 +697,7 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_INFO_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name <<
+                    ROS_DEBUG_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name <<
                                                     "', using default parameters");
                 }
 
@@ -766,7 +740,7 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_INFO_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name <<
+                    ROS_DEBUG_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name <<
                                                     "', using default parameters");
                 }
 
@@ -785,7 +759,7 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_INFO_STREAM_NAMED("parser",
+                    ROS_DEBUG_STREAM_NAMED("parser",
                                           "No spindle element found in myoMuscle '" << myoMuscle.name <<
                                           "', using default parameters");
                 }
@@ -817,7 +791,7 @@ namespace gazebo_ros_control {
                         return false;
                     }
                 } else {
-                    ROS_INFO_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name <<
+                    ROS_DEBUG_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name <<
                                                     "', using default parameters");
                 }
 

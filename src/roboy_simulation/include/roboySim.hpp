@@ -98,7 +98,7 @@ namespace gazebo_ros_control {
         void publishForce();
 
         /** calculates the COM */
-        math::Vector3 calculateCOM(int type = POSITION);
+        void calculateCOM(int type, math::Vector3 &COM);
         /*
          * This function loads the controllers registered to the individual joint interfaces
          * @param controllers names of controllers
@@ -143,9 +143,6 @@ namespace gazebo_ros_control {
 		 * SUBSCRIBER enables pause/resume and stop recording
 		 */
 		void steer_record(const common_utilities::Steer::ConstPtr &msg);
-
-		// Get the URDF XML from the parameter server
-		string getURDF(string param_name) const;
 
 		void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
 
