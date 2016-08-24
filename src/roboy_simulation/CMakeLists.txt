@@ -60,6 +60,9 @@ target_link_libraries(roboy_rviz ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(contact_plugin SHARED src/ContactPlugin.cpp)
 target_link_libraries(contact_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
+target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================
@@ -69,6 +72,7 @@ install(TARGETS
         roboySim
         roboy_rviz
         contact_plugin
+        force_torque_plugin
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
 

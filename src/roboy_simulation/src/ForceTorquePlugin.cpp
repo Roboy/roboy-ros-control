@@ -1,9 +1,9 @@
-#include "ContactPlugin.hpp"
+#include "ForceTorquePlugin.hpp"
 
 using namespace gazebo;
-GZ_REGISTER_SENSOR_PLUGIN(ContactPlugin)
+GZ_REGISTER_SENSOR_PLUGIN(ForceTorquePlugin)
 
-ContactPlugin::ContactPlugin() : SensorPlugin() {
+ForceTorquePlugin::ForceTorquePlugin() : SensorPlugin() {
     // start ros node
     if (!ros::isInitialized()) {
         int argc = 0;
@@ -15,26 +15,27 @@ ContactPlugin::ContactPlugin() : SensorPlugin() {
     nh = new ros::NodeHandle;
 }
 
-ContactPlugin::~ContactPlugin() {
+ForceTorquePlugin::~ForceTorquePlugin() {
     delete nh;
 }
 
-void ContactPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
+void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     // Get the parent sensor.
 #if GAZEBO_MAJOR_VERSION < 7
     parentSensor = boost::dynamic_pointer_cast<sensors::ForceTorqueSensor>(sensor);
 #else
-    this->parentSensor = std::dynamic_pointer_cast<sensors::ContactSensor>(sensor);
+    this->parentSensor = std::dynamic_pointer_cast<sensors::ForceTorqueSensor>(sensor);
 #endif
+
 
     // Make sure the parent sensor is valid.
     if (!parentSensor) {
-        gzerr << "ContactPlugin requires a ContactSensor.\n";
+        gzerr << "ForceTorquePlugin requires a ContactSensor.\n";
         return;
     }
 
     // Connect to the sensor update event.
-    updateConnection = parentSensor->ConnectUpdated(std::bind(&ContactPlugin::OnUpdate, this));
+    updateConnection = parentSensor->ConnectUpdated(std::bind(&ForceTorquePlugin::OnUpdate, this));
 
     // Make sure the parent sensor is active.
     parentSensor->SetActive(true);
@@ -44,13 +45,13 @@ void ContactPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     ROS_INFO_NAMED("contact_sensor","%s loaded", sdf->GetAttribute("name")->GetAsString().c_str());
 }
 
-void ContactPlugin::OnUpdate() {
+void ForceTorquePlugin::OnUpdate() {
     // Get all the contacts.
     std_msgs::Bool msg;
 #if GAZEBO_MAJOR_VERSION < 7
     msg.data = parentSensor->GetContacts().contact_size();
 #else
-    msg.data = parentSensor->Contacts().contact_size();
+//    msg.data = parentSensor->.contact_size();
 #endif
     contact_pub.publish(msg);
     ros::spinOnce();
