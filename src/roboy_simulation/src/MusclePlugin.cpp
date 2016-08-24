@@ -199,7 +199,7 @@ namespace roboy_simulation {
 			dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
 					  actuator.spindle.radius * actuator.elasticForce /
 					  (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-		}, x, time.nsec*1e-9, period.nsec*1e-9);
+		}, x, time.nsec*1e-6, period.nsec*1e-6);
 
 		actuator.motor.current = x[0];
 		actuator.spindle.angVel = x[1];

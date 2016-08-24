@@ -21,7 +21,7 @@ ContactPlugin::~ContactPlugin() {
 
 void ContactPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     // Get the parent sensor.
-    parentSensor = std::dynamic_pointer_cast<sensors::ContactSensor>(sensor);
+    parentSensor = boost::dynamic_pointer_cast<sensors::ContactSensor>(sensor);
 
     // Make sure the parent sensor is valid.
     if (!parentSensor) {
@@ -43,7 +43,7 @@ void ContactPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 void ContactPlugin::OnUpdate() {
     // Get all the contacts.
     std_msgs::Bool msg;
-    msg.data = parentSensor->Contacts().contact_size();
+    msg.data = parentSensor->GetContacts().contact_size();
     contact_pub.publish(msg);
     ros::spinOnce();
 }
