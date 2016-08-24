@@ -33,7 +33,7 @@ sudo apt-get install ros-indigo-pysdf
 sudo apt-get install ros-indigo-gazebo2rviz
 sudo apt-get install roboy-ros-control
 ```
-NOTE: if the installation of ros-indigo-gazebo-ros-control falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros-control is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros-control/+packages) with the Ubuntu Software Center and install it.
+NOTE: if the installation of ros-indigo-gazebo-ros-control falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros-control is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros-control_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros-control/+packages) and [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros/+packages) with the Ubuntu Software Center and install it.
 ### symlink to meshes
 For gazebo to find the meshes, create a symlink:
 ```
@@ -121,8 +121,8 @@ The project also depends on the [flexrayusbinterface](https://github.com/Roboy/f
 The repos can be cloned with the folowing commands, where the submodule command attempts to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
-git clone https://github.com/Roboy/ros_control
-cd ros_control
+git clone https://github.com/Roboy/roboy-ros-control
+cd roboy-ros-control
 git submodule update --init --recursive
 ```
 ## Build
@@ -131,14 +131,14 @@ Please follow the installation instructions for [flexrayusbinterface](https://gi
 Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
 ```
 #!bash
-cd path/to/ros_control/src/myomaster/patches
+cd path/to/roboy-ros-control/src/myomaster/patches
 diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff
 sudo patch /usr/include/WinTypes.h < WinTypes.diff
 ```
 NOTE: in case you want to undo the patch run with -R switch:
 ```
 #!bash
-cd path/to/ros_control/src/myomaster/patches
+cd path/to/roboy-ros-control/src/myomaster/patches
 sudo patch -R /usr/include/WinTypes.h < WinTypes.diff
 ```
 ### Environmental variables and sourceing
@@ -146,22 +146,27 @@ Now this is very important. For both build and especially running the code succe
 ```
 #!bash
 source /usr/share/gazebo-5.0/setup.sh
-export GAZEBO_MODEL_PATH=/path/to/ros_control/src/roboy_simulation:$GAZEBO_MODEL_PATH
-export GAZEBO_PLUGIN_PATH=/path/to/ros_control/devel/lib:$GAZEBO_PLUGIN_PATH
+export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_MODEL_PATH
+export GAZEBO_PLUGIN_PATH=/path/to/roboy-ros-control/devel/lib:$GAZEBO_PLUGIN_PATH
 source /opt/ros/jade/setup.bash
-source /path/to/ros_control/devel/setup.bash
+source /path/to/roboy-ros-control/devel/setup.bash
 ```
 Then you can build with:
 ```
 #!bash
 source ~/.bashrc
-cd path/to/ros_control
+cd path/to/roboy-ros-control
 catkin_make --pkg common_utilities
 source devel/setup.bash
 catkin_make
 ```
-## Downloading the meshes
-The simulation uses meshes which you can download with this [link](https://syncandshare.lrz.de/dl/fiF921kgykJu1gBJdY4Zv1y2/.zip). Then extract them to path/to/ros_control/src/roboy_simulation.
+### symlink to meshes
+For gazebo to find the meshes, create a symlink:
+```
+#!bash
+mkdir ~/.gazebo/models
+ln -s path/to/roboy-ros-control/src/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
+```
 
 #### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
 this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source. 
@@ -189,7 +194,7 @@ catkin_make
 ## with real roboy
 ```
 #!bash
-cd path/to/ros_control
+cd path/to/roboy-ros-control
 source devel/setup.bash
 roslaunch myo_master roboy.launch
 ```
@@ -246,7 +251,7 @@ controller:
 Generate a doxygen documentation using the following command:
 ```
 #!bash
-cd path/to/ros_control
+cd path/to/roboy-ros-control
 doxygen Doxyfile
 ```
 The documentation is put into the doc folder.
@@ -258,7 +263,7 @@ You can run eg the simulation with the following commands:
 ```
 #!bash
 xhost +local:root
-docker run -it --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" letrend/ros_control:devel roslaunch myo_master roboySim.launch
+docker run -it --env="DISPLAY" --env="QT_X11_NO_MITSHM=1" --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" letrend/roboy-ros-control:devel roslaunch myo_master roboySim.launch
 ```
 The xhost command enables GUI rendering, please check this [page](http://wiki.ros.org/docker/Tutorials/GUI) for alternatives.
 The docker run command downloads the image and runs the following commands. Once you are done, disable xhost with:
@@ -270,6 +275,6 @@ xhost -local:root
 You can also build your own docker image, using the Dockerfile in the repo with the following command:
 ```
 #!bash
-cd path/to/ros_control
-docker build -t ros_control .
+cd path/to/roboy-ros-control
+docker build -t roboy-ros-control .
 ```
