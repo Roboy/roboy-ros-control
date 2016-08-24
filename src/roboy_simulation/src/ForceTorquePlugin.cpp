@@ -8,7 +8,7 @@ ForceTorquePlugin::ForceTorquePlugin() : SensorPlugin() {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "contact_sensor",
+        ros::init(argc, argv, "force_torque_sensor",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
 
@@ -27,10 +27,9 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     this->parentSensor = std::dynamic_pointer_cast<sensors::ForceTorqueSensor>(sensor);
 #endif
 
-
     // Make sure the parent sensor is valid.
     if (!parentSensor) {
-        gzerr << "ForceTorquePlugin requires a ContactSensor.\n";
+        gzerr << "ForceTorquePlugin requires a ForceTorqueSensor.\n";
         return;
     }
 
@@ -40,19 +39,27 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     // Make sure the parent sensor is active.
     parentSensor->SetActive(true);
 
-    contact_pub = nh->advertise<std_msgs::Bool>("/roboy/"+sdf->GetAttribute("name")->GetAsString(), 1);
+    force_torque_pub = nh->advertise<roboy_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),
+                                                                  1);
 
-    ROS_INFO_NAMED("contact_sensor","%s loaded", sdf->GetAttribute("name")->GetAsString().c_str());
+    ROS_INFO_NAMED("force_torque_sensor","%s loaded", sdf->GetAttribute("name")->GetAsString().c_str());
 }
 
 void ForceTorquePlugin::OnUpdate() {
     // Get all the contacts.
-    std_msgs::Bool msg;
+    roboy_simulation::ForceTorque msg;
 #if GAZEBO_MAJOR_VERSION < 7
     msg.data = parentSensor->GetContacts().contact_size();
 #else
-//    msg.data = parentSensor->.contact_size();
+    ignition::math::Vector3d force = parentSensor->Force();
+    ignition::math::Vector3d torque = parentSensor->Torque();
+    msg.force.x = force.X();
+    msg.force.y = force.Y();
+    msg.force.z = force.Z();
+    msg.torque.x = torque.X();
+    msg.torque.y = torque.Y();
+    msg.torque.z = torque.Z();
 #endif
-    contact_pub.publish(msg);
+    force_torque_pub.publish(msg);
     ros::spinOnce();
 }

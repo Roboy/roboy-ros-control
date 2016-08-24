@@ -1,12 +1,13 @@
 #pragma once
 // ros
 #include <ros/ros.h>
-#include <std_msgs/Bool.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/sensors/sensors.hh>
 //std
 #include <string>
+// messages
+#include "roboy_simulation/ForceTorque.h"
 
 using namespace gazebo;
 
@@ -37,5 +38,5 @@ private:
     event::ConnectionPtr updateConnection;
 
     ros::NodeHandle *nh;
-    ros::Publisher contact_pub;
+    ros::Publisher force_torque_pub;
 };

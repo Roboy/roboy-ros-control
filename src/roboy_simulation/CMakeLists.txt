@@ -27,6 +27,7 @@ add_message_files(
         FILES
         Tendon.msg
         VisualizationControl.msg
+        ForceTorque.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)

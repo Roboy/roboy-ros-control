@@ -22,7 +22,7 @@ ContactPlugin::~ContactPlugin() {
 void ContactPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
     // Get the parent sensor.
 #if GAZEBO_MAJOR_VERSION < 7
-    parentSensor = boost::dynamic_pointer_cast<sensors::ForceTorqueSensor>(sensor);
+    parentSensor = boost::dynamic_pointer_cast<sensors::ContactSensor>(sensor);
 #else
     this->parentSensor = std::dynamic_pointer_cast<sensors::ContactSensor>(sensor);
 #endif
