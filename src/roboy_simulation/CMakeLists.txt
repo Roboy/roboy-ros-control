@@ -78,8 +78,3 @@ install(FILES
         walking_plugin.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         )
-
-install(DIRECTORY
-        legs_with_muscles_simplified/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/legs_with_muscles_simplified
-        )

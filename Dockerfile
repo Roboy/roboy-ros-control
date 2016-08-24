@@ -47,7 +47,7 @@ WORKDIR /root/catkin_ws
 RUN catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release
 RUN rm -r /root/catkin_ws/
 # clone the actual roboy ros_control repo and build it
-RUN git clone https://github.com/Roboy/ros_control /root/catkin_ws  && git checkout develop && git submodule init && git submodule update
+RUN git clone https://github.com/Roboy/roboy-ros-control /root/catkin_ws  && git checkout develop && git submodule update --init --recursive
 # install ftd2xx driver
 RUN cd src/flexrayusbinterface/lib && dpkg -i libftd2xx_1.1.12_amd64.deb
 #RUN cd src/myo_master/patches && diff -u /usr/include/FreeImage.h FreeImage.h > FreeImage.diff && patch /usr/include/FreeImage.h < FreeImage.diff
