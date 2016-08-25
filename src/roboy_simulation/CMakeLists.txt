@@ -63,6 +63,7 @@ add_library(contact_plugin SHARED src/ContactPlugin.cpp)
 target_link_libraries(contact_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
+add_dependencies(force_torque_plugin roboy_simulation_gencpp)
 target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 #==============================================================================
 # Installation

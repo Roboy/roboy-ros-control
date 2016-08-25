@@ -43,6 +43,7 @@
 // messages
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
+#include "roboy_simulation/ForceTorque.h"
 
 using namespace std;
 using namespace gazebo;
@@ -226,5 +227,41 @@ namespace gazebo_ros_control {
         }visualization;
 
         bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false;
+
+        enum LEG_STATE{
+            Stance,
+            Lift_off,
+            Swing,
+            Stance_Preparation
+        };
+
+        LEG_STATE NextState(LEG_STATE s)
+        {
+            LEG_STATE newstate;
+            switch (s)
+            {
+                case Stance:
+                    newstate = Lift_off;
+                    break;
+                case Lift_off:
+                    newstate = Swing;
+                    break;
+                case Swing:
+                    newstate = Stance_Preparation;
+                    break;
+                case Stance_Preparation:
+                    newstate = Stance;
+                    break;
+            }
+            return newstate;
+        }
+
+        LEG_STATE left_leg_state, right_leg_state;
+
+        ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub;
+
+        void finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg);
+
+        double F_contact = 10.0, d_lift = 0.0, d_prep = 0.0; // to be optimized
     };
 }

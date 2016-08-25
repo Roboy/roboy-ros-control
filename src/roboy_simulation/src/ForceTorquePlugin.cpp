@@ -41,6 +41,10 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 
     force_torque_pub = nh->advertise<roboy_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),
                                                                   1);
+    if(sdf->GetAttribute("name")->GetAsString().find("left")!=std::string::npos)
+        leg = LEG::LEFT;
+    else if(sdf->GetAttribute("name")->GetAsString().find("right")!=std::string::npos)
+        leg = LEG::RIGHT;
 
     ROS_INFO_NAMED("force_torque_sensor","%s loaded", sdf->GetAttribute("name")->GetAsString().c_str());
 }
@@ -48,8 +52,16 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 void ForceTorquePlugin::OnUpdate() {
     // Get all the contacts.
     roboy_simulation::ForceTorque msg;
+    msg.leg = leg;
 #if GAZEBO_MAJOR_VERSION < 7
-    msg.data = parentSensor->GetContacts().contact_size();
+    math::Vector3 force = parentSensor->Force();
+    math::Vector3 torque = parentSensor->Torque();
+    msg.force.x = force.X();
+    msg.force.y = force.Y();
+    msg.force.z = force.Z();
+    msg.torque.x = torque.X();
+    msg.torque.y = torque.Y();
+    msg.torque.z = torque.Z();
 #else
     ignition::math::Vector3d force = parentSensor->Force();
     ignition::math::Vector3d torque = parentSensor->Torque();

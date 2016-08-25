@@ -26,6 +26,11 @@ namespace gazebo_ros_control {
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         vel = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         eff = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
+
+        force_torque_ankle_left_sub  = nh->subscribe("/roboy/force_torque_ankle_left", 1,
+                                                     &RoboySim::finite_state_machine, this);
+        force_torque_ankle_right_sub  = nh->subscribe("/roboy/force_torque_ankle_right", 1,
+                                                     &RoboySim::finite_state_machine, this);
     }
 
     RoboySim::~RoboySim() {
@@ -803,6 +808,71 @@ namespace gazebo_ros_control {
             myoMuscles.push_back(myoMuscle);
         }
         return true;
+    }
+
+    void RoboySim::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg){
+        // check what state the leg is currently in
+        LEG_STATE leg_state;
+        math::Vector3 foot_pos;
+
+        if(msg->leg == LEG::LEFT){
+            leg_state = left_leg_state;
+            foot_pos = parent_model->GetLink("foot_left")->GetWorldCoGPose().pos;
+        }else if(msg->leg == LEG::RIGHT){
+            leg_state = right_leg_state;
+            foot_pos = parent_model->GetLink("foot_right")->GetWorldCoGPose().pos;
+        }
+
+        bool state_transition = false;
+
+        switch(leg_state){
+            case Stance:{
+                // calculate the COM
+                math::Vector3 COM;
+                calculateCOM(POSITION, COM);
+                // calculate signed horizontal distance between foot_pos and COM
+                double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
+                        ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
+                if(d_s < d_lift || (left_leg_state == Stance && right_leg_state == Stance)){
+                    state_transition = true;
+                }
+                break;
+            }
+            case Lift_off:{
+                double force_norm = sqrt(pow(msg->force.x, 2.0)+pow(msg->force.y, 2.0)+pow(msg->force.z, 2.0));
+                if(force_norm < F_contact){
+                    state_transition = true;
+                }
+                break;
+            }
+            case Swing:{
+                // calculate the COM
+                math::Vector3 COM;
+                calculateCOM(POSITION, COM);
+                // calculate signed horizontal distance between foot_pos and COM
+                double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
+                      ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
+                if(d_s > d_prep){
+                    state_transition = true;
+                }
+                break;
+            }
+            case Stance_Preparation:{
+                double force_norm = sqrt(pow(msg->force.x, 2.0)+pow(msg->force.y, 2.0)+pow(msg->force.z, 2.0));
+                if(force_norm > F_contact){
+                    state_transition = true;
+                }
+                break;
+            }
+        }
+
+        if(state_transition) {
+            if (msg->leg == LEG::LEFT) {
+                left_leg_state = NextState(left_leg_state);
+            } else if (msg->leg == LEG::RIGHT) {
+                right_leg_state = NextState(right_leg_state);
+            }
+        }
     }
 }
 

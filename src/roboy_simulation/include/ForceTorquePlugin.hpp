@@ -1,4 +1,6 @@
 #pragma once
+// common definitions
+#include "CommonDefinitions.h"
 // ros
 #include <ros/ros.h>
 // gazebo
@@ -39,4 +41,6 @@ private:
 
     ros::NodeHandle *nh;
     ros::Publisher force_torque_pub;
+
+    int leg;
 };
