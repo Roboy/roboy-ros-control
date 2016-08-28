@@ -1,9 +1,0 @@
-[submodule "src/flexrayusbinterface"]
-	path = src/flexrayusbinterface
-	url = https://github.com/Roboy/flexrayusbinterface
-[submodule "src/common_utilities"]
-	path = src/common_utilities
-	url = https://github.com/Roboy/common_utilities
-[submodule "src/roboy_models"]
-	path = src/roboy_models
-	url = https://github.com/Roboy/roboy_models
