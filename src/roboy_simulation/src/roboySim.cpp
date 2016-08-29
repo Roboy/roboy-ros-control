@@ -330,27 +330,26 @@ namespace gazebo_ros_control {
 
     void RoboySim::publishTendon(){
         static bool add = true;
-        visualization_msgs::Marker line_list;
-        line_list.header.frame_id = "world";
-        line_list.header.stamp = ros::Time::now();
-        line_list.ns = "tendon";
+        visualization_msgs::Marker line_strip;
+        line_strip.header.frame_id = "world";
+        line_strip.header.stamp = ros::Time::now();
+        line_strip.ns = "tendon";
         if(add) {
-            line_list.action = visualization_msgs::Marker::ADD;
+            line_strip.action = visualization_msgs::Marker::ADD;
             add = false;
         }else{
-            line_list.action = visualization_msgs::Marker::MODIFY;
+            line_strip.action = visualization_msgs::Marker::MODIFY;
         }
-
-        line_list.pose.orientation.w = 1.0;
-        line_list.id = 1000;
-        line_list.type = visualization_msgs::Marker::LINE_LIST;
-        line_list.scale.x = 0.003;
-        // Line list is red
-        line_list.color.r = 1.0;
-        line_list.color.a = 1.0;
+        line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+        line_strip.scale.x = 0.003;
+        line_strip.color.r = 1.0;
+        line_strip.color.a = 1.0;
+        line_strip.pose.orientation.w = 1.0;
 
         roboy_simulation::Tendon msg;
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+            line_strip.points.clear();
+            line_strip.id = 1000+muscle;
             for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
                 geometry_msgs::Vector3 vp;
                 vp.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
@@ -361,11 +360,11 @@ namespace gazebo_ros_control {
                 p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
                 p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
                 p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
-                line_list.points.push_back(p);
+                line_strip.points.push_back(p);
             }
+            marker_visualization_pub.publish(line_strip);
         }
         visualizeTendon_pub.publish(msg);
-        marker_visualization_pub.publish(line_list);
     }
 
     void RoboySim::publishCOM(){

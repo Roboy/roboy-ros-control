@@ -169,7 +169,7 @@ namespace roboy_simulation {
         uint j = 0;
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
             // absolute position + relative position=actual position of each via point
-            gazebo::math::Pose linkPose = links[j]->GetWorldCoGPose();
+            gazebo::math::Pose linkPose = links[j]->GetWorldPose();
             viaPointsInGlobalFrame[i] = (linkPose.pos + linkPose.rot.RotateVector(viaPoints[i]));
             if(i>=link_index[j]-1){
                 j++;
