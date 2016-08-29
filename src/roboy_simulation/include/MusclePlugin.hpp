@@ -76,7 +76,9 @@ namespace roboy_simulation {
 
 	struct MyoMuscleInfo{
 		string name;
-		map<string,vector<math::Vector3>> viaPoints;
+        vector<gazebo::physics::LinkPtr> links;
+        vector<uint> link_index;
+		vector<math::Vector3> viaPoints;
 		Motor motor;
 		Gear gear;
 		Spindle spindle;
@@ -124,7 +126,7 @@ namespace roboy_simulation {
 		math::Vector3 CalculateForce(double _elasticForce, double _motorForce,
 									 const math::Vector3 &_tendonOrien);
 
-		static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
+		void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
 
 		SEE see;
 	private:
@@ -176,19 +178,19 @@ namespace roboy_simulation {
 		MusclePlugin();
 
 		void Init(MyoMuscleInfo &myoMuscle);
-		void Update(ros::Time &time, ros::Duration &period,
-					vector<math::Vector3> &viaPointInGobalFrame,
-					vector<math::Vector3> &force);
+		void Update(ros::Time &time, ros::Duration &period );
 		string name;
-		map<string,vector<math::Vector3>> viaPoints;
-		map<string,math::Pose> linkPose;
+        vector<gazebo::physics::LinkPtr> links;
+        vector<uint> link_index;
+        vector<math::Vector3> viaPoints;
+        vector<math::Vector3> viaPointsInGlobalFrame;
+        vector<math::Vector3> force;
+
 		PIDcontroller pid;
 		double cmd = 0;
 	private:
 		event::ConnectionPtr connection;
 		common::Time prevUpdateTime;
-		physics::ModelPtr model;
-		std::vector<physics::LinkPtr> links;
 
 		IActuator::state_type x;
 		ITendon tendon;

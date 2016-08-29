@@ -213,7 +213,7 @@ namespace gazebo_ros_control {
 		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::MusclePlugin>> class_loader;
 		vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
-		vector<math::Vector3> viaPointInGobalFrame, force;
+		vector<math::Vector3> viaPointsInGobalFrame, force;
 
         enum{
             POSITION = 0,
@@ -263,5 +263,10 @@ namespace gazebo_ros_control {
         void finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg);
 
         double F_contact = 10.0, d_lift = 0.0, d_prep = 0.0; // to be optimized
+
+        // desired user values
+        double theta_heading = 0.0;
+        double omega_heading = 0.0;
+        double v_forward = 1.0;
     };
 }

@@ -101,13 +101,16 @@ namespace roboy_simulation {
 
 	void ITendon::GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p)//try later with pointer
 	{
+        see.length = 0;
 		for (int i = 0; i < viaPointPos.size() - 1; i++) {
 			tendon_p->MidPoint.push_back((viaPointPos[i] + viaPointPos[i + 1]) / 2);
 			tendon_p->Vector.push_back(viaPointPos[i] - viaPointPos[i + 1]);
-			tendon_p->Orientation.push_back(tendon_p->Vector[i] / tendon_p->Vector[i].GetLength());
+            double length = tendon_p->Vector[i].GetLength();
+			tendon_p->Orientation.push_back(tendon_p->Vector[i] / length);
 			tendon_p->Pitch.push_back(atan(tendon_p->Orientation[i][0] / tendon_p->Orientation[i][2]));
 			tendon_p->Roll.push_back(
 					-acos(sqrt((pow(tendon_p->Orientation[i][0], 2) + pow(tendon_p->Orientation[i][2], 2)))));
+            see.length += length;
 		}
 	}
 
@@ -138,12 +141,16 @@ namespace roboy_simulation {
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
 
+        link_index = myoMuscle.link_index;
+        links = myoMuscle.links;
 		viaPoints = myoMuscle.viaPoints;
+        viaPointsInGlobalFrame = myoMuscle.viaPoints;
+        force = myoMuscle.viaPoints;
 		actuator.motor = myoMuscle.motor;
 		actuator.gear = myoMuscle.gear;
 		actuator.spindle = myoMuscle.spindle;
 		tendon.see = myoMuscle.see;
-
+        name = myoMuscle.name;
 
 		pid.params.pidParameters.pgain = 1000;
 		pid.params.pidParameters.igain = 0;
@@ -151,31 +158,25 @@ namespace roboy_simulation {
 	}
 
 
-	void MusclePlugin::Update(ros::Time &time, ros::Duration &period,
-							  vector<math::Vector3> &viaPointInGobalFrame,
-							  vector<math::Vector3> &force) {
+	void MusclePlugin::Update( ros::Time &time, ros::Duration &period ) {
 		// TODO: calculate PID result
 //		pid.calc_output(cmd,pos,period);
 		actuator.motor.voltage = cmd;
 
 		tendonType newTendon;
 
-        vector<math::Vector3> vpg;
-
 		// get the position and orientation of the links
-        for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
-			// absolute position + relative position=actual position of each via point
-			for (uint i = 0; i < viaPoint->second.size(); i++) {
-                viaPointInGobalFrame.push_back(
-                        linkPose[viaPoint->first].pos + linkPose[viaPoint->first].rot.RotateVector(viaPoint->second[i]));
-                vpg.push_back(viaPointInGobalFrame.back());
+        uint j = 0;
+        for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
+            // absolute position + relative position=actual position of each via point
+            gazebo::math::Pose linkPose = links[j]->GetWorldCoGPose();
+            viaPointsInGlobalFrame[i] = (linkPose.pos + linkPose.rot.RotateVector(viaPoints[i]));
+            if(i>=link_index[j]-1){
+                j++;
             }
 		}
 
-		tendon.GetTendonInfo(vpg, &newTendon);
-
-		// extract info from linkPose
-		tendon.see.length = newTendon.Vector[0].GetLength() + newTendon.Vector[1].GetLength();
+        tendon.GetTendonInfo(viaPointsInGlobalFrame, &newTendon);
 
 		// calculate elastic force
 		actuator.elasticForce = 0;//tendon.ElasticElementModel(_see.lengthRest,
@@ -210,13 +211,9 @@ namespace roboy_simulation {
         ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
 		// calculate general force (elastic+actuator)
-        for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
-			//remove elastic force, this is to be discussed
-			for (uint i = 0; i < viaPoint->second.size(); i++)
-				force.push_back(tendon.CalculateForce(actuator.elasticForce, actuatorForce, newTendon.Orientation[i]));
-//			this->links[i]->AddForceAtWorldPosition(-force, viaPointPos[i]);
-//			this->links[i + 1]->AddForceAtWorldPosition(force, viaPointPos[i + 1]);
-		}
+        for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
+            force[i] = tendon.CalculateForce(actuator.elasticForce, actuatorForce, newTendon.Orientation[i]);
+        }
 	}
 }
 // make it a plugin loadable via pluginlib

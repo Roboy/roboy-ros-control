@@ -235,16 +235,9 @@ namespace gazebo_ros_control {
         ROS_DEBUG("read simulation");
         // update muscle plugins
         force.clear();
-        viaPointInGobalFrame.clear();
+        viaPointsInGobalFrame.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            for (auto link = sim_muscles[muscle]->linkPose.begin();
-                 link != sim_muscles[muscle]->linkPose.end(); ++link) {
-                sim_muscles[muscle]->linkPose[link->first] = parent_model->GetLink(link->first)->GetWorldPose();
-                ROS_INFO_THROTTLE(1, "pose: %f %f %f", sim_muscles[muscle]->linkPose[link->first].pos.x,
-                                  sim_muscles[muscle]->linkPose[link->first].pos.y,
-                                  sim_muscles[muscle]->linkPose[link->first].pos.z);
-            }
-            sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
+            sim_muscles[muscle]->Update(time, period);
         }
         if(visualizeTendon)
             publishTendon();
@@ -260,11 +253,10 @@ namespace gazebo_ros_control {
         // apply the calculated forces
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-            for (auto viaPoint = sim_muscles[muscle]->viaPoints.begin();
-                 viaPoint != sim_muscles[muscle]->viaPoints.end(); ++viaPoint) {
-                physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
-                for (uint i = 0; i < viaPoint->second.size(); i++) {
-                    link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j]);
+            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
+                sim_muscles[muscle]->links[j]->AddForceAtWorldPosition( sim_muscles[muscle]->force[i],
+                            sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
+                if(i>=sim_muscles[muscle]->link_index[j]-1){
                     j++;
                 }
             }
@@ -358,18 +350,19 @@ namespace gazebo_ros_control {
         line_list.color.a = 1.0;
 
         roboy_simulation::Tendon msg;
-        for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
-            geometry_msgs::Vector3 vp;
-            vp.x = viaPointInGobalFrame[i].x;
-            vp.y = viaPointInGobalFrame[i].y;
-            vp.z = viaPointInGobalFrame[i].z;
-            msg.viaPoints.push_back(vp);
-
-            geometry_msgs::Point p;
-            p.x = viaPointInGobalFrame[i].x;
-            p.y = viaPointInGobalFrame[i].y;
-            p.z = viaPointInGobalFrame[i].z;
-            line_list.points.push_back(p);
+        for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
+                geometry_msgs::Vector3 vp;
+                vp.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
+                vp.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
+                vp.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
+                msg.viaPoints.push_back(vp);
+                geometry_msgs::Point p;
+                p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
+                p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
+                p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
+                line_list.points.push_back(p);
+            }
         }
         visualizeTendon_pub.publish(msg);
         marker_visualization_pub.publish(line_list);
@@ -429,27 +422,28 @@ namespace gazebo_ros_control {
         }else{
             arrow.action = visualization_msgs::Marker::MODIFY;
         }
-
-        for (uint i = 0; i < viaPointInGobalFrame.size(); i++) {
-            arrow.id = i;
-            if(fabs(force[i].GetSquaredLength())>0.0) {
-
-                arrow.header.stamp = ros::Time::now();
-                arrow.points.clear();
-                geometry_msgs::Point p;
-                p.x = viaPointInGobalFrame[i].x;
-                p.y = viaPointInGobalFrame[i].y;
-                p.z = viaPointInGobalFrame[i].z;
-                arrow.points.push_back(p);
-                p.x += force[i].x;
-                p.y += force[i].y;
-                p.z += force[i].z;
-                arrow.points.push_back(p);
-            }else{
-                arrow.action = visualization_msgs::Marker::DELETE;
-                add = true;
+        uint id = 0;
+        for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
+                arrow.id = id;
+                if (fabs(sim_muscles[muscle]->force[i].GetSquaredLength()) > 0.0) {
+                    arrow.header.stamp = ros::Time::now();
+                    arrow.points.clear();
+                    geometry_msgs::Point p;
+                    p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
+                    p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
+                    p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
+                    arrow.points.push_back(p);
+                    p.x += sim_muscles[muscle]->force[i].x;
+                    p.y += sim_muscles[muscle]->force[i].y;
+                    p.z += sim_muscles[muscle]->force[i].z;
+                    arrow.points.push_back(p);
+                } else {
+                    arrow.action = visualization_msgs::Marker::DELETE;
+                    add = true;
+                }
+                marker_visualization_pub.publish(arrow);
             }
-            marker_visualization_pub.publish(arrow);
         }
     }
 
@@ -605,12 +599,12 @@ namespace gazebo_ros_control {
                 myoMuscle.name = myoMuscle_it->Attribute("name");
                 // myoMuscle joint acting on
                 TiXmlElement *link_child_it = NULL;
+                uint link_index = 0;
                 for (link_child_it = myoMuscle_it->FirstChildElement("link"); link_child_it;
                      link_child_it = link_child_it->NextSiblingElement("link")) {
                     string linkname = link_child_it->Attribute("name");
                     if (!linkname.empty()) {
                         TiXmlElement *viaPoint_child_it = NULL;
-                        vector<math::Vector3> viaPoints;
                         for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                              viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
                             float x, y, z;
@@ -618,19 +612,16 @@ namespace gazebo_ros_control {
                                 ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                                 return false;
                             } else {
-                                viaPoints.push_back(math::Vector3(x, y, z));
+                                myoMuscle.viaPoints.push_back(math::Vector3(x, y, z));
+                                link_index++;
                             }
                         }
-                        myoMuscle.viaPoints[linkname] = viaPoints;
+                        myoMuscle.links.push_back(parent_model->GetLink(linkname));
+                        myoMuscle.link_index.push_back(link_index);
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                                              << myoMuscle.name << "' link element.");
                             return false;
-                        } else {
-                            for (auto viaPoint : myoMuscle.viaPoints[linkname]) {
-                                ROS_INFO("%s viaPoint: %lf %lf %lf", linkname.c_str(), viaPoint.x, viaPoint.y,
-                                         viaPoint.z);
-                            }
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No link name attribute specified for myoMuscle'"
@@ -638,6 +629,16 @@ namespace gazebo_ros_control {
                         continue;
                     }
                 }
+//                uint j = 0;
+//                for (uint i = 0; i < myoMuscle.viaPoints.size(); i++) {
+//                    // absolute position + relative position=actual position of each via point
+//                    ROS_INFO("%s: %f %f %f", myoMuscle.links[j]->GetName().c_str(),
+//                             myoMuscle.viaPoints[i].x, myoMuscle.viaPoints[i].y, myoMuscle.viaPoints[i].z);
+//                    if(i>=myoMuscle.link_index[j]-1){
+//                        j++;
+//                    }
+//                }
+                ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
 
                 TiXmlElement *motor_child = myoMuscle_it->FirstChildElement("motor");
                 if (motor_child) {
