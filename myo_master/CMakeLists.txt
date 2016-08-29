@@ -12,23 +12,47 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager std_msgs)
-catkin_package(CATKIN_DEPENDS message_runtime)
+find_package(catkin REQUIRED COMPONENTS 
+				roscpp 
+				controller_manager 
+				std_msgs
+				common_utilities
+				flexrayusbinterface)
 
-find_package(libftd2xx)
+find_package(Boost REQUIRED COMPONENTS thread)
 
 include_directories(
-	${catkin_INCLUDE_DIRS} 
-	include/ 
-	${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
-	${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
+	include 
+	${catkin_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIRS} 
+
 )
+
+catkin_package(
+   INCLUDE_DIRS include
+   LIBRARIES ${PROJECT_NAME}
+   CATKIN_DEPENDS roscpp message_runtime controller_manager std_msgs common_utilities flexrayusbinterface
+   DEPENDS Boost)
 #==============================================================================
 # Application
 #==============================================================================
-add_executable(multiJoint src/main.cpp src/roboy.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/src/FlexRayHardwareInterface.cpp)
-add_dependencies(multiJoint common_utilities_gencpp)
-target_link_libraries(multiJoint ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${libftd2xx_LIBRARY} -ldl -lpthread)
+add_executable(multiJoint 
+		src/main.cpp 
+		src/roboy.cpp 
+)
+
+add_dependencies(multiJoint 
+					${catkin_EXPORTED_TARGETS}
+					common_utilities_gencpp
+					${flexrayusbinterface_EXPORTED_TARGETS}
+)
+
+target_link_libraries(multiJoint 
+						${catkin_LIBRARIES} 
+						${Boost_LIBRARIES} 
+						-lftd2xx
+						-ldl 
+						-lpthread)
 
 #==============================================================================
 # Installation

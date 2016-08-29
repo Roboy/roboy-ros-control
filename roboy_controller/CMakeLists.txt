@@ -8,14 +8,15 @@ SET(CMAKE_BUILD_TYPE Debug)
 #==============================================================================
 # Dependencies
 #==============================================================================
-find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib)
-catkin_package(CATKIN_DEPENDS message_runtime)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_interface pluginlib common_utilities)
 
 include_directories(
 include 
 ${catkin_INCLUDE_DIRS}
-${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
 )
+
+catkin_package(CATKIN_DEPENDS message_runtime common_utilities roscpp controller_interface hardware_interface pluginlib
+			INCLUDE_DIRS include)
 
 #==============================================================================
 # Libraries
