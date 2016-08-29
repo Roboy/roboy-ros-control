@@ -50,12 +50,11 @@ namespace roboy_simulation {
 	}
 
 
-	double ITendon::ElasticElementModel(const double _length0, const double _length, double _stiffness,
-										const double _speed, const double _spindleRadius, const double _time) {
+	double ITendon::ElasticElementModel(const double _speed, const double _spindleRadius, const double _time) {
 		// double realTimeUpdateRate=1000;
 		double windingLength = _spindleRadius * _speed * _time;
 		double displacement;
-		displacement = windingLength + _length - _length0;
+		displacement = windingLength + see.length - see.lengthRest;
 
 		// gzdbg << "displacement: "
 		// 	  << displacement
@@ -67,7 +66,7 @@ namespace roboy_simulation {
 		double elasticForce;
 
 		if (displacement >= 0) {
-			elasticForce = displacement * _stiffness;
+			elasticForce = displacement * see.stiffness;
 		}
 		else {
 			elasticForce = 0;
@@ -125,7 +124,7 @@ namespace roboy_simulation {
 
 	double IActuator::EfficiencyApproximation() {
 		double param1 = 0.1; // defines steepness of the approximation
-		double param2 = 0; // defines zero crossing of the approximation
+		double param2 = 0.0; // defines zero crossing of the approximation
 		return gear.efficiency + (1 / gear.efficiency - gear.efficiency) *
 								 (0.5 * (tanh(-param1 * spindle.angVel * motor.current - param2) + 1));
 	}
@@ -136,7 +135,7 @@ namespace roboy_simulation {
 
 	void MusclePlugin::Init(MyoMuscleInfo &myoMuscle) {
 		//state initialization
-		x[0] = 0.0; // start at i=0.0, w_g=0.0
+		x[0] = 0.0;
 		x[1] = 0.0;
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
@@ -179,9 +178,7 @@ namespace roboy_simulation {
         tendon.GetTendonInfo(viaPointsInGlobalFrame, &newTendon);
 
 		// calculate elastic force
-		actuator.elasticForce = 0;//tendon.ElasticElementModel(_see.lengthRest,
-		// _see.length, _see.stiffness, spindle.angVel,
-		// spindle.radius, stepTime.Double());
+		actuator.elasticForce = tendon.ElasticElementModel(actuator.spindle.angVel, actuator.spindle.radius, period.toSec());
 
 		// calculate motor force
 		// calculate the approximation of gear's efficiency
@@ -200,7 +197,7 @@ namespace roboy_simulation {
 			dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
 					  actuator.spindle.radius * actuator.elasticForce /
 					  (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-		}, x, time.nsec*1e-6, period.nsec*1e-6);
+		}, x, time.toSec(), period.toSec());
 
 		actuator.motor.current = x[0];
 		actuator.spindle.angVel = x[1];
@@ -208,7 +205,28 @@ namespace roboy_simulation {
 		actuatorForce = tendon.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
 												  actuator.spindle.radius);
 
-        ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
+        ROS_INFO_THROTTLE(1,"\ncurrent: %f\n"
+                "voltage: %f\n"
+                "spindle.angVel: %f\n"
+                "actuatorForce %f\n"
+                "tendon see length: %f\n"
+                "t: %f\n"
+                "dt: %f\n"
+                "actuator.motor.inertiaMoment: %f\n"
+                "actuator.gear.inertiaMoment: %f\n"
+                "actuator.gear.ratio: %f\n"
+                "actuator.motor.inductance: %f\n"
+                "actuator.motor.resistance: %f\n"
+                "actuator.elasticForce: %f\n"
+                "actuator.gear.appEfficiency: %f\n"
+                "actuator.motor.BEMFConst: %f\n"
+                "actuator.motor.torqueConst: %f\n"
+                "", actuator.motor.current, actuator.motor.voltage, actuator.spindle
+                .angVel, actuatorForce,
+                          tendon.see.length,  time.toSec(), period.toSec(), actuator.motor.inertiaMoment, actuator.gear
+                                  .inertiaMoment, actuator.gear.ratio, actuator.motor.inductance, actuator.motor
+                                  .resistance, actuator.elasticForce, actuator.gear
+                                  .appEfficiency,actuator.motor.BEMFConst, actuator.motor.torqueConst);
 
 		// calculate general force (elastic+actuator)
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
