@@ -58,9 +58,9 @@ void WalkController::calculateCOM(int type, math::Vector3 &COM) {
     COM /= mass_total;
 }
 
-vector<double> WalkController::calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag){
+vector<double> WalkController::calculateAngles(vector<pair<std::string, std::string>> linkpair, PLANE flag){
     vector<double> angle;
-    for(auto compare : _linkpair) {
+    for(auto compare : linkpair) {
         physics::LinkPtr link1;
         link1 = parent_model->GetLink(compare.first);
         physics::LinkPtr link2;
@@ -70,15 +70,32 @@ vector<double> WalkController::calculateAngle_links(vector<pair<std::string, std
         math::Vector3 Euler1=p1.rot.GetAsEuler();
         math::Vector3 Euler2=p2.rot.GetAsEuler();
         switch (flag){
-            case 1: angle.push_back(Euler1.y-Euler2.y);      /** sagittal */
+            case SAGITTAL: angle.push_back(Euler1.y-Euler2.y);
                 break;
-            case 2: angle.push_back(Euler1.x-Euler2.x);      /** coronal */
+            case CORONAL: angle.push_back(Euler1.x-Euler2.x);
                 break;
-            case 3: angle.push_back(Euler1.z-Euler2.z);      /** traversal */
+            case TRAVERSAL: angle.push_back(Euler1.z-Euler2.z);
                 break;
         }
     }
     return angle;
+}
+
+double WalkController::calculateAngle(string link0, string link1, PLANE flag){
+    math::Pose p1= parent_model->GetLink(link0)->GetWorldCoGPose();
+    math::Pose p2= parent_model->GetLink(link1)->GetWorldCoGPose();
+    math::Vector3 Euler1=p1.rot.GetAsEuler();
+    math::Vector3 Euler2=p2.rot.GetAsEuler();
+    switch (flag){
+        case SAGITTAL:
+            return Euler1.y-Euler2.y;
+        case CORONAL:
+            return Euler1.x-Euler2.x;
+        case TRAVERSAL:
+            return Euler1.z-Euler2.z;
+        default:
+            ROS_ERROR("unknown plane");
+    }
 }
 
 map<string,math::Vector3> WalkController::calculateTrunk(){
@@ -209,10 +226,87 @@ void WalkController::calculateTargetFeatures(){
     // target angular velocity is zero
     omega["hip"] = math::Vector3::Zero;
 
-    // hip
-    double theta_hip = theta_hip_0 + k_p_theta * d_s + k_d_theta * (v_forward - v_s);
-    double phi_hip = phi_hip_0 + k_p_phi * d_c - k_d_phi * v_c;
+    // thigh left
+    physics::LinkPtr thigh_left = parent_model->GetLink("thigh_left");
+    double theta_groin_left = theta_groin_0[LEG::LEFT] + k_p_theta_left[leg_state[LEG::LEFT]] * d_s
+                              + k_d_theta_left[leg_state[LEG::LEFT]] * (v_forward - v_s);
+    double phi_groin_left = phi_groin_0[LEG::LEFT] + k_p_phi[LEG::LEFT] * d_c - k_d_phi[LEG::LEFT] * v_c;
+    // target orientation for the hip
+    Q["thigh_left"] = math::Quaternion(phi_groin_left, theta_groin_left, psi_heading);
+    // there is no target position, so we set it to the current position
+    P["thigh_left"] = thigh_left->GetWorldPose().pos;
+    // there is no target velocity, so we set it to the current velocity
+    v["thigh_left"] = thigh_left->GetWorldCoGLinearVel();
+    // target angular velocity is zero while stance preparation
+    if(leg_state[LEG::LEFT]==Stance_Preparation)
+        omega["thigh_left"] = math::Vector3::Zero;
+    else  // there is no target
+        omega["thigh_left"] = thigh_left->GetWorldAngularVel();
 
+    // thigh right
+    physics::LinkPtr thigh_right = parent_model->GetLink("thigh_right");
+    double theta_groin_right = theta_groin_0[LEG::RIGHT] + k_p_theta_right[leg_state[LEG::RIGHT]] * d_s
+                              + k_d_theta_right[leg_state[LEG::RIGHT]] * (v_forward - v_s);
+    double phi_groin_right = phi_groin_0[LEG::RIGHT] + k_p_phi[LEG::RIGHT] * d_c - k_d_phi[LEG::RIGHT] * v_c;
+    // target orientation for the hip
+    Q["thigh_right"] = math::Quaternion(phi_groin_right, theta_groin_right, psi_heading);
+    // there is no target position, so we set it to the current position
+    P["thigh_right"] = thigh_right->GetWorldPose().pos;
+    // there is no target velocity, so we set it to the current velocity
+    v["thigh_right"] = thigh_right->GetWorldCoGLinearVel();
+    // target angular velocity is zero while stance preparation
+    if(leg_state[LEG::RIGHT]==Stance_Preparation) // target is zero while stance preparation
+        omega["thigh_right"] = math::Vector3::Zero;
+    else  // there is no target
+        omega["thigh_right"] = thigh_right->GetWorldAngularVel();
+
+    // shank left
+    physics::LinkPtr shank_left = parent_model->GetLink("shank_left");
+    math::Pose shank_left_pose = shank_left->GetWorldPose();
+    // target orientation for the hip
+    Q["shank_left"] = math::Quaternion( shank_left_pose.rot.GetRoll(), theta_knee[LEG::LEFT], psi_heading);
+    // there is no target position for the hip, so we set it to the current position
+    P["shank_left"] = shank_left_pose.pos;
+    // target velocity is the forward velocity into desired heading direction
+    v["shank_left"] = shank_left->GetWorldCoGLinearVel();
+    // target angular velocity is zero
+    omega["shank_left"] = shank_left->GetWorldAngularVel();
+
+    // shank right
+    physics::LinkPtr shank_right = parent_model->GetLink("shank_right");
+    math::Pose shank_right_pose = shank_right->GetWorldPose();
+    // target orientation for the hip
+    Q["shank_right"] = math::Quaternion( shank_right_pose.rot.GetRoll(), theta_knee[LEG::RIGHT], psi_heading);
+    // there is no target position for the hip, so we set it to the current position
+    P["shank_right"] = shank_right_pose.pos;
+    // target velocity is the forward velocity into desired heading direction
+    v["shank_right"] = shank_right->GetWorldCoGLinearVel();
+    // target angular velocity is zero
+    omega["shank_right"] = shank_right->GetWorldAngularVel();
+
+    // foot left
+    physics::LinkPtr foot_left = parent_model->GetLink("foot_left");
+    math::Pose foot_left_pose = foot_left->GetWorldPose();
+    // target orientation for the hip
+    Q["foot_left"] = math::Quaternion( foot_left_pose.rot.GetRoll(), theta_ankle[LEG::LEFT], psi_heading);
+    // there is no target position for the hip, so we set it to the current position
+    P["foot_left"] = foot_left_pose.pos;
+    // target velocity is the forward velocity into desired heading direction
+    v["foot_left"] = foot_left->GetWorldCoGLinearVel();
+    // target angular velocity is zero
+    omega["foot_left"] = foot_left->GetWorldAngularVel();
+
+    // foot right
+    physics::LinkPtr foot_right = parent_model->GetLink("foot_right");
+    math::Pose foot_right_pose = foot_left->GetWorldPose();
+    // target orientation for the hip
+    Q["foot_right"] = math::Quaternion( foot_right_pose.rot.GetRoll(), theta_ankle[LEG::RIGHT], psi_heading);
+    // there is no target position for the hip, so we set it to the current position
+    P["foot_right"] = foot_right_pose.pos;
+    // target velocity is the forward velocity into desired heading direction
+    v["foot_right"] = foot_right->GetWorldCoGLinearVel();
+    // target angular velocity is zero
+    omega["foot_right"] = foot_right->GetWorldAngularVel();
 }
 
 void WalkController::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg){

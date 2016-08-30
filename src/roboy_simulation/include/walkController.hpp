@@ -33,6 +33,12 @@ enum{
     VELOCITY
 };
 
+enum PLANE{
+    TRAVERSAL,
+    SAGITTAL,
+    CORONAL
+};
+
 class WalkController{
 public:
     WalkController(vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> &sim_muscles,
@@ -43,9 +49,20 @@ public:
     void calculateCOM(int type, math::Vector3 &COM);
 
     /**
-     * This function will calculate the angles between several link-pairs
+     * This function calculates the angles between several link-pairs
+     * @param linkpair vector of link pair names
+     * @param flag #PLANE (SAGITTAL, TRAVERSAL, CORONAL)
+     * @return a vector containing the angles in the respective plane
      */
-    vector<double> calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag);
+    vector<double> calculateAngles(vector<pair<std::string, std::string>> linkpair, PLANE flag);
+/**
+     * This function calculates the angle two links
+     * @param link0 first link
+     * @param link1 second link
+     * @param flag #PLANE (SAGITTAL, TRAVERSAL, CORONAL)
+     * @return angle between links in respective plane
+     */
+    double calculateAngle(string link0, string link1, PLANE flag);
     /**
      * This function will calculate the angles and velocity of the trunk
      */
@@ -86,14 +103,15 @@ private:
     double v_COM;
 
     // target feature gains
-    double k_v, k_h, k_p_theta, k_d_theta, k_p_phi, k_d_phi;
+    double k_v, k_h, k_p_theta_left[4], k_p_theta_right[4], k_d_theta_left[4], k_d_theta_right[4], k_p_phi[2],
+            k_d_phi[2];
     // target features
     map<string,math::Quaternion> Q;
     map<string,math::Vector3> P;
     map<string,math::Vector3> v;
     map<string,math::Vector3> omega;
 
-    double theta_hip_0, phi_hip_0, theta_trunk_0, phi_trunk_0;
+    double theta_groin_0[2], phi_groin_0[2], theta_trunk_0, phi_trunk_0, theta_knee[2], theta_ankle[2];
     double d_s, d_c, v_s, v_c;
 
     math::Vector3 center_of_mass[2];
