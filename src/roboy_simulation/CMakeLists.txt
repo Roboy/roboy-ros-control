@@ -50,7 +50,7 @@ add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
 add_dependencies(tendon_visualizer roboy_simulation_gencpp)
 target_link_libraries(tendon_visualizer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(roboySim SHARED src/roboySim.cpp)
+add_library(roboySim SHARED src/roboySim.cpp src/walkController.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 

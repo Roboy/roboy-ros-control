@@ -42,6 +42,7 @@ public Q_SLOTS:
     void showCOM();
     void showForce();
     void showTendon();
+    void showMomentArm();
 
 private:
     ros::NodeHandle *nh;
@@ -51,8 +52,9 @@ private:
     enum{
         Tendon,
         COM,
-        Force
+        Force,
+        MomentArm
     }visualization;
 
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false;
+    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
 };

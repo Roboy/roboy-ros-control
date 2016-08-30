@@ -164,13 +164,15 @@ namespace roboy_simulation {
 
 		tendonType newTendon;
 
-		// get the position and orientation of the links
         uint j = 0;
+        momentArm.resize(link_index.size());
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
             // absolute position + relative position=actual position of each via point
             gazebo::math::Pose linkPose = links[j]->GetWorldPose();
-            viaPointsInGlobalFrame[i] = (linkPose.pos + linkPose.rot.RotateVector(viaPoints[i]));
+            viaPointsInGlobalFrame[i] = linkPose.pos + linkPose.rot.RotateVector(viaPoints[i]);
             if(i>=link_index[j]-1){
+                momentArm[j] = (viaPointsInGlobalFrame[i]-linkPose.pos).Cross(
+                        (viaPointsInGlobalFrame[i+1]-viaPointsInGlobalFrame[i]).Normalize());
                 j++;
             }
 		}

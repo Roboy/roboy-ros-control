@@ -17,20 +17,11 @@ namespace gazebo_ros_control {
         record_sub = nh->subscribe("/roboy/record", 1, &RoboySim::record, this);
         recordResult_pub = nh->advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
         steer_recording_sub = nh->subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
-        roboy_visualization_control_sub = nh->subscribe("/roboy/visualization_control", 10, &RoboySim::visualization_control, this);
-
-        visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
-        marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         vel = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         eff = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
-
-        force_torque_ankle_left_sub  = nh->subscribe("/roboy/force_torque_ankle_left", 1,
-                                                     &RoboySim::finite_state_machine, this);
-        force_torque_ankle_right_sub  = nh->subscribe("/roboy/force_torque_ankle_right", 1,
-                                                     &RoboySim::finite_state_machine, this);
     }
 
     RoboySim::~RoboySim() {
@@ -39,6 +30,7 @@ namespace gazebo_ros_control {
         delete[] cmd, pos, vel, eff;
         update_thread->join();
         delete update_thread;
+        delete walkController;
     }
 
     void RoboySim::initializeControllers(const common_utilities::Initialize::ConstPtr &msg) {
@@ -130,6 +122,8 @@ namespace gazebo_ros_control {
         if (!startControllers(start_controllers))
             ROS_WARN(
                     "could not start POSITION CONTROLLERS, try starting via /controller_manager/switch_controller service");
+
+        walkController = new WalkController(sim_muscles, parent_model);
 
         initialized = true;
     }
@@ -234,18 +228,9 @@ namespace gazebo_ros_control {
     void RoboySim::readSim(ros::Time time, ros::Duration period) {
         ROS_DEBUG("read simulation");
         // update muscle plugins
-        force.clear();
-        viaPointsInGobalFrame.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             sim_muscles[muscle]->Update(time, period);
         }
-        if(visualizeTendon)
-            publishTendon();
-        if(visualizeForce)
-            publishForce();
-        if(visualizeCOM)
-            publishCOM();
-
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
@@ -311,199 +296,6 @@ namespace gazebo_ros_control {
         last_write_sim_time_ros = ros::Time();
     }
 
-    void RoboySim::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg){
-        switch (msg->control){
-            case Tendon:{
-                visualizeTendon = msg->value;
-                break;
-            }
-            case COM:{
-                visualizeCOM = msg->value;
-                break;
-            }
-            case Force:{
-                visualizeForce = msg->value;
-                break;
-            }
-        }
-    }
-
-    void RoboySim::publishTendon(){
-        static bool add = true;
-        visualization_msgs::Marker line_strip;
-        line_strip.header.frame_id = "world";
-        line_strip.header.stamp = ros::Time::now();
-        line_strip.ns = "tendon";
-        if(add) {
-            line_strip.action = visualization_msgs::Marker::ADD;
-            add = false;
-        }else{
-            line_strip.action = visualization_msgs::Marker::MODIFY;
-        }
-        line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-        line_strip.scale.x = 0.003;
-        line_strip.color.r = 1.0;
-        line_strip.color.a = 1.0;
-        line_strip.pose.orientation.w = 1.0;
-
-        roboy_simulation::Tendon msg;
-        for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            line_strip.points.clear();
-            line_strip.id = 1000+muscle;
-            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
-                geometry_msgs::Vector3 vp;
-                vp.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-                vp.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-                vp.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
-                msg.viaPoints.push_back(vp);
-                geometry_msgs::Point p;
-                p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-                p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-                p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
-                line_strip.points.push_back(p);
-            }
-            marker_visualization_pub.publish(line_strip);
-        }
-        visualizeTendon_pub.publish(msg);
-    }
-
-    void RoboySim::publishCOM(){
-        static bool add = true;
-        visualization_msgs::Marker sphere;
-        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-        sphere.header.frame_id = "world";
-        sphere.ns = "force";
-        sphere.type = visualization_msgs::Marker::SPHERE;
-        sphere.color.r = 0.0f;
-        sphere.color.g = 0.0f;
-        sphere.color.b = 1.0f;
-        sphere.color.a = 1.0;
-        sphere.lifetime = ros::Duration();
-        sphere.scale.x = 0.1;
-        sphere.scale.y = 0.1;
-        sphere.scale.z = 0.1;
-        if(add) {
-            sphere.action = visualization_msgs::Marker::ADD;
-            add = false;
-        }else{
-            sphere.action = visualization_msgs::Marker::MODIFY;
-        }
-        sphere.header.stamp = ros::Time::now();
-        sphere.points.clear();
-        sphere.id = 1001;
-        math::Vector3 comPosition;
-        calculateCOM(POSITION, comPosition);
-        sphere.pose.position.x = comPosition.x;
-        sphere.pose.position.y = comPosition.y;
-        sphere.pose.position.z = comPosition.z;
-        marker_visualization_pub.publish(sphere);
-    }
-
-    void RoboySim::publishForce(){
-        static bool add = true;
-        visualization_msgs::Marker arrow;
-        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-        arrow.header.frame_id = "world";
-        arrow.ns = "force";
-        arrow.type = visualization_msgs::Marker::ARROW;
-        arrow.color.r = 0.0f;
-        arrow.color.g = 1.0f;
-        arrow.color.b = 0.0f;
-        arrow.color.a = 1.0;
-        arrow.lifetime = ros::Duration();
-        arrow.scale.x = 0.005;
-        arrow.scale.y = 0.005;
-        arrow.scale.z = 0.1;
-        arrow.id = 1002;
-        if(add) {
-            arrow.action = visualization_msgs::Marker::ADD;
-            add = false;
-        }else{
-            arrow.action = visualization_msgs::Marker::MODIFY;
-        }
-        uint id = 0;
-        for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
-                arrow.id = id;
-                if (fabs(sim_muscles[muscle]->force[i].GetSquaredLength()) > 0.0) {
-                    arrow.header.stamp = ros::Time::now();
-                    arrow.points.clear();
-                    geometry_msgs::Point p;
-                    p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-                    p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-                    p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
-                    arrow.points.push_back(p);
-                    p.x += sim_muscles[muscle]->force[i].x;
-                    p.y += sim_muscles[muscle]->force[i].y;
-                    p.z += sim_muscles[muscle]->force[i].z;
-                    arrow.points.push_back(p);
-                } else {
-                    arrow.action = visualization_msgs::Marker::DELETE;
-                    add = true;
-                }
-                marker_visualization_pub.publish(arrow);
-            }
-        }
-    }
-
-    void RoboySim::calculateCOM(int type, math::Vector3 &COM) {
-        physics::Link_V links = parent_model->GetLinks();
-        double mass_total = 0;
-        COM = math::Vector3(0, 0, 0);
-        for (auto link:links) {
-            if(link->GetName().compare("halterung")==0)
-                continue;
-            double m = link->GetInertial()->GetMass();
-            mass_total += m;
-            switch (type) {
-                case POSITION: {
-                    math::Pose p = link->GetWorldCoGPose();
-                    COM += p.pos * m;
-                    break;
-                }
-                case VELOCITY: {
-                    math::Vector3 v = link->GetWorldCoGLinearVel();
-                    COM += v * m;
-                    break;
-                }
-            }
-        }
-        COM /= mass_total;
-    }
-    vector<double> RoboySim::calculateAngle_links(vector<pair<std::string, std::string>> _linkpair, int flag){
-        vector<double> angle;
-        for(auto compare : _linkpair) {
-            physics::LinkPtr link1;
-            link1 = parent_model->GetLink(compare.first);
-            physics::LinkPtr link2;
-            link2 = parent_model->GetLink(compare.second);
-            math::Pose p1= link1->GetWorldCoGPose();
-            math::Pose p2= link2->GetWorldCoGPose();
-            math::Vector3 Euler1=p1.rot.GetAsEuler();
-            math::Vector3 Euler2=p2.rot.GetAsEuler();
-            switch (flag){
-                case 1: angle.push_back(Euler1.y-Euler2.y);      /** sagittal */
-                    break;
-                case 2: angle.push_back(Euler1.x-Euler2.x);      /** coronal */
-                    break;
-                case 3: angle.push_back(Euler1.z-Euler2.z);      /** traversal */
-                    break;
-            }
-        }
-    return angle;
-    }
-    map<string,math::Vector3> RoboySim::calculateTrunk(){
-        physics::LinkPtr trunk = parent_model->GetLink("hip");
-        math::Pose p = trunk->GetWorldCoGPose();
-        math::Vector3 Euler = p.rot.GetAsEuler();
-        math::Vector3 velocity = trunk->GetWorldCoGLinearVel();
-        map<string,math::Vector3> r;
-        string a("Velocity");
-        string b("Angle");
-        r.insert({a,velocity});
-        r.insert({b,Euler});
-        return r;
-    }
     bool RoboySim::loadControllers(vector<string> controllers) {
         bool controller_loaded = true;
         for (auto controller : controllers) {
@@ -810,70 +602,6 @@ namespace gazebo_ros_control {
         return true;
     }
 
-    void RoboySim::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg){
-        // check what state the leg is currently in
-        LEG_STATE leg_state;
-        math::Vector3 foot_pos;
-
-        if(msg->leg == LEG::LEFT){
-            leg_state = left_leg_state;
-            foot_pos = parent_model->GetLink("foot_left")->GetWorldCoGPose().pos;
-        }else if(msg->leg == LEG::RIGHT){
-            leg_state = right_leg_state;
-            foot_pos = parent_model->GetLink("foot_right")->GetWorldCoGPose().pos;
-        }
-
-        bool state_transition = false;
-
-        switch(leg_state){
-            case Stance:{
-                // calculate the COM
-                math::Vector3 COM;
-                calculateCOM(POSITION, COM);
-                // calculate signed horizontal distance between foot_pos and COM
-                double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
-                        ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
-                if(d_s < d_lift || (left_leg_state == Stance && right_leg_state == Stance)){
-                    state_transition = true;
-                }
-                break;
-            }
-            case Lift_off:{
-                double force_norm = sqrt(pow(msg->force.x, 2.0)+pow(msg->force.y, 2.0)+pow(msg->force.z, 2.0));
-                if(force_norm < F_contact){
-                    state_transition = true;
-                }
-                break;
-            }
-            case Swing:{
-                // calculate the COM
-                math::Vector3 COM;
-                calculateCOM(POSITION, COM);
-                // calculate signed horizontal distance between foot_pos and COM
-                double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
-                      ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
-                if(d_s > d_prep){
-                    state_transition = true;
-                }
-                break;
-            }
-            case Stance_Preparation:{
-                double force_norm = sqrt(pow(msg->force.x, 2.0)+pow(msg->force.y, 2.0)+pow(msg->force.z, 2.0));
-                if(force_norm > F_contact){
-                    state_transition = true;
-                }
-                break;
-            }
-        }
-
-        if(state_transition) {
-            if (msg->leg == LEG::LEFT) {
-                left_leg_state = NextState(left_leg_state);
-            } else if (msg->leg == LEG::RIGHT) {
-                right_leg_state = NextState(right_leg_state);
-            }
-        }
-    }
 }
 
 GZ_REGISTER_MODEL_PLUGIN(gazebo_ros_control::RoboySim)

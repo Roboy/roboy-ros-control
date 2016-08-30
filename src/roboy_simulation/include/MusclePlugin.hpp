@@ -178,6 +178,7 @@ namespace roboy_simulation {
         vector<math::Vector3> viaPoints;
         vector<math::Vector3> viaPointsInGlobalFrame;
         vector<math::Vector3> force;
+        vector<math::Vector3> momentArm;
 
 		PIDcontroller pid;
 		double cmd = 0;

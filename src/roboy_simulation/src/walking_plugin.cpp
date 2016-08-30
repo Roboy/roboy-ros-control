@@ -22,6 +22,10 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
     frameLayout->addWidget(visualizeForce);
 
+    QCheckBox *visualizeMomentArm = new QCheckBox(tr("show momentArms"));
+    connect(visualizeMomentArm, SIGNAL(clicked()), this, SLOT(showMomentArm()));
+    frameLayout->addWidget(visualizeMomentArm);
+
     // Add frameLayout to the frame
     mainFrame->setLayout(frameLayout);
 
@@ -74,6 +78,14 @@ void WalkingPlugin::showForce() {
     roboy_simulation::VisualizationControl msg;
     msg.control = Force;
     msg.value = visualizeForce;
+    roboy_visualization_control_pub.publish(msg);
+}
+
+void WalkingPlugin::showMomentArm() {
+    visualizeMomentArm = !visualizeMomentArm;
+    roboy_simulation::VisualizationControl msg;
+    msg.control = MomentArm;
+    msg.value = visualizeMomentArm;
     roboy_visualization_control_pub.publish(msg);
 }
 
