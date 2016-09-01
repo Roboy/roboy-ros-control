@@ -46,6 +46,9 @@ include_directories(
 add_library(muscle_plugin SHARED src/MusclePlugin.cpp)
 target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
+add_library(dummy_muscle_plugin SHARED src/DummyMusclePlugin.cpp)
+target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+
 add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
 add_dependencies(tendon_visualizer roboy_simulation_gencpp)
 target_link_libraries(tendon_visualizer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
@@ -70,6 +73,7 @@ target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES
 #==============================================================================
 install(TARGETS
         muscle_plugin
+        dummy_muscle_plugin
         tendon_visualizer
         roboySim
         roboy_rviz

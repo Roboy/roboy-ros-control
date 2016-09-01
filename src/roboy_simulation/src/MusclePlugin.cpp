@@ -142,6 +142,7 @@ namespace roboy_simulation {
 
         link_index = myoMuscle.link_index;
         links = myoMuscle.links;
+        joint = myoMuscle.joint;
 		viaPoints = myoMuscle.viaPoints;
         viaPointsInGlobalFrame = myoMuscle.viaPoints;
         force = myoMuscle.viaPoints;
@@ -165,13 +166,12 @@ namespace roboy_simulation {
 		tendonType newTendon;
 
         uint j = 0;
-        momentArm.resize(link_index.size());
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
             // absolute position + relative position=actual position of each via point
             gazebo::math::Pose linkPose = links[j]->GetWorldPose();
             viaPointsInGlobalFrame[i] = linkPose.pos + linkPose.rot.RotateVector(viaPoints[i]);
-            if(i>=link_index[j]-1){
-                momentArm[j] = (viaPointsInGlobalFrame[i]-linkPose.pos).Cross(
+            if(i==link_index-1){
+                momentArm = (viaPointsInGlobalFrame[i]-joint->GetWorldPose().pos).Cross(
                         (viaPointsInGlobalFrame[i+1]-viaPointsInGlobalFrame[i]).Normalize());
                 j++;
             }

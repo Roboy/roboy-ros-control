@@ -36,7 +36,7 @@
 #include <vector>
 #include <thread>
 // muscle plugin
-#include "MusclePlugin.hpp"
+#include "DummyMusclePlugin.hpp"
 // walkController (Flexible Muscle-Based Locomotion for Bipedal Creatures paper)
 #include "walkController.hpp"
 
@@ -171,8 +171,8 @@ namespace gazebo_ros_control {
 		uint numberOfMyoMuscles;
 
 		vector<gazebo::physics::JointPtr> sim_joints;
-		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::MusclePlugin>> class_loader;
-		vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
+		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>> class_loader;
+		vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
         WalkController *walkController;

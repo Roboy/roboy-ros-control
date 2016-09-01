@@ -58,6 +58,7 @@ class PositionController : public controller_interface::Controller<hardware_inte
 				if (dt<trajectory_duration) {
 					setpoint = spline_trajectory(dt);
 				}else{
+                    setpoint = 0.0;
 					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
 					steered = STOP_TRAJECTORY;

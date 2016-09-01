@@ -75,7 +75,8 @@ namespace roboy_simulation {
 	struct MyoMuscleInfo{
 		string name;
         vector<gazebo::physics::LinkPtr> links;
-        vector<uint> link_index;
+        gazebo::physics::JointPtr joint;
+        uint link_index;
 		vector<math::Vector3> viaPoints;
 		Motor motor;
 		Gear gear;
@@ -174,11 +175,12 @@ namespace roboy_simulation {
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
         vector<gazebo::physics::LinkPtr> links;
-        vector<uint> link_index;
+        gazebo::physics::JointPtr joint;
+        math::Vector3 momentArm;
+        uint link_index;
         vector<math::Vector3> viaPoints;
         vector<math::Vector3> viaPointsInGlobalFrame;
         vector<math::Vector3> force;
-        vector<math::Vector3> momentArm;
 
 		PIDcontroller pid;
 		double cmd = 0;

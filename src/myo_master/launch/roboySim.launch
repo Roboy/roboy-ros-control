@@ -19,11 +19,11 @@
     </include>
 
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_models)/plate_with_muscle/model.sdf -model plate_with_muscle"/>
+          args="-sdf -file $(find roboy_models)/legs_with_muscles_simplified/model.sdf -model legs_with_muscles_simplified"/>
 
     <!-- the following two nodes transform gazebo link_states to rviz marker/tf -->
-    <include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />
-    <include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />
+    <!--<include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />-->
+    <!--<include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />-->
 
     <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
 </launch>

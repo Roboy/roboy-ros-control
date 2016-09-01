@@ -54,8 +54,8 @@ namespace gazebo_ros_control {
             jnt_state_interface.registerHandle(state_handle);
 
             try {
-                ROS_INFO("Loading Muscle Plugin");
-                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
+                ROS_INFO("Loading Dummy Muscle Plugin");
+                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::DummyMusclePlugin"));
                 sim_muscles.back()->Init(myoMuscles[i]);
             }
             catch (pluginlib::PluginlibException &ex) {
@@ -215,9 +215,9 @@ namespace gazebo_ros_control {
         ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
         // class laoder for loading muscle plugins
-        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
+        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>
                                    ("roboy_simulation",
-                                    "roboy_simulation::MusclePlugin"));
+                                    "roboy_simulation::DummyMusclePlugin"));
 
         // Listen to the update event. This event is broadcast every simulation iteration.
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
@@ -231,6 +231,15 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             sim_muscles[muscle]->Update(time, period);
         }
+
+        if(walkController->visualizeTendon)
+            walkController->publishTendon();
+        if(walkController->visualizeForce)
+            walkController->publishForce();
+        if(walkController->visualizeCOM)
+            walkController->publishCOM();
+        if(walkController->visualizeMomentArm)
+            walkController->publishMomentArm();
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
@@ -238,11 +247,16 @@ namespace gazebo_ros_control {
         // apply the calculated forces
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
-            for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
-                sim_muscles[muscle]->links[j]->AddForceAtWorldPosition( sim_muscles[muscle]->force[i],
-                            sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
-                if(i>=sim_muscles[muscle]->link_index[j]-1){
-                    j++;
+            for (uint i = 0; i < sim_muscles[muscle]->force.size(); i++) {
+                if(sim_muscles[muscle]->force[i].GetLength()>0.0){  // using zero forces makes the model collapse
+                    sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(-sim_muscles[muscle]->force[i],
+                                                                           sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
+                    sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(sim_muscles[muscle]->force[i],
+                                                                           sim_muscles[muscle]->viaPointsInGlobalFrame[
+                                                                                   i + 1]);
+                    if (i == sim_muscles[muscle]->link_index - 1) {
+                        j++;
+                    }
                 }
             }
         }
@@ -391,6 +405,7 @@ namespace gazebo_ros_control {
                 // myoMuscle joint acting on
                 TiXmlElement *link_child_it = NULL;
                 uint link_index = 0;
+                bool first_link = true;
                 for (link_child_it = myoMuscle_it->FirstChildElement("link"); link_child_it;
                      link_child_it = link_child_it->NextSiblingElement("link")) {
                     string linkname = link_child_it->Attribute("name");
@@ -408,11 +423,18 @@ namespace gazebo_ros_control {
                             }
                         }
                         myoMuscle.links.push_back(parent_model->GetLink(linkname));
-                        myoMuscle.link_index.push_back(link_index);
+                        if(first_link) {
+                            myoMuscle.link_index = link_index;
+                            first_link=false;
+                        }
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                                              << myoMuscle.name << "' link element.");
                             return false;
+                        }
+                        if(myoMuscle.links.size()>2){
+                            ROS_WARN_STREAM_NAMED("parser", "In myoMuscle '"
+                                    << myoMuscle.name << "' link element: Only two links are supported.");
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No link name attribute specified for myoMuscle'"
@@ -420,16 +442,20 @@ namespace gazebo_ros_control {
                         continue;
                     }
                 }
-//                uint j = 0;
-//                for (uint i = 0; i < myoMuscle.viaPoints.size(); i++) {
-//                    // absolute position + relative position=actual position of each via point
-//                    ROS_INFO("%s: %f %f %f", myoMuscle.links[j]->GetName().c_str(),
-//                             myoMuscle.viaPoints[i].x, myoMuscle.viaPoints[i].y, myoMuscle.viaPoints[i].z);
-//                    if(i>=myoMuscle.link_index[j]-1){
-//                        j++;
-//                    }
-//                }
                 ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
+
+                TiXmlElement *spans_joint_child_it = NULL;
+                for (spans_joint_child_it = myoMuscle_it->FirstChildElement("spans_joint"); spans_joint_child_it;
+                     spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spans_joint")) {
+                    string jointname = spans_joint_child_it->Attribute("name");
+                    if (!jointname.empty()) {
+                        myoMuscle.joint = parent_model->GetJoint(jointname);
+                    } else {
+                        ROS_ERROR_STREAM_NAMED("parser", "No spans_joint name attribute specified for myoMuscle'"
+                                << myoMuscle.name << "'.");
+                        continue;
+                    }
+                }
 
                 TiXmlElement *motor_child = myoMuscle_it->FirstChildElement("motor");
                 if (motor_child) {

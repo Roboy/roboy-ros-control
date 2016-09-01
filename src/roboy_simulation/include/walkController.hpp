@@ -10,7 +10,7 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 // muscle plugin
-#include "MusclePlugin.hpp"
+#include "DummyMusclePlugin.hpp"
 // messages
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
@@ -41,7 +41,7 @@ enum PLANE{
 
 class WalkController{
 public:
-    WalkController(vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> &sim_muscles,
+    WalkController(vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> &sim_muscles,
                    gazebo::physics::ModelPtr parent_model);
     ~WalkController();
 
@@ -74,7 +74,9 @@ public:
 
     LEG getLegInState(LEG_STATE s);
 
-    void calculateTargetFeatures();
+    void updateTargetFeatures();
+
+    void updateMuscleActivity();
 
     void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
 
@@ -87,6 +89,8 @@ public:
     void publishMomentArm();
 
     LEG_STATE leg_state[2];
+
+    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
 private:
     ros::NodeHandle *nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
@@ -94,7 +98,7 @@ private:
     gazebo::physics::ModelPtr parent_model;
     vector<string> link_names;
 
-    vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> &sim_muscles;
+    vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> &sim_muscles;
     double F_contact = 10.0, d_lift = 0.0, d_prep = 0.0; // to be optimized
     // desired user values
     double psi_heading = 0.0;
@@ -105,11 +109,20 @@ private:
     // target feature gains
     double k_v, k_h, k_p_theta_left[4], k_p_theta_right[4], k_d_theta_left[4], k_d_theta_right[4], k_p_phi[2],
             k_d_phi[2];
+    // target force torque gains
+    double k_V, k_P, k_Q, k_omega;
     // target features
     map<string,math::Quaternion> Q;
     map<string,math::Vector3> P;
     map<string,math::Vector3> v;
     map<string,math::Vector3> omega;
+    // target force torque
+    map<string,math::Vector3> F;
+    map<string,math::Vector3> T;
+    map<string,math::Vector3> tau;
+    map<string,math::Vector3> F_tilde;
+
+    map<string,vector<uint>> muscles_spanning_joint;
 
     double theta_groin_0[2], phi_groin_0[2], theta_trunk_0, phi_trunk_0, theta_knee[2], theta_ankle[2];
     double d_s, d_c, v_s, v_c;
@@ -122,6 +135,4 @@ private:
         Force,
         MomentArm
     }visualization;
-
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
 };
