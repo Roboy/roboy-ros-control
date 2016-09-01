@@ -57,6 +57,8 @@ class PositionController : public controller_interface::Controller<hardware_inte
 //                ROS_INFO("%f", dt );
 				if (dt<trajectory_duration) {
 					setpoint = spline_trajectory(dt);
+                    if(setpoint<0.0)
+                        setpoint = 0.0;
 				}else{
                     setpoint = 0.0;
 					myStatus = TRAJECTORY_DONE;

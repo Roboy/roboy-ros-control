@@ -248,7 +248,7 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             uint j = 0;
             for (uint i = 0; i < sim_muscles[muscle]->force.size(); i++) {
-                if(sim_muscles[muscle]->force[i].GetLength()>0.0){  // using zero forces makes the model collapse
+                if(sim_muscles[muscle]->force[i].GetLength()>0.0 ){  // using zero forces makes the model collapse
                     sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(-sim_muscles[muscle]->force[i],
                                                                            sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
                     sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(sim_muscles[muscle]->force[i],
