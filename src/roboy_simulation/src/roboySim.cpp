@@ -18,6 +18,8 @@ namespace gazebo_ros_control {
         recordResult_pub = nh->advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
         steer_recording_sub = nh->subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
 
+        init_walk_controller_sub = nh->subscribe("/roboy/init_walk_controller", 1, &RoboySim::initializeWalkController, this);
+
         cmd = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         pos = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
         vel = new double[NUMBER_OF_GANGLIONS * NUMBER_OF_JOINTS_PER_GANGLION];
@@ -126,6 +128,86 @@ namespace gazebo_ros_control {
         walkController = new WalkController(sim_muscles, parent_model);
 
         initialized = true;
+    }
+
+    void RoboySim::initializeWalkController( const std_msgs::Bool::ConstPtr& msg){
+        if(msg->data == true){
+            ROS_WARN("Initializing WalkController. The GUI connections are shutting down now!");
+            init_sub.shutdown();
+            record_sub.shutdown();
+            recordResult_pub.shutdown();
+            steer_recording_sub.shutdown();
+
+            initialized = false;
+            sim_muscles.clear();
+
+            vector<string> start_controllers;
+            for (uint muscle = 0; muscle < myoMuscles.size(); muscle++) {
+                // connect and register the joint state interface
+                start_controllers.push_back(myoMuscles[muscle].name);
+
+                nh->setParam("/"+myoMuscles[muscle].name+"/type", "roboy_controller/MuscleActivityController");
+
+                hardware_interface::JointStateHandle state_handle(myoMuscles[muscle].name,
+                                                                  &pos[muscle],
+                                                                  &vel[muscle],
+                                                                  &eff[muscle]);
+                jnt_state_interface.registerHandle(state_handle);
+
+                try {
+                    ROS_INFO("Loading Dummy Muscle Plugin");
+                    sim_muscles.push_back(class_loader->createInstance("roboy_simulation::DummyMusclePlugin"));
+                    sim_muscles.back()->Init(myoMuscles[muscle]);
+                }
+                catch (pluginlib::PluginlibException &ex) {
+                    //handle the class failing to load
+                    ROS_ERROR("The plugin failed to load for some reason. Error: %s", ex.what());
+                }
+
+                hardware_interface::JointHandle joint_handle(jnt_state_interface.getHandle(myoMuscles[muscle].name),
+                                                             &sim_muscles.back()->cmd);
+
+
+                ROS_INFO("%s muscle activity controlled", myoMuscles[muscle].name.c_str());
+                // connect and register the joint position interface
+                jnt_eff_interface.registerHandle(joint_handle);
+            }
+
+            registerInterface(&jnt_eff_interface);
+            string str;
+            vector<string>resources = jnt_eff_interface.getNames();
+            for (uint i = 0; i < resources.size(); i++) {
+                str.append(resources[i]);
+                str.append(" ");
+            }
+
+            ROS_INFO("Resources registered to hardware interface:\n%s", str.c_str());
+            loadControllers(start_controllers);
+
+            ROS_INFO("Starting controllers now...");
+            if (!startControllers(start_controllers))
+                ROS_WARN("could not start controllers, try starting via /controller_manager/switch_controller service");
+
+            if(walkController != nullptr) {
+                delete walkController;
+            }
+            walkController = new WalkController(sim_muscles, parent_model);
+
+            initialized = true;
+
+        }else if(initialized){
+            initialized = false;
+            // delete the walkController
+            delete walkController;
+            walkController = nullptr;
+            // reconnect to GUI
+            init_sub = nh->subscribe("/roboy/initialize", 1, &RoboySim::initializeControllers, this);
+            record_sub = nh->subscribe("/roboy/record", 1, &RoboySim::record, this);
+            recordResult_pub = nh->advertise<common_utilities::RecordResult>("/roboy/recordResult", 1000);
+            steer_recording_sub = nh->subscribe("/roboy/steer_record", 1000, &RoboySim::steer_record, this);
+        }else{
+            ROS_INFO("Trying to shutdown WalkController, but it is not running");
+        }
     }
 
     void RoboySim::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {

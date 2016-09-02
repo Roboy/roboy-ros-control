@@ -97,8 +97,8 @@ private:
     ros::Publisher visualizeTendon_pub, marker_visualization_pub;
     gazebo::physics::ModelPtr parent_model;
     vector<string> link_names;
-
     vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> &sim_muscles;
+
     double F_contact = 10.0, d_lift = 0.0, d_prep = 0.0; // to be optimized
     // desired user values
     double psi_heading = 0.0;

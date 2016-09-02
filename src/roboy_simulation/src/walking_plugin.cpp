@@ -1,3 +1,4 @@
+#include <std_msgs/Bool.h>
 #include "walking_plugin.hpp"
 
 WalkingPlugin::WalkingPlugin(QWidget *parent)
@@ -9,6 +10,14 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     QFrame *mainFrame = new QFrame();
 
     QVBoxLayout *frameLayout = new QVBoxLayout();
+
+    QPushButton *initwalkcontroller = new QPushButton(tr("initialize WalkController"));
+    connect(initwalkcontroller, SIGNAL(clicked()), this, SLOT(initWalkController()));
+    frameLayout->addWidget(initwalkcontroller);
+
+    QPushButton *shutdowncontroller = new QPushButton(tr("shutdown WalkController"));
+    connect(shutdowncontroller, SIGNAL(clicked()), this, SLOT(shutDownWalkController()));
+    frameLayout->addWidget(shutdowncontroller);
 
     QCheckBox *visualizeTendon= new QCheckBox(tr("show tendon"));
     connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
@@ -50,11 +59,24 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     spinner = new ros::AsyncSpinner(1);
 
     roboy_visualization_control_pub = nh->advertise<roboy_simulation::VisualizationControl>("/roboy/visualization_control", 1);
+    init_walk_controller_pub = nh->advertise<std_msgs::Bool>("/roboy/init_walk_controller", 1);
 }
 
 WalkingPlugin::~WalkingPlugin(){
     delete nh;
     delete spinner;
+}
+
+void WalkingPlugin::initWalkController(){
+    std_msgs::Bool msg;
+    msg.data = true;
+    init_walk_controller_pub.publish(msg);
+}
+
+void WalkingPlugin::shutDownWalkController(){
+    std_msgs::Bool msg;
+    msg.data = false;
+    init_walk_controller_pub.publish(msg);
 }
 
 void WalkingPlugin::showTendon() {

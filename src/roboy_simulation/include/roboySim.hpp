@@ -59,6 +59,8 @@ namespace gazebo_ros_control {
 
 		void initializeControllers( const common_utilities::Initialize::ConstPtr& msg );
 
+
+        void initializeWalkController( const std_msgs::Bool::ConstPtr& msg);
 		/**
 		 * Overloaded Gazebo entry point
 		 */
@@ -84,7 +86,6 @@ namespace gazebo_ros_control {
 
         /** Called on world reset */
 		void Reset();
-	private:
         /**
          * This function loads the controllers registered to the individual joint interfaces
          * @param controllers names of controllers
@@ -141,7 +142,7 @@ namespace gazebo_ros_control {
 		hardware_interface::VelocityJointInterface jnt_vel_interface;
 		hardware_interface::EffortJointInterface jnt_eff_interface;
 
-		ros::Subscriber steer_recording_sub, record_sub, init_sub;
+		ros::Subscriber steer_recording_sub, record_sub, init_sub, init_walk_controller_sub;
 		ros::Publisher roboy_pub, recordResult_pub;
 
 		common_utilities::RoboyState roboyStateMsg;
@@ -175,6 +176,6 @@ namespace gazebo_ros_control {
 		vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
-        WalkController *walkController;
+        WalkController *walkController = nullptr;
     };
 }

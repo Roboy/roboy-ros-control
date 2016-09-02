@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <QPainter>
 #include <QCheckBox>
+#include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -38,7 +39,8 @@ public:
     virtual void save(rviz::Config config) const;
 
 public Q_SLOTS:
-
+    void initWalkController();
+    void shutDownWalkController();
     void showCOM();
     void showForce();
     void showTendon();
@@ -47,7 +49,7 @@ public Q_SLOTS:
 private:
     ros::NodeHandle *nh;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub;
+    ros::Publisher roboy_visualization_control_pub, init_walk_controller_pub;
 
     enum{
         Tendon,
