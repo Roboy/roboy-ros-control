@@ -2,6 +2,7 @@
 // std
 #include <cstdlib>
 #include <iostream>
+#include <deque>
 // ros
 #include <ros/ros.h>
 #include <controller_manager/controller_manager.h>
@@ -86,6 +87,26 @@ public:
     /** Called on world reset */
     void Reset();
 
+    void finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg);
+
+    LEG_STATE NextState(LEG_STATE s);
+
+    LEG getLegInState(LEG_STATE s);
+
+    bool updateFootDisplacementAndVelocity();
+
+    bool updateTargetFeatures();
+
+    void updateMuscleForces();
+
+    void updateMuscleActivities();
+
+    void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
+
+    LEG_STATE leg_state[2];
+
+    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
+private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
 
@@ -119,20 +140,6 @@ public:
      */
     map<string,math::Vector3> calculateTrunk();
 
-    bool updateFootDisplacementAndVelocity();
-
-    void finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg);
-
-    LEG_STATE NextState(LEG_STATE s);
-
-    LEG getLegInState(LEG_STATE s);
-
-    bool updateTargetFeatures();
-
-    void updateMuscleActivity();
-
-    void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
-
     void publishTendon();
 
     void publishCOM();
@@ -141,16 +148,14 @@ public:
 
     void publishMomentArm();
 
-    LEG_STATE leg_state[2];
-
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
-private:
     ros::NodeHandle *nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
     ros::Publisher visualizeTendon_pub, marker_visualization_pub;
     vector<string> link_names;
 
-    double F_contact = 10.0, d_lift = -0.3, d_prep = 0.0; // to be optimized
+    double gazebo_max_step_size = 0.003;
+
+    double F_contact = 10.0, d_lift = -0.3, d_prep = 0.0, F_max = 500; // to be optimized
     // desired user values
     double psi_heading = 0.0;
     double omega_heading = 0.0;
@@ -162,6 +167,8 @@ private:
             k_d_phi[2];
     // target force torque gains
     double k_V, k_P, k_Q, k_omega;
+    // feedback gains
+    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_lift_kee = 1.0;
     // target features
     map<string,math::Quaternion> Q;
     map<string,math::Vector3> P;
@@ -172,6 +179,8 @@ private:
     map<string,math::Vector3> T;
     map<string,double> tau;
     map<string,double> F_tilde;
+    map<string,deque<double>> activity;
+    map<string,double> feedback;
 
     map<string,vector<uint>> muscles_spanning_joint;
 

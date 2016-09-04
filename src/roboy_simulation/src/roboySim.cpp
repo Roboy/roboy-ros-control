@@ -534,7 +534,7 @@ namespace gazebo_ros_control {
                      spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spans_joint")) {
                     string jointname = spans_joint_child_it->Attribute("name");
                     if (!jointname.empty()) {
-                        myoMuscle.joint = parent_model->GetJoint(jointname);
+                        myoMuscle.spanning_joint = parent_model->GetJoint(jointname);
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No spans_joint name attribute specified for myoMuscle'"
                                 << myoMuscle.name << "'.");

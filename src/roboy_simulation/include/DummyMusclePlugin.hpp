@@ -26,6 +26,12 @@
 #include <fstream>
 #include <chrono>
 
+enum MUSCLE_TYPE{
+    EXTENSOR,
+    FLEXOR,
+    STABILIZER
+};
+
 namespace roboy_simulation {
     using namespace std;
     using namespace gazebo;
@@ -90,7 +96,8 @@ namespace roboy_simulation {
     struct MyoMuscleInfo{
         string name;
         vector<gazebo::physics::LinkPtr> links;
-        gazebo::physics::JointPtr joint;
+        gazebo::physics::JointPtr spanning_joint;
+        MUSCLE_TYPE muscle_type;
         uint link_index;
         vector<math::Vector3> viaPoints;
         Motor motor;
@@ -114,7 +121,7 @@ namespace roboy_simulation {
         vector<math::Vector3> viaPoints;
         vector<math::Vector3> viaPointsInGlobalFrame;
         vector<math::Vector3> force;
-
+        MUSCLE_TYPE muscle_type;
         double cmd = 0;
     private:
         common::Time prevUpdateTime;

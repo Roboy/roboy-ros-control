@@ -29,10 +29,6 @@ WalkController::WalkController() {
     link_names.push_back("foot_left");
     link_names.push_back("foot_right");
 
-    for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        muscles_spanning_joint[sim_muscles[muscle]->joint->GetName()].push_back(muscle);
-    }
-
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
 
@@ -101,8 +97,10 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         robot_description = "robot_description"; // default
     }
 
+    gazebo_max_step_size = parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
+
     // Get the Gazebo simulation period
-    ros::Duration gazebo_period(parent_model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize());
+    ros::Duration gazebo_period = ros::Duration(gazebo_max_step_size);
 
     // Decide the plugin control period
     control_period = ros::Duration(0.1);
@@ -158,6 +156,26 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
                            myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::DummyMusclePlugin"));
             sim_muscles.back()->Init(myoMuscles[muscle]);
+
+            muscles_spanning_joint[sim_muscles[muscle]->joint->GetName()].push_back(muscle);
+
+            // initialize the queue for delayed activities depending on the spanning joint
+            // hip muscles: 5ms, knee muscles 10ms, ankle muscles 20ms
+            if(sim_muscles[muscle]->joint->GetName().find("groin")!=string::npos){
+                for(uint i=0;i<5e-03/gazebo_max_step_size;i++){
+                    activity[sim_muscles[muscle]->name].push_back(0.0);
+                }
+            }else if(sim_muscles[muscle]->joint->GetName().find("knee")!=string::npos) {
+                for (uint i = 0; i < 10e-03 / gazebo_max_step_size; i++) {
+                    activity[sim_muscles[muscle]->name].push_back(0.0);
+                }
+            }else if(sim_muscles[muscle]->joint->GetName().find("ankle")!=string::npos) {
+                for (uint i = 0; i < 20e-03 / gazebo_max_step_size; i++) {
+                    activity[sim_muscles[muscle]->name].push_back(0.0);
+                }
+            }
+
+
         }
         catch (pluginlib::PluginlibException &ex) {
             //handle the class failing to load
@@ -189,7 +207,7 @@ void WalkController::Update() {
 
         // Compute the controller commands
         if(updateTargetFeatures());
-            updateMuscleActivity();
+            updateMuscleForces();
     }
 
     // Update the gazebo model with the result of the controller
@@ -311,7 +329,15 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
                  spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spans_joint")) {
                 string jointname = spans_joint_child_it->Attribute("name");
                 if (!jointname.empty()) {
-                    myoMuscle.joint = parent_model->GetJoint(jointname);
+                    myoMuscle.spanning_joint = parent_model->GetJoint(jointname);
+                    if(strcmp(spans_joint_child_it->GetText(),"extensor")==0)
+                        myoMuscle.muscle_type = EXTENSOR;
+                    else if(strcmp(spans_joint_child_it->GetText(),"flexor")==0)
+                        myoMuscle.muscle_type = FLEXOR;
+                    else if(strcmp(spans_joint_child_it->GetText(),"stabilizer")==0)
+                        myoMuscle.muscle_type = STABILIZER;
+                    else
+                        ROS_WARN_STREAM_NAMED("parser", "muscle type not defined for " << myoMuscle.name << "'.");
                 } else {
                     ROS_ERROR_STREAM_NAMED("parser", "No spans_joint name attribute specified for myoMuscle'"
                             << myoMuscle.name << "'.");
@@ -682,7 +708,7 @@ LEG WalkController::getLegInState(LEG_STATE s) {
 
 bool WalkController::updateTargetFeatures() {
     if(!updateFootDisplacementAndVelocity()){
-        ROS_WARN_THROTTLE(1.0, "legs are no touching the ground");
+        ROS_WARN_THROTTLE(1.0, "legs are not touching the ground");
         return false;
     }
 
@@ -790,7 +816,7 @@ bool WalkController::updateTargetFeatures() {
     return true;
 }
 
-void WalkController::updateMuscleActivity() {
+void WalkController::updateMuscleForces() {
     // calculate target force and torque
     for (auto link_name:link_names) {
         physics::LinkPtr link = parent_model->GetLink(link_name);
@@ -814,8 +840,107 @@ void WalkController::updateMuscleActivity() {
                         momentArm_normalized.Cross(link->GetWorldPose().pos - joint->GetWorldPose().pos)
                                 .Dot(F[link_name]) + momentArm_normalized.Dot(T[link_name]);
                 F_tilde[sim_muscles[muscle]->name] = tau[sim_muscles[muscle]->name] / momentArm.GetLength();
-                sim_muscles[muscle]->cmd = F_tilde[sim_muscles[muscle]->name];
-                ROS_INFO("")
+//                ROS_INFO("F_tilde: %f tau: %f", tau[sim_muscles[muscle]->name],F_tilde[sim_muscles[muscle]->name]);
+            }
+        }
+    }
+}
+
+void WalkController::updateMuscleActivities(){
+    // queue the activities for time delayed feedbacks
+    for(uint muscle=0; muscle<sim_muscles.size(); muscle++) {
+        activity[sim_muscles[muscle]->name].push_back(F_tilde[sim_muscles[muscle]->name] / F_max);
+    }
+    // update the feedbacks. this depends on the current state of each leg
+    for(uint leg=0; leg<=2; leg++){
+        switch(leg_state[leg]){
+            case Stance: {
+                // during stance the hip muscles stabilize and rotate the hip towards its target orientation
+                char joint[20];
+                sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                // the rest of the leg has no target position or orientations, instead we are using positive
+                // force feedback for the extensors to achieve joint compliance
+                sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                break;
+            }
+            case Lift_off: {
+                // during lift-off all muscles attached to the hip are fed a constant
+                // excitation of high magnitude, to initiate a leg swing
+                char joint[20];
+                sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = c_hip_lift;
+                    if (sim_muscles[muscle]->muscle_type == FLEXOR)
+                        feedback[sim_muscles[muscle]->name] = -c_hip_lift;
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                // the rest of the leg has no target position or orientations, instead we are using positive
+                // force feedback for the extensors to achieve joint compliance
+                sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                break;
+            }
+            case Swing: {
+                char joint[20];
+                sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                break;
+            }
+            case Stance_Preparation: {
+                char joint[20];
+                sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
+                for (uint muscle:muscles_spanning_joint[joint]) {
+                    if (sim_muscles[muscle]->muscle_type == EXTENSOR)
+                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
+                    activity[sim_muscles[muscle]->name].pop_front();
+                }
+                break;
             }
         }
     }

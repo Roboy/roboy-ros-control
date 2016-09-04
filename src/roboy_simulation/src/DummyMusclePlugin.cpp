@@ -32,7 +32,8 @@ namespace roboy_simulation {
     void DummyMusclePlugin::Init(MyoMuscleInfo &myoMuscle) {
         link_index = myoMuscle.link_index;
         links = myoMuscle.links;
-        joint = myoMuscle.joint;
+        joint = myoMuscle.spanning_joint;
+        muscle_type = myoMuscle.muscle_type;
         viaPoints = myoMuscle.viaPoints;
         viaPointsInGlobalFrame = myoMuscle.viaPoints;
         force = myoMuscle.viaPoints;
