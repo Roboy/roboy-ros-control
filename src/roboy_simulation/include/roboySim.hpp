@@ -175,7 +175,5 @@ namespace gazebo_ros_control {
 		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>> class_loader;
 		vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
-
-        WalkController *walkController = nullptr;
     };
 }

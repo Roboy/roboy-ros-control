@@ -32,7 +32,7 @@ namespace gazebo_ros_control {
         delete[] cmd, pos, vel, eff;
         update_thread->join();
         delete update_thread;
-        delete walkController;
+//        delete walkController;
     }
 
     void RoboySim::initializeControllers(const common_utilities::Initialize::ConstPtr &msg) {
@@ -125,7 +125,7 @@ namespace gazebo_ros_control {
             ROS_WARN(
                     "could not start POSITION CONTROLLERS, try starting via /controller_manager/switch_controller service");
 
-        walkController = new WalkController(sim_muscles, parent_model);
+//        walkController = new WalkController(sim_muscles, parent_model);
 
         initialized = true;
     }
@@ -188,18 +188,18 @@ namespace gazebo_ros_control {
             if (!startControllers(start_controllers))
                 ROS_WARN("could not start controllers, try starting via /controller_manager/switch_controller service");
 
-            if(walkController != nullptr) {
-                delete walkController;
-            }
-            walkController = new WalkController(sim_muscles, parent_model);
+//            if(walkController != nullptr) {
+//                delete walkController;
+//            }
+//            walkController = new WalkController(sim_muscles, parent_model);
 
             initialized = true;
 
         }else if(initialized){
             initialized = false;
             // delete the walkController
-            delete walkController;
-            walkController = nullptr;
+//            delete walkController;
+//            walkController = nullptr;
             // reconnect to GUI
             init_sub = nh->subscribe("/roboy/initialize", 1, &RoboySim::initializeControllers, this);
             record_sub = nh->subscribe("/roboy/record", 1, &RoboySim::record, this);
@@ -215,6 +215,8 @@ namespace gazebo_ros_control {
         // Save pointers to the model
         parent_model = parent_;
         sdf = sdf_;
+
+//        ROS_INFO("WORLD: %s", parent_model->GetWorld()->GetName().c_str());
 
         // Error message if the model couldn't be found
         if (!parent_model) {
@@ -277,7 +279,7 @@ namespace gazebo_ros_control {
 
         // Create the controller manager
         ROS_INFO_STREAM_NAMED("ros_control_plugin", "Loading controller_manager");
-        cm = new controller_manager::ControllerManager(this, *nh);
+//        cm = new controller_manager::ControllerManager(this, *nh);
 
         // Initialize the emergency stop code.
         e_stop_active = false;
@@ -313,15 +315,15 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             sim_muscles[muscle]->Update(time, period);
         }
-
-        if(walkController->visualizeTendon)
-            walkController->publishTendon();
-        if(walkController->visualizeForce)
-            walkController->publishForce();
-        if(walkController->visualizeCOM)
-            walkController->publishCOM();
-        if(walkController->visualizeMomentArm)
-            walkController->publishMomentArm();
+//
+//        if(walkController->visualizeTendon)
+//            walkController->publishTendon();
+//        if(walkController->visualizeForce)
+//            walkController->publishForce();
+//        if(walkController->visualizeCOM)
+//            walkController->publishCOM();
+//        if(walkController->visualizeMomentArm)
+//            walkController->publishMomentArm();
     }
 
     void RoboySim::writeSim(ros::Time time, ros::Duration period) {
@@ -376,7 +378,7 @@ namespace gazebo_ros_control {
                     reset_ctrlrs = false;
                 }
             }
-            cm->update(sim_time_ros, sim_period, reset_ctrlrs);
+//            cm->update(sim_time_ros, sim_period, reset_ctrlrs);
         }
 
         // Update the gazebo model with the result of the controller
@@ -384,6 +386,7 @@ namespace gazebo_ros_control {
         if(initialized)
             writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
         last_write_sim_time_ros = sim_time_ros;
+        ros::spinOnce();
     }
 
     void RoboySim::Reset() {

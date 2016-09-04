@@ -53,7 +53,7 @@ add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
 add_dependencies(tendon_visualizer roboy_simulation_gencpp)
 target_link_libraries(tendon_visualizer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(roboySim SHARED src/roboySim.cpp src/walkController.cpp)
+add_library(roboySim SHARED src/roboySim.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
@@ -68,6 +68,14 @@ target_link_libraries(contact_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
 add_dependencies(force_torque_plugin roboy_simulation_gencpp)
 target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_executable(walkTrainer src/walkTrainer.cpp )
+add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
+target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
+add_library(WalkController SHARED src/walkController.cpp)
+add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
+target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================
