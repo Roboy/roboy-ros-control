@@ -29,6 +29,7 @@ add_message_files(
         VisualizationControl.msg
         ForceTorque.msg
         LegState.msg
+        SimulationState.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)

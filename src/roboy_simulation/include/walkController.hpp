@@ -32,6 +32,7 @@
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
+#include "roboy_simulation/SimulationState.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
@@ -146,6 +147,12 @@ private:
 
     void publishModel();
 
+    void publishSimulationState();
+
+    void publishID();
+
+    void publishLegState();
+
     ros::NodeHandle *nh;
     uint ID;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
@@ -203,7 +210,7 @@ private:
     int8_t recording;
 
     ros::Subscriber steer_recording_sub, record_sub, init_sub, init_walk_controller_sub;
-    ros::Publisher roboy_pub, recordResult_pub, leg_state_pub;
+    ros::Publisher roboy_pub, recordResult_pub, leg_state_pub, simulation_state_pub;
 
     common_utilities::RoboyState roboyStateMsg;
 

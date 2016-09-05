@@ -19,12 +19,10 @@ WalkController::WalkController() {
                                                     &WalkController::visualization_control, this);
 
     visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
-    marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
-    leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 1);
-    id_pub = nh->advertise<std_msgs::Int32>("/roboy/id",100);
-
-    while(id_pub.getNumSubscribers()==0)
-        ROS_INFO_THROTTLE(1,"Waiting for rviz id subsriber");
+    marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
+    leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 2);
+    id_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
+    simulation_state_pub = nh->advertise<roboy_simulation::SimulationState>("/roboy/simulationState", 1);
 
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
@@ -65,6 +63,8 @@ WalkController::WalkController() {
     k_P = 1.0;
     k_Q = 1.0;
     k_omega = 1.0;
+
+    ID = gazebo::physics::getUniqueId();
 }
 
 WalkController::~WalkController() {
@@ -192,10 +192,8 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 
     updateFootDisplacementAndVelocity();
 
-    ID = gazebo::physics::getUniqueId();
-    std_msgs::Int32 msg;
-    msg.data = ID;
-    id_pub.publish(msg);
+    publishID();
+
     ros::spinOnce();
 
     // Listen to the update event. This event is broadcast every simulation iteration.
@@ -229,6 +227,24 @@ void WalkController::Update() {
     // computation
     writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
     last_write_sim_time_ros = sim_time_ros;
+
+    // publish every now and then
+    if((gz_time_now.nsec*gz_time_now.nsInMs)%100){
+        if (visualizeTendon)
+            publishTendon();
+        if (visualizeForce)
+            publishForce();
+        if (visualizeCOM)
+            publishCOM();
+        if (visualizeMomentArm)
+            publishMomentArm();
+        if(visualizeMesh)
+            publishModel();
+        publishSimulationState();
+        publishID();
+        publishLegState();
+    }
+
     ros::spinOnce();
 }
 
@@ -238,17 +254,6 @@ void WalkController::readSim(ros::Time time, ros::Duration period) {
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         sim_muscles[muscle]->Update(time, period);
     }
-
-    if (visualizeTendon)
-        publishTendon();
-    if (visualizeForce)
-        publishForce();
-    if (visualizeCOM)
-        publishCOM();
-    if (visualizeMomentArm)
-        publishMomentArm();
-    if(visualizeMesh)
-        publishModel();
 }
 
 void WalkController::writeSim(ros::Time time, ros::Duration period) {
@@ -693,12 +698,6 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
                  LEG_STATE_STRING[new_state] );
         leg_state[msg->leg] = new_state;
     }
-
-    roboy_simulation::LegState msg2;
-    msg2.id = ID;
-    msg2.leg = msg->leg;
-    msg2.state = leg_state[msg->leg];
-    leg_state_pub.publish(msg2);
 }
 
 LEG_STATE WalkController::NextState(LEG_STATE s) {
@@ -1239,6 +1238,67 @@ void WalkController::publishModel(){
         mesh.mesh_resource = meshpath;
         marker_visualization_pub.publish(mesh);
     }
+}
+
+void WalkController::publishSimulationState(){
+    roboy_simulation::SimulationState msg;
+    msg.id = ID;
+    msg.F_contact = F_contact;
+    msg.d_lift = d_lift;
+    msg.d_prep = d_prep;
+    msg.F_max = F_max;
+    msg.psi_heading = psi_heading;
+    msg.omega_heading = omega_heading;
+    msg.v_forward = v_forward;
+    msg.v_COM = v_COM;
+    msg.k_v = k_v;
+    msg.k_h = k_h;
+    msg.k_p_theta_left.assign(k_p_theta_left, k_p_theta_left+4);
+    msg.k_d_phi.assign(k_d_phi,k_d_phi+2);
+    msg.k_p_theta_right.assign(k_p_theta_right, k_p_theta_right+4);
+    msg.k_d_theta_left.assign(k_d_theta_left, k_d_theta_left+4);
+    msg.k_d_theta_right.assign(k_d_theta_right, k_d_theta_right+4);
+    msg.k_p_phi.assign(k_p_theta_left, k_p_theta_left+4);
+    msg.k_d_phi.assign(k_p_theta_left, k_p_theta_left+4);
+    msg.k_V = k_V;
+    msg.k_P = k_P;
+    msg.k_Q = k_Q;
+    msg.k_omega = k_omega;
+    msg.k_M_Fplus = k_M_Fplus;
+    msg.c_hip_lift = c_hip_lift;
+    msg.c_lift_kee = c_lift_kee;
+    msg.c_stance_lift = c_stance_lift;
+    msg.c_swing_prep = c_swing_prep;
+    msg.theta_groin_0.assign(theta_groin_0, theta_groin_0+2);
+    msg.phi_groin_0.assign(phi_groin_0, phi_groin_0+2);
+    msg.theta_trunk_0 = theta_trunk_0;
+    msg.phi_trunk_0 = phi_trunk_0;
+    msg.theta_knee.assign(theta_knee, theta_knee+2);
+    msg.theta_ankle.assign(theta_ankle, theta_ankle+2);
+    msg.d_s = d_s;
+    msg.d_c = d_c;
+    msg.v_s = v_s;
+    msg.v_c = v_c;
+    simulation_state_pub.publish(msg);
+}
+
+void WalkController::publishID(){
+    std_msgs::Int32 msg;
+    msg.data = ID;
+    id_pub.publish(msg);
+}
+
+void WalkController::publishLegState(){
+    roboy_simulation::LegState msgLeft;
+    msgLeft.id = ID;
+    msgLeft.leg = LEG::LEFT;
+    msgLeft.state = leg_state[LEG::LEFT];
+    leg_state_pub.publish(msgLeft);
+    roboy_simulation::LegState msgRight;
+    msgRight.id = ID;
+    msgRight.leg = LEG::RIGHT;
+    msgRight.state = leg_state[LEG::RIGHT];
+    leg_state_pub.publish(msgRight);
 }
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

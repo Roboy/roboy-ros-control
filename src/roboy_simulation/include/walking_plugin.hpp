@@ -12,12 +12,14 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QTableWidget>
 #include <QComboBox>
 #include <QTimer>
 #include <geometry_msgs/Twist.h>
 #include <pluginlib/class_list_macros.h>
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/LegState.h"
+#include "roboy_simulation/SimulationState.h"
 #include "CommonDefinitions.h"
 #include <std_msgs/Int32.h>
 #include <map>
@@ -104,6 +106,8 @@ public Q_SLOTS:
 
     void changeID(int index);
 
+    void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
+
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 
@@ -115,7 +119,7 @@ private:
 //    map<uint, ros::Publisher> leg_state_sub;
     ros::AsyncSpinner *spinner;
     ros::Publisher roboy_visualization_control_pub, init_walk_controller_pub;
-    ros::Subscriber id_sub;
+    ros::Subscriber id_sub, simulation_state_sub;
     enum {
         Tendon,
         COM,
