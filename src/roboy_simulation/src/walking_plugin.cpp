@@ -322,6 +322,12 @@ void WalkingPlugin::showMomentArm() {
 void WalkingPlugin::changeID(int index){
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     currentID = make_pair(index, roboyID->currentText().toInt());
+    // republish visualization
+    showMesh();
+    showCOM();
+    showMomentArm();
+    showForce();
+    showTendon();
 }
 
 void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
@@ -385,15 +391,18 @@ void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &
 
 void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
-    roboyID->addItem(QString::number(msg->data));
-    leg_state_sub[msg->data] = nh->subscribe("/roboy/leg_state", 2, &WalkingPlugin::updateLegStates, this);
-    roboyID->repaint();
-    // republish visualization
-    showMesh();
-    showCOM();
-    showMomentArm();
-    showForce();
-    showTendon();
+    int index = roboyID->findText(QString::number(msg->data));
+    if(index==-1) {
+        roboyID->addItem(QString::number(msg->data));
+        leg_state_sub[msg->data] = nh->subscribe("/roboy/leg_state", 2, &WalkingPlugin::updateLegStates, this);
+        roboyID->repaint();
+        // republish visualization
+        showMesh();
+        showCOM();
+        showMomentArm();
+        showForce();
+        showTendon();
+    }
 }
 
 void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg){

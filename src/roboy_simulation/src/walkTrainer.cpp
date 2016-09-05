@@ -61,17 +61,9 @@ void WalkTrainer::initializeWorlds(uint numberOfWorlds){
 }
 
 void WalkTrainer::simulate(){
-    physics::ModelPtr model0 = world[0]->GetModel("legs_with_muscles_simplified");
-    physics::ModelPtr model1 = world[1]->GetModel("legs_with_muscles_simplified");
-
-    for(uint i=0;i<2;i++) {
+    for(uint i=0;i<world.size();i++) {
+        gazebo::sensors::run_once(true);
         gazebo::runWorld(world[i], (i+1)*100);
-    }
-    if (model0 == nullptr && model1 == nullptr)
-        cout << "could not find legs" << endl;
-    else {
-        cout << "world 0: " << model0->GetLink("foot_left")->GetWorldPose() << endl;
-        cout << "world 1: " << model1->GetLink("foot_left")->GetWorldPose() << endl;
     }
 }
 
@@ -85,13 +77,10 @@ int main(int _argc, char **_argv) {
 
     WalkTrainer walkTrainer;
 
-    walkTrainer.initializeWorlds(1);
+    walkTrainer.initializeWorlds(2);
 
     while(ros::ok()){
-        for(uint i=0;i<walkTrainer.world.size();i++) {
-            gazebo::sensors::run_once(true);
-            gazebo::runWorld(walkTrainer.world[i], 100);
-        }
+        walkTrainer.simulate();
     }
 
     gazebo::shutdown();
