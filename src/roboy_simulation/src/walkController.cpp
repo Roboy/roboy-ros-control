@@ -1,3 +1,4 @@
+#include <std_msgs/Float32.h>
 #include "walkController.hpp"
 
 WalkController::WalkController() {
@@ -20,6 +21,10 @@ WalkController::WalkController() {
     visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
     leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 1);
+    id_pub = nh->advertise<std_msgs::Int32>("/roboy/id",100);
+
+    while(id_pub.getNumSubscribers()==0)
+        ROS_INFO_THROTTLE(1,"Waiting for rviz id subsriber");
 
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
@@ -187,6 +192,12 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 
     updateFootDisplacementAndVelocity();
 
+    ID = gazebo::physics::getUniqueId();
+    std_msgs::Int32 msg;
+    msg.data = ID;
+    id_pub.publish(msg);
+    ros::spinOnce();
+
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&WalkController::Update, this));
 
@@ -236,6 +247,8 @@ void WalkController::readSim(ros::Time time, ros::Duration period) {
         publishCOM();
     if (visualizeMomentArm)
         publishMomentArm();
+    if(visualizeMesh)
+        publishModel();
 }
 
 void WalkController::writeSim(ros::Time time, ros::Duration period) {
@@ -682,6 +695,7 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
     }
 
     roboy_simulation::LegState msg2;
+    msg2.id = ID;
     msg2.leg = msg->leg;
     msg2.state = leg_state[msg->leg];
     leg_state_pub.publish(msg2);
@@ -961,22 +975,58 @@ void WalkController::updateMuscleActivities(){
 }
 
 void WalkController::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
-    switch (msg->control) {
-        case Tendon: {
-            visualizeTendon = msg->value;
-            break;
-        }
-        case COM: {
-            visualizeCOM = msg->value;
-            break;
-        }
-        case Force: {
-            visualizeForce = msg->value;
-            break;
-        }
-        case MomentArm: {
-            visualizeMomentArm = msg->value;
-            break;
+    if(msg->id == ID) { // only react to messages with my id
+        switch (msg->control) {
+            case Tendon: {
+                visualizeTendon = msg->value;
+                if(!visualizeTendon){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
+            case COM: {
+                visualizeCOM = msg->value;
+                if(!visualizeCOM){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
+            case Force: {
+                visualizeForce = msg->value;
+                if(!visualizeForce){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
+            case MomentArm: {
+                visualizeMomentArm = msg->value;
+                if(!visualizeMomentArm){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
+            case Mesh: {
+                visualizeMesh = msg->value;
+                if(!visualizeMesh){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
         }
     }
 }
@@ -986,7 +1036,9 @@ void WalkController::publishTendon() {
     visualization_msgs::Marker line_strip;
     line_strip.header.frame_id = "world";
     line_strip.header.stamp = ros::Time::now();
-    line_strip.ns = "tendon";
+    char tendonnamespace[20];
+    sprintf(tendonnamespace, "tendon_%d", ID);
+    line_strip.ns = tendonnamespace;
     if (add) {
         line_strip.action = visualization_msgs::Marker::ADD;
         add = false;
@@ -1025,7 +1077,9 @@ void WalkController::publishCOM() {
     visualization_msgs::Marker sphere;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     sphere.header.frame_id = "world";
-    sphere.ns = "force";
+    char comnamespace[20];
+    sprintf(comnamespace, "COM_%d", ID);
+    sphere.ns = comnamespace;
     sphere.type = visualization_msgs::Marker::SPHERE;
     sphere.color.r = 0.0f;
     sphere.color.g = 0.0f;
@@ -1057,7 +1111,9 @@ void WalkController::publishForce() {
     visualization_msgs::Marker arrow;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     arrow.header.frame_id = "world";
-    arrow.ns = "force";
+    char forcenamespace[20];
+    sprintf(forcenamespace, "force_%d", ID);
+    arrow.ns = forcenamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
     arrow.color.a = 1.0;
     arrow.lifetime = ros::Duration();
@@ -1110,7 +1166,9 @@ void WalkController::publishMomentArm() {
     visualization_msgs::Marker arrow;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     arrow.header.frame_id = "world";
-    arrow.ns = "momentArm";
+    char momentarmnamespace[20];
+    sprintf(momentarmnamespace, "momentarm_%d", ID);
+    arrow.ns = momentarmnamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
     arrow.color.r = 0.0f;
     arrow.color.g = 0.0f;
@@ -1136,6 +1194,50 @@ void WalkController::publishMomentArm() {
         p.z += sim_muscles[muscle]->momentArm.z;
         arrow.points.push_back(p);
         marker_visualization_pub.publish(arrow);
+    }
+}
+
+void WalkController::publishModel(){
+    static bool add = true;
+    visualization_msgs::Marker mesh;
+    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    mesh.header.frame_id = "world";
+    char modelnamespace[20];
+    sprintf(modelnamespace, "model_%d", ID);
+    mesh.ns = modelnamespace;
+    mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
+    mesh.color.r = 1.0f;
+    mesh.color.g = 1.0f;
+    mesh.color.b = 1.0f;
+    mesh.color.a = 0.5;
+    mesh.scale.x = 1.0;
+    mesh.scale.y = 1.0;
+    mesh.scale.z = 1.0;
+    mesh.lifetime = ros::Duration();
+    if (add) {
+        mesh.action = visualization_msgs::Marker::ADD;
+        add = false;
+    } else {
+        mesh.action = visualization_msgs::Marker::MODIFY;
+    }
+    mesh.header.stamp = ros::Time::now();
+    mesh.id = 80;
+    for(auto link_name:link_names){
+        mesh.id+=1;
+        physics::LinkPtr link = parent_model->GetLink(link_name);
+        math::Pose pose = link->GetWorldPose();
+        mesh.pose.position.x = pose.pos.x;
+        mesh.pose.position.y = pose.pos.y;
+        mesh.pose.position.z = pose.pos.z;
+        mesh.pose.orientation.x = pose.rot.x;
+        mesh.pose.orientation.y = pose.rot.y;
+        mesh.pose.orientation.z = pose.rot.z;
+        mesh.pose.orientation.w = pose.rot.w;
+        char meshpath[200];
+        sprintf(meshpath,"package://roboy_models/legs_with_muscles_simplified/cad/%s.STL",
+                link_name.c_str() );
+        mesh.mesh_resource = meshpath;
+        marker_visualization_pub.publish(mesh);
     }
 }
 

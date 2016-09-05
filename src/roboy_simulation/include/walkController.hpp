@@ -26,6 +26,7 @@
 #include "DummyMusclePlugin.hpp"
 // ros messages
 #include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
 #include <geometry_msgs/Vector3.h>
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
@@ -99,7 +100,8 @@ public:
 
     LEG_STATE leg_state[2];
 
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
+    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
+            visualizeMesh = false;
 private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
@@ -142,9 +144,12 @@ private:
 
     void publishMomentArm();
 
+    void publishModel();
+
     ros::NodeHandle *nh;
+    uint ID;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
-    ros::Publisher visualizeTendon_pub, marker_visualization_pub;
+    ros::Publisher visualizeTendon_pub, marker_visualization_pub, id_pub;
     vector<string> link_names;
 
     double gazebo_max_step_size = 0.003;
@@ -189,7 +194,8 @@ private:
         Tendon,
         COM,
         Force,
-        MomentArm
+        MomentArm,
+        Mesh
     }visualization;
 
     double *cmd, *pos, *vel, *eff;

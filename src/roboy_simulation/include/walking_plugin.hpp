@@ -12,13 +12,18 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QComboBox>
 #include <QTimer>
 #include <geometry_msgs/Twist.h>
 #include <pluginlib/class_list_macros.h>
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/LegState.h"
 #include "CommonDefinitions.h"
+#include <std_msgs/Int32.h>
+#include <map>
 #endif
+
+using namespace std;
 
 class LightWidget : public QWidget {
 Q_OBJECT
@@ -93,22 +98,29 @@ public Q_SLOTS:
 
     void showTendon();
 
+    void showMesh();
+
     void showMomentArm();
+
+    void changeID(int index);
 
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 
+    void updateId(const std_msgs::Int32::ConstPtr &msg);
 
     ros::NodeHandle *nh;
+    pair<uint, uint> currentID;
+    map<uint, ros::Subscriber> leg_state_sub;
+//    map<uint, ros::Publisher> leg_state_sub;
     ros::AsyncSpinner *spinner;
     ros::Publisher roboy_visualization_control_pub, init_walk_controller_pub;
-    ros::Subscriber leg_state_sub;
+    ros::Subscriber id_sub;
     enum {
         Tendon,
         COM,
         Force,
-        MomentArm
+        MomentArm,
+        Mesh
     } visualization;
-
-    bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false;
 };
