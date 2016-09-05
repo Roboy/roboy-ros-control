@@ -28,6 +28,7 @@ add_message_files(
         Tendon.msg
         VisualizationControl.msg
         ForceTorque.msg
+        LegState.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)

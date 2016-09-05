@@ -30,6 +30,7 @@
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/ForceTorque.h"
+#include "roboy_simulation/LegState.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
@@ -42,13 +43,6 @@ using namespace gazebo;
 using namespace std;
 
 static const char * FOOT[] = { "foot_left", "foot_right" };
-
-enum LEG_STATE{
-    Stance,
-    Lift_off,
-    Swing,
-    Stance_Preparation
-};
 
 static const char * LEG_STATE_STRING[] = { "Stance", "Lift_off", "Swing", "Stance_Preparation" };
 
@@ -155,7 +149,8 @@ private:
 
     double gazebo_max_step_size = 0.003;
 
-    double F_contact = 10.0, d_lift = -0.3, d_prep = 0.0, F_max = 500; // to be optimized
+    double F_contact = 10.0, d_lift = -0.3, d_prep = 0.0;
+    double F_max = 500;
     // desired user values
     double psi_heading = 0.0;
     double omega_heading = 0.0;
@@ -168,7 +163,7 @@ private:
     // target force torque gains
     double k_V, k_P, k_Q, k_omega;
     // feedback gains
-    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_lift_kee = 1.0;
+    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_lift_kee = 1.0, c_stance_lift = 1.0, c_swing_prep = 1.0;
     // target features
     map<string,math::Quaternion> Q;
     map<string,math::Vector3> P;
@@ -181,6 +176,7 @@ private:
     map<string,double> F_tilde;
     map<string,deque<double>> activity;
     map<string,double> feedback;
+    map<string,double> a;
 
     map<string,vector<uint>> muscles_spanning_joint;
 
@@ -201,7 +197,7 @@ private:
     int8_t recording;
 
     ros::Subscriber steer_recording_sub, record_sub, init_sub, init_walk_controller_sub;
-    ros::Publisher roboy_pub, recordResult_pub;
+    ros::Publisher roboy_pub, recordResult_pub, leg_state_pub;
 
     common_utilities::RoboyState roboyStateMsg;
 

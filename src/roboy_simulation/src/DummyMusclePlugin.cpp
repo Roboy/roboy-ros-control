@@ -58,7 +58,7 @@ namespace roboy_simulation {
 
         tendon.GetTendonInfo(viaPointsInGlobalFrame, &newTendon);
 
-        actuatorForce = cmd;
+        actuatorForce = cmd * F_max;
 
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
             force[i] = actuatorForce * newTendon.Orientation[i];

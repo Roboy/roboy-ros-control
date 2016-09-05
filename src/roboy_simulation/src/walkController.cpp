@@ -19,6 +19,7 @@ WalkController::WalkController() {
 
     visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 1);
+    leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 1);
 
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
@@ -175,6 +176,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
                 }
             }
 
+            a[sim_muscles[muscle]->name] = 0.0;
 
         }
         catch (pluginlib::PluginlibException &ex) {
@@ -197,6 +199,12 @@ void WalkController::Update() {
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
 
+    // Compute the controller commands
+    if(updateTargetFeatures()) {
+        updateMuscleForces();
+        updateMuscleActivities();
+    }
+
     // Check if we should update the controllers
     if (sim_period >= control_period) {
         // Store this simulation time
@@ -204,10 +212,6 @@ void WalkController::Update() {
 
         // Update the robot simulation with the state of the gazebo model
         readSim(sim_time_ros, sim_period);
-
-        // Compute the controller commands
-        if(updateTargetFeatures());
-            updateMuscleForces();
     }
 
     // Update the gazebo model with the result of the controller
@@ -676,6 +680,11 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
                  LEG_STATE_STRING[new_state] );
         leg_state[msg->leg] = new_state;
     }
+
+    roboy_simulation::LegState msg2;
+    msg2.leg = msg->leg;
+    msg2.state = leg_state[msg->leg];
+    leg_state_pub.publish(msg2);
 }
 
 LEG_STATE WalkController::NextState(LEG_STATE s) {
@@ -859,22 +868,22 @@ void WalkController::updateMuscleActivities(){
                 char joint[20];
                 sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
-                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                    feedback[sim_muscles[muscle]->name] =
+                            activity[sim_muscles[muscle]->name].front() + c_stance_lift;
                 }
                 // the rest of the leg has no target position or orientations, instead we are using positive
                 // force feedback for the extensors to achieve joint compliance
                 sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_stance_lift;
                 }
                 sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_stance_lift;
                 }
                 break;
             }
@@ -885,24 +894,23 @@ void WalkController::updateMuscleActivities(){
                 sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = c_hip_lift;
+                        feedback[sim_muscles[muscle]->name] = c_hip_lift + c_stance_lift;
                     if (sim_muscles[muscle]->muscle_type == FLEXOR)
-                        feedback[sim_muscles[muscle]->name] = -c_hip_lift;
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] = -c_hip_lift + c_stance_lift;
                 }
                 // the rest of the leg has no target position or orientations, instead we are using positive
                 // force feedback for the extensors to achieve joint compliance
                 sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_stance_lift;
                 }
                 sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_stance_lift;
                 }
                 break;
             }
@@ -910,14 +918,14 @@ void WalkController::updateMuscleActivities(){
                 char joint[20];
                 sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
-                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                    feedback[sim_muscles[muscle]->name] =
+                            activity[sim_muscles[muscle]->name].front() + c_swing_prep;
                 }
                 sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_swing_prep;
                 }
                 break;
             }
@@ -925,24 +933,30 @@ void WalkController::updateMuscleActivities(){
                 char joint[20];
                 sprintf(joint, "groin_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
-                    feedback[sim_muscles[muscle]->name] = activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                    feedback[sim_muscles[muscle]->name] =
+                            activity[sim_muscles[muscle]->name].front() + c_swing_prep;
                 }
                 sprintf(joint, "knee_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_swing_prep;
                 }
                 sprintf(joint, "ankle_%s", (leg == LEFT ? "left" : "right"));
                 for (uint muscle:muscles_spanning_joint[joint]) {
                     if (sim_muscles[muscle]->muscle_type == EXTENSOR)
-                        feedback[sim_muscles[muscle]->name] = k_M_Fplus * activity[sim_muscles[muscle]->name].front();
-                    activity[sim_muscles[muscle]->name].pop_front();
+                        feedback[sim_muscles[muscle]->name] =
+                                k_M_Fplus * activity[sim_muscles[muscle]->name].front() + c_swing_prep;
                 }
                 break;
             }
         }
+    }
+    // integrate the activity and feedback and pop the first activity
+    for(uint muscle=0; muscle<sim_muscles.size(); muscle++) {
+        a[sim_muscles[muscle]->name] += 100.0*gazebo_max_step_size*
+                        (feedback[sim_muscles[muscle]->name] - activity[sim_muscles[muscle]->name].front());
+        activity[sim_muscles[muscle]->name].pop_front();
     }
 }
 

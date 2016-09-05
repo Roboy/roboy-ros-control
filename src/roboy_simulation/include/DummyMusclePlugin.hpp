@@ -122,6 +122,7 @@ namespace roboy_simulation {
         vector<math::Vector3> viaPointsInGlobalFrame;
         vector<math::Vector3> force;
         MUSCLE_TYPE muscle_type;
+        double F_max = 500;
         double cmd = 0;
     private:
         common::Time prevUpdateTime;
