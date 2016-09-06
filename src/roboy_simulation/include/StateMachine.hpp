@@ -13,6 +13,7 @@ namespace roboy_simulation
 
     class StateMachine{
 
+    public:
         ////////////////////
         /// \brief The state enum for different states of the state machine
         ///
