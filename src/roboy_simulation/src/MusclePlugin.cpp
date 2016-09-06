@@ -35,98 +35,6 @@ namespace roboy_simulation {
 		return result;
 	}
 
-	double ITendon::ElectricMotorModel(const double _current, const double _torqueConstant,
-									   const double _spindleRadius) {
-		double motorForce;
-
-		if (_current >= 0) {
-			motorForce = _current * _torqueConstant / _spindleRadius;
-		}
-		else {
-			motorForce = 0;
-		}
-
-		return motorForce;
-	}
-
-
-	double ITendon::ElasticElementModel(const double _length0, const double _length, double _stiffness,
-										const double _speed, const double _spindleRadius, const double _time) {
-		// double realTimeUpdateRate=1000;
-		double windingLength = _spindleRadius * _speed * _time;
-		double displacement;
-		displacement = windingLength + _length - _length0;
-
-		// gzdbg << "displacement: "
-		// 	  << displacement
-		// 	  << "\n"
-		//          << "windingLength: "
-		// 	  << windingLength
-		// 	  << "\n";
-
-		double elasticForce;
-
-		if (displacement >= 0) {
-			elasticForce = displacement * _stiffness;
-		}
-		else {
-			elasticForce = 0;
-		}
-
-		//return _stiffness[0] + (displacement*_stiffness[1]) + (displacement*displacement*_stiffness[2]) +
-		//			(displacement*displacement*displacement*_stiffness[3]) ;
-		//return displacement*_stiffness[0];
-		return elasticForce;
-
-	}
-
-	math::Vector3 ITendon::CalculateForce(double _elasticForce, double _motorForce,
-										  const math::Vector3 &_tendonOrien) {
-		// math::Vector3 diff = _fixationP - _instertionP;
-
-		/*    double tendonForce;
-
-		if (_elasticForce+_motorForce>=0)
-		{
-			tendonForce=_elasticForce+_motorForce;
-		}
-		else
-		{
-			tendonForce=0;
-		}*/
-
-		return _tendonOrien * (_elasticForce + _motorForce);
-
-	}
-
-	void ITendon::GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p)//try later with pointer
-	{
-		for (int i = 0; i < viaPointPos.size() - 1; i++) {
-			tendon_p->MidPoint.push_back((viaPointPos[i] + viaPointPos[i + 1]) / 2);
-			tendon_p->Vector.push_back(viaPointPos[i] - viaPointPos[i + 1]);
-			tendon_p->Orientation.push_back(tendon_p->Vector[i] / tendon_p->Vector[i].GetLength());
-			tendon_p->Pitch.push_back(atan(tendon_p->Orientation[i][0] / tendon_p->Orientation[i][2]));
-			tendon_p->Roll.push_back(
-					-acos(sqrt((pow(tendon_p->Orientation[i][0], 2) + pow(tendon_p->Orientation[i][2], 2)))));
-		}
-	}
-
-	double ITendon::DotProduct(const math::Vector3 &_v1, const math::Vector3 &_v2) {
-		return _v1.x * _v2.x + _v1.y * _v2.y + _v1.z * _v2.z;
-	}
-
-
-	double ITendon::Angle(const math::Vector3 &_v1, const math::Vector3 &_v2) {
-		return acos(_v1.Dot(_v2) / _v1.GetLength() * _v2.GetLength());
-	}
-
-	double IActuator::EfficiencyApproximation() {
-		double param1 = 0.1; // defines steepness of the approximation
-		double param2 = 0; // defines zero crossing of the approximation
-		return gear.efficiency + (1 / gear.efficiency - gear.efficiency) *
-								 (0.5 * (tanh(-param1 * spindle.angVel * motor.current - param2) + 1));
-	}
-
 	MusclePlugin::MusclePlugin() {
 		x.resize(2);
 	}
@@ -143,6 +51,8 @@ namespace roboy_simulation {
 		actuator.gear = myoMuscle.gear;
 		actuator.spindle = myoMuscle.spindle;
 		tendon.see = myoMuscle.see;
+		tendon.see.expansion = 0.0;
+		tendon.see.force = 0.0;
 
 
 		pid.params.pidParameters.pgain = 1000;
@@ -150,39 +60,65 @@ namespace roboy_simulation {
 		pid.params.pidParameters.dgain = 0;
 	}
 
-
 	void MusclePlugin::Update(ros::Time &time, ros::Duration &period,
-							  vector<math::Vector3> &viaPointInGobalFrame,
-							  vector<math::Vector3> &force) {
+							  vector<math::Vector3> &prevForcePoints,
+							  vector<math::Vector3> &nextForcePoints,
+							  vector<math::Vector3> &prevForce,
+							  vector<math::Vector3> &nextForce) {
+
 		// TODO: calculate PID result
 //		pid.calc_output(cmd,pos,period);
 		actuator.motor.voltage = cmd;
 
-		tendonType newTendon;
-
-        vector<math::Vector3> vpg;
-
 		// get the position and orientation of the links
+		// and compute force points and muscle length
+
         for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
 			// absolute position + relative position=actual position of each via point
+
 			for (uint i = 0; i < viaPoint->second.size(); i++) {
-                viaPointInGobalFrame.push_back(
-                        linkPose[viaPoint->first].pos + linkPose[viaPoint->first].rot.RotateVector(viaPoint->second[i]));
-                vpg.push_back(viaPointInGobalFrame.back());
+
+                viaPoint->second[i].linkPosition = linkPose[viaPoint->first].pos;
+                viaPoint->second[i].linkRotation = linkPose[viaPoint->first].rot;
+                viaPoint->second[i].globalCoordinates = viaPoint->second[i].linkPosition +
+                                        viaPoint->second[i].linkRotation.RotateVector(viaPoint->second[i].localCoordinates);
+
+                if (i>0){
+                    viaPoint->second[i].prevPoint = &viaPoint->second[i-1] ;
+                    viaPoint->second[i-1].nextPoint = &viaPoint->second[i];
+                }
             }
-		}
+            if(viaPoint != viaPoints.begin())
+            {
 
-		tendon.GetTendonInfo(vpg, &newTendon);
+                viaPoint->second.front().prevPoint = &((--viaPoint)->second.back());
+                (--viaPoint)->second.back().nextPoint = &(viaPoint->second[0]);
+            }
+        }
 
-		// extract info from linkPose
-		tendon.see.length = newTendon.Vector[0].GetLength() + newTendon.Vector[1].GetLength();
+        //update force points and calculate muscle length
+        for(IViaPoints *viaPoint = &viaPoints.begin()->second[0]; viaPoint->nextPoint != nullptr; viaPoint = viaPoint->nextPoint)
+        {
+            viaPoint->UpdateForcePoints();
+            tendon.muscleLength += viaPoint->previousSegmentLength;
+            if(viaPoint->prevPoint){
+                prevForcePoints.push_back(viaPoint->prevForcePoint);
+            } else if (viaPoint->nextPoint){
+                nextForcePoints.push_back(viaPoint->nextForcePoint);
+            }
+        };
 
-		// calculate elastic force
-		actuator.elasticForce = 0;//tendon.ElasticElementModel(_see.lengthRest,
-		// _see.length, _see.stiffness, spindle.angVel,
-		// spindle.radius, stepTime.Double());
+		if (tendon.firstUpdate)
+        {
+            tendon.tendonLength = tendon.muscleLength;
+            tendon.firstUpdate = false;
+        }
 
-		// calculate motor force
+        //calculate elastic force
+        tendon.see.length = tendon.muscleLength - tendon.tendonLength;
+        tendon.ElasticElementModel(tendon.see, tendon.see.length);
+        actuator.elasticForce = tendon.see.force;
+
 		// calculate the approximation of gear's efficiency
 		actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
 
@@ -204,19 +140,31 @@ namespace roboy_simulation {
 		actuator.motor.current = x[0];
 		actuator.spindle.angVel = x[1];
 
+		//calculate motor force
 		actuatorForce = tendon.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
 												  actuator.spindle.radius);
 
-        ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
+		ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
-		// calculate general force (elastic+actuator)
-        for(auto viaPoint = viaPoints.begin(); viaPoint != viaPoints.end(); ++viaPoint) {
-			//remove elastic force, this is to be discussed
-			for (uint i = 0; i < viaPoint->second.size(); i++)
-				force.push_back(tendon.CalculateForce(actuator.elasticForce, actuatorForce, newTendon.Orientation[i]));
-//			this->links[i]->AddForceAtWorldPosition(-force, viaPointPos[i]);
-//			this->links[i + 1]->AddForceAtWorldPosition(force, viaPointPos[i + 1]);
-		}
+		actuator.gear.position += actuator.spindle.angVel*period.nsec*1e-9;
+        tendon.tendonLength = tendon.initialTendonLength - actuator.spindle.radius*actuator.gear.position;
+
+        for(IViaPoints *viaPoint = &viaPoints.begin()->second[0]; viaPoint->nextPoint != nullptr; viaPoint = viaPoint->nextPoint)
+        {
+            if(viaPoint->prevPoint)
+            {
+                viaPoint->fa = viaPoint->prevPoint->fb;
+                viaPoint->fb = viaPoint->prevPoint->fb;
+            } else {
+                viaPoint->fb = tendon.see.force;
+            }
+            viaPoint->CalculateForce();
+            if(viaPoint->prevPoint){
+                prevForce.push_back(viaPoint->prevForce);
+            } else if (viaPoint->nextPoint){
+                nextForce.push_back(viaPoint->nextForce);
+            }
+        };
 	}
 }
 // make it a plugin loadable via pluginlib
