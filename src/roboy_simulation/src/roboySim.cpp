@@ -228,9 +228,12 @@ namespace gazebo_ros_control {
 
     void RoboySim::readSim(ros::Time time, ros::Duration period) {
         ROS_DEBUG("read simulation");
-        // update muscle plugins
-        force.clear();
-        viaPointInGobalFrame.clear();
+
+        // update msucle plugin
+        prevForcePoints.clear();
+        nextForcePoints.clear();
+        prevForce.clear();
+        nextForce.clear();
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             for (auto link = sim_muscles[muscle]->linkPose.begin();
                  link != sim_muscles[muscle]->linkPose.end(); ++link) {
@@ -239,7 +242,7 @@ namespace gazebo_ros_control {
                                   sim_muscles[muscle]->linkPose[link->first].pos.y,
                                   sim_muscles[muscle]->linkPose[link->first].pos.z);
             }
-            sim_muscles[muscle]->Update(time, period, viaPointInGobalFrame, force);
+            sim_muscles[muscle]->Update(time, period, prevForcePoints, nextForcePoints, prevForce, nextForce);
         }
         if(visualizeTendon)
             publishTendon();
@@ -260,6 +263,12 @@ namespace gazebo_ros_control {
                 physics::LinkPtr link = parent_model->GetLink(viaPoint->first);
                 for (uint i = 0; i < viaPoint->second.size(); i++) {
                     link->AddForceAtWorldPosition(force[j], viaPointInGobalFrame[j]);
+                    if(i < viaPoint->second.size() - 1){
+                        link->AddForceAtWorldPosition(nextForce[j], nextForcePoints[j]);
+                    }
+                    if(i > 0){
+                        link->AddForceAtWorldPosition(prevForce[j], prevForcePoints[j]);
+                    }
                     j++;
                 }
             }
@@ -605,26 +614,61 @@ namespace gazebo_ros_control {
                     string linkname = link_child_it->Attribute("name");
                     if (!linkname.empty()) {
                         TiXmlElement *viaPoint_child_it = NULL;
-                        vector<math::Vector3> viaPoints;
+                        vector<roboy_simulation::IViaPoints> &viaPoints = myoMuscle.viaPoints[linkname];
                         for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                              viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
                             float x, y, z;
                             if (sscanf(viaPoint_child_it->GetText(), "%f %f %f", &x, &y, &z) != 3) {
                                 ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                                 return false;
+                            }
+                            if (viaPoint_child_it->Attribute("type")){
+                                string type = viaPoint_child_it->Attribute("type");
+                                if (type == "FIXPOINT") {
+                                    roboy_simulation::IViaPoints fvp = roboy_simulation::IViaPoints(math::Vector3(x, y, z));
+                                    viaPoints.push_back(fvp);
+                                } else if (type == "SPHERICAL" || type == "CYLINDRICAL") {
+                                    double radius;
+                                    int state, counter;
+                                    if (viaPoint_child_it->QueryDoubleAttribute("radius", &radius) != TIXML_SUCCESS){
+                                        ROS_ERROR_STREAM_NAMED("parser", "error reading radius");
+                                        return false;
+                                    }
+                                    if (viaPoint_child_it->QueryIntAttribute("state", &state) != TIXML_SUCCESS){
+                                        ROS_ERROR_STREAM_NAMED("parser", "error reading state");
+                                        return false;
+                                    }
+                                    if (viaPoint_child_it->QueryIntAttribute("revCounter", &counter) != TIXML_SUCCESS){
+                                        ROS_ERROR_STREAM_NAMED("parser", "error reading revCounter");
+                                        return false;
+                                    }
+                                    if (type == "SPHERICAL") {
+                                        roboy_simulation::SphericalWrapping svp = roboy_simulation::SphericalWrapping(math::Vector3(x, y, z), radius, state, counter);
+                                        viaPoints.push_back(svp);
+                                    } else {
+                                        roboy_simulation::CylindricalWrapping cvp = roboy_simulation::CylindricalWrapping(math::Vector3(x, y, z), radius, state, counter);
+                                        viaPoints.push_back(cvp);
+                                    }
+                                } else if (type == "MESH") {
+                                    // TODO
+                                    //vp.type = MESH;
+                                } else {
+                                    ROS_ERROR_STREAM_NAMED("parser", "unknown type of via point: " + type);
+                                    return false;
+                                }
                             } else {
-                                viaPoints.push_back(math::Vector3(x, y, z));
+                                ROS_ERROR_STREAM_NAMED("parser", "error reading type");
+                                return false;
                             }
                         }
-                        myoMuscle.viaPoints[linkname] = viaPoints;
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                                              << myoMuscle.name << "' link element.");
                             return false;
                         } else {
                             for (auto viaPoint : myoMuscle.viaPoints[linkname]) {
-                                ROS_INFO("%s viaPoint: %lf %lf %lf", linkname.c_str(), viaPoint.x, viaPoint.y,
-                                         viaPoint.z);
+                                ROS_INFO("%s viaPoint: %lf %lf %lf", linkname.c_str(), viaPoint.localCoordinates.x, viaPoint.localCoordinates.y,
+                                         viaPoint.localCoordinates.z);
                             }
                         }
                     } else {
