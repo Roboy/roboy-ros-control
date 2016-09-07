@@ -82,17 +82,6 @@ namespace roboy_simulation {
                 viaPoint->second[i].linkRotation = linkPose[viaPoint->first].rot;
                 viaPoint->second[i].globalCoordinates = viaPoint->second[i].linkPosition +
                                         viaPoint->second[i].linkRotation.RotateVector(viaPoint->second[i].localCoordinates);
-
-                if (i>0){
-                    viaPoint->second[i].prevPoint = &viaPoint->second[i-1] ;
-                    viaPoint->second[i-1].nextPoint = &viaPoint->second[i];
-                }
-            }
-            if(viaPoint != viaPoints.begin())
-            {
-
-                viaPoint->second.front().prevPoint = &((--viaPoint)->second.back());
-                (--viaPoint)->second.back().nextPoint = &(viaPoint->second[0]);
             }
         }
 
@@ -101,11 +90,8 @@ namespace roboy_simulation {
         {
             viaPoint->UpdateForcePoints();
             tendon.muscleLength += viaPoint->previousSegmentLength;
-            if(viaPoint->prevPoint){
-                prevForcePoints.push_back(viaPoint->prevForcePoint);
-            } else if (viaPoint->nextPoint){
-                nextForcePoints.push_back(viaPoint->nextForcePoint);
-            }
+            prevForcePoints.push_back(viaPoint->prevForcePoint);
+            nextForcePoints.push_back(viaPoint->nextForcePoint);
         };
 
 		if (tendon.firstUpdate)
@@ -159,11 +145,14 @@ namespace roboy_simulation {
                 viaPoint->fb = tendon.see.force;
             }
             viaPoint->CalculateForce();
-            if(viaPoint->prevPoint){
-                prevForce.push_back(viaPoint->prevForce);
-            } else if (viaPoint->nextPoint){
-                nextForce.push_back(viaPoint->nextForce);
+            if(!viaPoint->prevPoint){
+                viaPoint->prevForce = 0;
             }
+            if(!viaPoint->nextPoint){
+                viaPoint->nextForce = 0;
+            }
+            prevForce.push_back(viaPoint->prevForce);
+            nextForce.push_back(viaPoint->nextForce);
         };
 	}
 }
