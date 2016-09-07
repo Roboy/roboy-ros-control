@@ -96,6 +96,7 @@ namespace roboy_simulation {
 
 		if (tendon.firstUpdate)
         {
+            tendon.initialTendonLength = tendon.muscleLength;
             tendon.tendonLength = tendon.muscleLength;
             tendon.firstUpdate = false;
         }
@@ -104,6 +105,8 @@ namespace roboy_simulation {
         tendon.see.length = tendon.muscleLength - tendon.tendonLength;
         tendon.ElasticElementModel(tendon.see, tendon.see.length);
         actuator.elasticForce = tendon.see.force;
+        //set elastic force zero to compare with old plugin functionality
+        actuator.elasticForce = 0;
 
 		// calculate the approximation of gear's efficiency
 		actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
@@ -137,12 +140,18 @@ namespace roboy_simulation {
 
         for(IViaPoints *viaPoint = &viaPoints.begin()->second[0]; viaPoint->nextPoint != nullptr; viaPoint = viaPoint->nextPoint)
         {
-            if(viaPoint->prevPoint)
+            if(viaPoint->prevPoint && viaPoint->nextPoint)
             {
                 viaPoint->fa = viaPoint->prevPoint->fb;
                 viaPoint->fb = viaPoint->prevPoint->fb;
-            } else {
-                viaPoint->fb = tendon.see.force;
+            } else if (!viaPoint->prevPoint){
+                viaPoint->fa = 0;
+                //use this to compare with old functionality of plugin
+                viaPoint->fb = actuator.elasticForce + actuatorForce;
+                //viaPoint->fb = tendon.see.force;
+            } else if (!viaPoint->nextPoint){
+                viaPoint->fa = viaPoint->prevPoint->fb;
+                viaPoint->fb = 0;
             }
             viaPoint->CalculateForce();
             if(!viaPoint->prevPoint){
