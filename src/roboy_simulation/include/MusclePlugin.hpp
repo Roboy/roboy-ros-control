@@ -103,15 +103,6 @@ namespace roboy_simulation {
 
 //		msgs::Visual visualMsg[linkNumber - 1];
 
-    /*
-    private: void updateObstacleOrigins();
-    private: void ComputeStepTime();
-    private: void ApplyForce();
-
-    private: common::Time controllerPrevUpdateTime;
-    private: common::Time currTime;
-    private: common::Time stepTime;
-    */
 	};
 
 }
