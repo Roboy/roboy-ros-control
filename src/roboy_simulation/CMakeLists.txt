@@ -39,11 +39,13 @@ include_directories(
         include/
         ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
+				${CMAKE_CURRENT_SOURCE_DIR}/../../devel/include
 )
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED src/MusclePlugin.cpp)
+add_library(muscle_plugin SHARED src/MusclePlugin.cpp src/CylindricalWrapping.cpp src/IActuator.cpp 
+																 src/ITendon.cpp src/IViaPoints.cpp src/MeshWrapping.cpp src/SphericalWrapping.cpp src/StateMachine.cpp)
 target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(tendon_visualizer SHARED src/TendonVisualizer.cpp)
