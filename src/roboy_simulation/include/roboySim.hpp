@@ -212,7 +212,6 @@ namespace gazebo_ros_control {
 		boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::MusclePlugin>> class_loader;
 		vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
 		vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
-		vector<math::Vector3> viaPointInGobalFrame, force;
 		vector<math::Vector3> nextForcePoints, prevForcePoints, nextForce, prevForce;
 
         enum{
