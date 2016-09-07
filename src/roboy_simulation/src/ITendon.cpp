@@ -2,7 +2,7 @@
 
 using namespace roboy_simulation;
 
-    ITendon::ITendon(): muscleLength(0), tendonLength(0), initialTendonLength(0.257593), firstUpdate(true)
+    ITendon::ITendon(): muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
     {
 
     };
