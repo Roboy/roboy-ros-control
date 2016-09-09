@@ -61,8 +61,6 @@ namespace roboy_simulation
         math::Vector3 prevForce;
         math::Vector3 nextForce;
         double previousSegmentLength;
-
-
 	};
 }
 

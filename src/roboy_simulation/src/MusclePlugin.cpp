@@ -2,39 +2,6 @@
 
 namespace roboy_simulation {
 
-	double PIDcontroller::calc_output(double cmd, double pos, double timePeriod) {
-		float pterm, dterm, result, err, ffterm;
-		if (cmd >= spNegMax && cmd <= spPosMax) {
-			err = pos - cmd;
-			if ((err > params.pidParameters.deadBand) || (err < -1 * params.pidParameters.deadBand)) {
-				pterm = params.pidParameters.pgain * err;
-				if ((pterm < outputPosMax) || (pterm > outputNegMax)) //if the proportional term is not maxed
-				{
-					integral += (params.pidParameters.igain * err * (timePeriod)); //add to the integral
-					if (integral > params.pidParameters.IntegralPosMax)
-						integral = params.pidParameters.IntegralPosMax;
-					else if (integral < params.pidParameters.IntegralNegMax)
-						integral = params.pidParameters.IntegralNegMax;
-				}
-
-				dterm = ((err - lastError) / timePeriod) * params.pidParameters.dgain;
-
-				ffterm = params.pidParameters.forwardGain * cmd;
-				result = ffterm + pterm + integral + dterm;
-				if (result < outputNegMax)
-					result = outputNegMax;
-				else if (result > outputPosMax)
-					result = outputPosMax;
-			}
-			else
-				result = integral;
-			lastError = err;
-		} else {
-			result = 0;
-		}
-		return result;
-	}
-
 	MusclePlugin::MusclePlugin() {
 		x.resize(2);
 	}
@@ -54,10 +21,6 @@ namespace roboy_simulation {
         name = myoMuscle.name;
 		tendon.see.expansion = 0.0;
 		tendon.see.force = 0.0;
-
-		pid.params.pidParameters.pgain = 1000;
-		pid.params.pidParameters.igain = 0;
-		pid.params.pidParameters.dgain = 0;
 	}
 
 	void MusclePlugin::Update( ros::Time &time, ros::Duration &period ) {

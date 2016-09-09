@@ -41,23 +41,12 @@ namespace roboy_simulation {
 
 	struct MyoMuscleInfo{
 		string name;
-		vector<IViaPoints>viaPoints;
+		vector<IViaPoints> viaPoints;
 		Motor motor;
 		Gear gear;
 		Spindle spindle;
 		SEE see;
 		MyoMuscleInfo():viaPoints(){};
-	};
-
-	struct PIDcontroller{
-		double calc_output(double cmd, double pos, double timePeriod);
-		sint32 outputPosMax = 24; /*!< maximum control output in the positive direction in counts, max 4000*/
-		sint32 outputNegMax = -24; /*!< maximum control output in the negative direction in counts, max -4000*/
-		float32 spPosMax = 100;/*<!Positive limit for the set point.*/
-		float32 spNegMax = 100;/*<!Negative limit for the set point.*/
-		parameters_t params;
-		float32 integral;
-		float32 lastError;
 	};
 
 	class MusclePlugin{
@@ -74,7 +63,6 @@ namespace roboy_simulation {
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
 		vector<IViaPoints> viaPoints;
-		PIDcontroller pid;
 		double cmd = 0;
 	private:
 		event::ConnectionPtr connection;
