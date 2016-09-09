@@ -1,0 +1,8 @@
+<library path="libdummy_muscle_plugin">
+  <class type="roboy_simulation::DummyMusclePlugin" 
+	 base_class_type="roboy_simulation::DummyMusclePlugin">
+  <description>
+  	This is a dummy muscle plugin propagating cmd->actuator_force
+  </description>
+  </class>
+</library>

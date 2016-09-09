@@ -45,6 +45,7 @@
 
     <export>
         <roboy_simulation plugin="${prefix}/muscle_plugin.xml"/>
+        <roboy_simulation plugin="${prefix}/dummy_muscle_plugin.xml"/>
         <rviz plugin="${prefix}/walking_plugin.xml"/>
     </export>
 </package>

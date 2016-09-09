@@ -1,0 +1,7 @@
+<library path="lib/libMuscleActivityController">
+  <class name="roboy_controller/MuscleActivityController" type="MuscleActivityController"
+base_class_type="controller_interface::ControllerBase">
+    <description>This is a force controller plugin.</description>
+  </class>
+</library>
+

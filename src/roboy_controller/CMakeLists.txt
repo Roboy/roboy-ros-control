@@ -12,10 +12,9 @@ find_package(catkin REQUIRED COMPONENTS roscpp controller_interface hardware_int
 catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(
-include 
-${catkin_INCLUDE_DIRS}
-${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
-${CMAKE_CURRENT_SOURCE_DIR}/../../devel/include
+        include
+        ${catkin_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
 )
 
 #==============================================================================
@@ -33,25 +32,31 @@ add_library(ForceController src/ForceController.cpp)
 add_dependencies(ForceController common_utilities_generate_messages_cpp)
 target_link_libraries(ForceController ${catkin_LIBRARIES})
 
+add_library(MuscleActivityController src/MuscleActivityController.cpp)
+add_dependencies(MuscleActivityController common_utilities_generate_messages_cpp)
+target_link_libraries(MuscleActivityController ${catkin_LIBRARIES})
+
 #==============================================================================
 # Installation
 #==============================================================================
 install(TARGETS
-	PositionController
-	VelocityController
-	ForceController    
-	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+        PositionController
+        VelocityController
+        ForceController
+        MuscleActivityController
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        )
 
 install(FILES
-	package.xml 
-	PositionController_plugin.xml
-	VelocityController_plugin.xml
-	ForceController_plugin.xml
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
+        package.xml
+        PositionController_plugin.xml
+        VelocityController_plugin.xml
+        ForceController_plugin.xml
+        MuscleActivityController_plugin.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+        )
 
 install(DIRECTORY
-	config/
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
-)
+        config/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+        )

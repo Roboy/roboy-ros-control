@@ -30,7 +30,7 @@ namespace gazebo_ros_control {
         force_torque_ankle_left_sub  = nh->subscribe("/roboy/force_torque_ankle_left", 1,
                                                      &RoboySim::finite_state_machine, this);
         force_torque_ankle_right_sub  = nh->subscribe("/roboy/force_torque_ankle_right", 1,
-                                                     &RoboySim::finite_state_machine, this);
+                                                      &RoboySim::finite_state_machine, this);
     }
 
     RoboySim::~RoboySim() {
@@ -150,8 +150,8 @@ namespace gazebo_ros_control {
         if (!ros::isInitialized()) {
             ROS_FATAL_STREAM_NAMED("gazebo_ros_control",
                                    "A ROS node for Gazebo has not been initialized, unable to load plugin. "
-                                   <<
-                                   "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
+                                           <<
+                                           "Load the Gazebo system plugin 'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
             return;
         }
 
@@ -183,20 +183,20 @@ namespace gazebo_ros_control {
             // Check the period against the simulation period
             if (control_period < gazebo_period) {
                 ROS_ERROR_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
-                                                             << " s) is faster than the gazebo simulation period (" <<
-                                                             gazebo_period << " s).");
+                                                                                                  << " s) is faster than the gazebo simulation period (" <<
+                                                                                                  gazebo_period << " s).");
             }
             else if (control_period > gazebo_period) {
                 ROS_WARN_STREAM_NAMED("gazebo_ros_control", "Desired controller update period (" << control_period
-                                                            << " s) is slower than the gazebo simulation period (" <<
-                                                            gazebo_period << " s).");
+                                                                                                 << " s) is slower than the gazebo simulation period (" <<
+                                                                                                 gazebo_period << " s).");
             }
         }
         else {
             control_period = gazebo_period;
             ROS_DEBUG_STREAM_NAMED("gazebo_ros_control",
                                    "Control period not found in URDF/SDF, defaulting to Gazebo period of "
-                                   << control_period);
+                                           << control_period);
         }
 
         // Create the controller manager
@@ -502,7 +502,7 @@ namespace gazebo_ros_control {
                     break;
             }
         }
-    return angle;
+        return angle;
     }
     map<string,math::Vector3> RoboySim::calculateTrunk(){
         physics::LinkPtr trunk = parent_model->GetLink("hip");
@@ -664,12 +664,12 @@ namespace gazebo_ros_control {
                         }
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
-                                                             << myoMuscle.name << "' link element.");
+                                    << myoMuscle.name << "' link element.");
                             return false;
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No link name attribute specified for myoMuscle'"
-                                                         << myoMuscle.name << "'.");
+                                << myoMuscle.name << "'.");
                         continue;
                     }
                 }
@@ -704,7 +704,7 @@ namespace gazebo_ros_control {
                     }
                     if(myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
                         if(myoMuscle.viaPoints[i-1].type != roboy_simulation::IViaPoints::FIXPOINT
-                            || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
+                           || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
                             ROS_ERROR_STREAM_NAMED("parser", "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
                             return false;
                         }
@@ -722,7 +722,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No bemf_constant element found in myoMuscle '"
-                                                         << myoMuscle.name << "' motor element.");
+                                << myoMuscle.name << "' motor element.");
                         return false;
                     }
                     // torque_constant
@@ -734,7 +734,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No torque_constant element found in myoMuscle '"
-                                                         << myoMuscle.name << "' motor element.");
+                                << myoMuscle.name << "' motor element.");
                         return false;
                     }
                     // inductance
@@ -746,7 +746,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No inductance element found in myoMuscle '"
-                                                         << myoMuscle.name << "' motor element.");
+                                << myoMuscle.name << "' motor element.");
                         return false;
                     }
                     // resistance
@@ -758,7 +758,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No resistance element found in myoMuscle '"
-                                                         << myoMuscle.name << "' motor element.");
+                                << myoMuscle.name << "' motor element.");
                         return false;
                     }
                     // inertiaMoment
@@ -770,12 +770,12 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
-                                                         << myoMuscle.name << "' motor element.");
+                                << myoMuscle.name << "' motor element.");
                         return false;
                     }
                 } else {
                     ROS_DEBUG_STREAM_NAMED("parser", "No motor element found in myoMuscle '" << myoMuscle.name <<
-                                                    "', using default parameters");
+                                                                                             "', using default parameters");
                 }
 
                 TiXmlElement *gear_child = myoMuscle_it->FirstChildElement("gear");
@@ -789,7 +789,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No ratio element found in myoMuscle '"
-                                                         << myoMuscle.name << "' gear element.");
+                                << myoMuscle.name << "' gear element.");
                         return false;
                     }
                     // ratio
@@ -801,7 +801,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No efficiency element found in myoMuscle '"
-                                                         << myoMuscle.name << "' gear element.");
+                                << myoMuscle.name << "' gear element.");
                         return false;
                     }
                     // inertiaMoment
@@ -813,12 +813,12 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No inertiaMoment element found in myoMuscle '"
-                                                         << myoMuscle.name << "' gear element.");
+                                << myoMuscle.name << "' gear element.");
                         return false;
                     }
                 } else {
                     ROS_DEBUG_STREAM_NAMED("parser", "No gear element found in myoMuscle '" << myoMuscle.name <<
-                                                    "', using default parameters");
+                                                                                            "', using default parameters");
                 }
 
                 TiXmlElement *spindle_child = myoMuscle_it->FirstChildElement("spindle");
@@ -832,13 +832,13 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No radius element found in myoMuscle '"
-                                                         << myoMuscle.name << "' spindle element.");
+                                << myoMuscle.name << "' spindle element.");
                         return false;
                     }
                 } else {
                     ROS_DEBUG_STREAM_NAMED("parser",
-                                          "No spindle element found in myoMuscle '" << myoMuscle.name <<
-                                          "', using default parameters");
+                                           "No spindle element found in myoMuscle '" << myoMuscle.name <<
+                                                                                     "', using default parameters");
                 }
 
                 TiXmlElement *SEE_child = myoMuscle_it->FirstChildElement("SEE");
@@ -852,7 +852,7 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No stiffness element found in myoMuscle '"
-                                                         << myoMuscle.name << "' SEE element.");
+                                << myoMuscle.name << "' SEE element.");
                         return false;
                     }
                     // length
@@ -864,12 +864,12 @@ namespace gazebo_ros_control {
                         }
                     } else {
                         ROS_ERROR_STREAM_NAMED("parser", "No length element found in myoMuscle '"
-                                                         << myoMuscle.name << "' SEE element.");
+                                << myoMuscle.name << "' SEE element.");
                         return false;
                     }
                 } else {
                     ROS_DEBUG_STREAM_NAMED("parser", "No SEE element found in myoMuscle '" << myoMuscle.name <<
-                                                    "', using default parameters");
+                                                                                           "', using default parameters");
                 }
 
             } else {
@@ -904,7 +904,7 @@ namespace gazebo_ros_control {
                 calculateCOM(POSITION, COM);
                 // calculate signed horizontal distance between foot_pos and COM
                 double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
-                        ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
+                             ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
                 if(d_s < d_lift || (left_leg_state == Stance && right_leg_state == Stance)){
                     state_transition = true;
                 }
@@ -923,7 +923,7 @@ namespace gazebo_ros_control {
                 calculateCOM(POSITION, COM);
                 // calculate signed horizontal distance between foot_pos and COM
                 double d_s = sqrt(pow(foot_pos.x-COM.x,2.0)+pow(foot_pos.y-COM.y,2.0)) *
-                      ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
+                             ((foot_pos.x - COM.x ) < 0 && (foot_pos.y - COM.y ) < 0)? -1.0 : 1.0;
                 if(d_s > d_prep){
                     state_transition = true;
                 }

@@ -8,11 +8,10 @@ namespace roboy_simulation {
 
 	void MusclePlugin::Init(MyoMuscleInfo &myoMuscle) {
 		//state initialization
-		x[0] = 0.0; // start at i=0.0, w_g=0.0
+		x[0] = 0.0;
 		x[1] = 0.0;
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
-
 		viaPoints = myoMuscle.viaPoints;
 		actuator.motor = myoMuscle.motor;
 		actuator.gear = myoMuscle.gear;
@@ -74,7 +73,7 @@ namespace roboy_simulation {
 			dxdt[1] = actuator.motor.torqueConst * x[0] / (actuator.gear.ratio * totalIM) -
 					  actuator.spindle.radius * actuator.elasticForce /
 					  (actuator.gear.ratio * actuator.gear.ratio * totalIM * actuator.gear.appEfficiency);
-		}, x, time.nsec*1e-6, period.nsec*1e-6);
+		}, x, time.toSec(), period.toSec());
 
 		actuator.motor.current = x[0];
 		actuator.spindle.angVel = x[1];

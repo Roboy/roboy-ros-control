@@ -57,7 +57,10 @@ class PositionController : public controller_interface::Controller<hardware_inte
 //                ROS_INFO("%f", dt );
 				if (dt<trajectory_duration) {
 					setpoint = spline_trajectory(dt);
+                    if(setpoint<0.0)
+                        setpoint = 0.0;
 				}else{
+                    setpoint = 0.0;
 					myStatus = TRAJECTORY_DONE;
 					statusMsg.state = myStatus;
 					steered = STOP_TRAJECTORY;
@@ -122,9 +125,14 @@ class PositionController : public controller_interface::Controller<hardware_inte
 			if(!msg->waypoints.empty()) {
 				vector<double> x,y;
 				for(uint i=0; i<msg->waypoints.size(); i++){
-					x.push_back(i*msg->samplerate);
-					y.push_back(msg->waypoints[i]);
-					cout << msg->waypoints[i] << " ";
+                    x.push_back(i*msg->samplerate);
+                    if(msg->waypoints[i]!=FLT_MAX) {
+                        y.push_back(msg->waypoints[i]);
+                        cout << msg->waypoints[i] << " ";
+                    }else{
+                        y.push_back(0.0);
+                        cout << msg->waypoints[i] << " ";
+                    }
 				}
 				cout << endl;
 				spline_trajectory.set_points(x,y);

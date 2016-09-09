@@ -76,9 +76,6 @@ namespace roboy_simulation {
 
 		transport::NodePtr node;
 		transport::PublisherPtr visPub;
-
-//		msgs::Visual visualMsg[linkNumber - 1];
-
 	};
 
 }
