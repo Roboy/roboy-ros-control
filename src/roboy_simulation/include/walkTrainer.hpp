@@ -12,6 +12,7 @@
 #include <gazebo/sensors/sensors.hh>
 // ros
 #include <ros/ros.h>
+#include <std_srvs/Trigger.h>
 
 using namespace gazebo;
 using namespace std;
@@ -23,11 +24,14 @@ public:
     void initializeWorlds(uint numberOfWorlds);
     void simulate();
     transport::NodePtr node;
-    gazebo::transport::PublisherPtr serverControlPub;
+    gazebo::transport::PublisherPtr serverControlPub, resetPub;
     gazebo::transport::SubscriberPtr worldModSub;
     vector<gazebo::physics::WorldPtr> world;
 private:
-    ros::NodeHandle *nh;
+    bool resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
+
+    ros::NodeHandlePtr nh;
+    ros::ServiceServer reset_world_srv;
 };
 
 void OnWorldModify(ConstWorldModifyPtr &_msg);

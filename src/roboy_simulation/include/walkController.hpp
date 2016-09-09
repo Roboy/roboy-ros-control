@@ -64,6 +64,25 @@ enum PLANE{
     CORONAL
 };
 
+class CoordinateSystem{
+public:
+    CoordinateSystem(physics::LinkPtr link):m_link(link){};
+    void Update(){
+        math::Pose pose = m_link->GetWorldPose();
+        rot = pose.rot;
+        origin = pose.pos;
+        X = pose.rot.RotateVector(math::Vector3::UnitX);
+        Y = pose.rot.RotateVector(math::Vector3::UnitY);
+        Z = pose.rot.RotateVector(math::Vector3::UnitZ);
+    }
+    math::Vector3 origin, X, Y, Z;
+    math::Quaternion rot;
+private:
+    physics::LinkPtr m_link;
+};
+
+typedef boost::shared_ptr<CoordinateSystem> CoordSys;
+
 class WalkController : public gazebo::ModelPlugin{
 public:
     WalkController();
@@ -92,9 +111,11 @@ public:
 
     LEG getLegInState(LEG_STATE s);
 
-    bool updateFootDisplacementAndVelocity();
+    void initializeValues();
 
-    bool updateTargetFeatures();
+    void updateFootDisplacementAndVelocity();
+
+    void updateTargetFeatures();
 
     void updateMuscleForces();
 
@@ -107,7 +128,7 @@ public:
     LEG_STATE leg_state[2];
 
     bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false;
+            visualizeMesh = false, visualizeStateMachineParameters = false;
 private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
@@ -158,11 +179,23 @@ private:
 
     void publishLegState();
 
-    ros::NodeHandle *nh;
-    uint ID;
+    void publishStateMachineParameters();
+
+    void toggleWalkController(const std_msgs::Bool::ConstPtr &msg);
+
+    ros::NodeHandlePtr nh;
+    int roboyID;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
     ros::Publisher visualizeTendon_pub, marker_visualization_pub, id_pub;
     vector<string> link_names;
+
+    bool control = true;
+
+    // these values are used for visualization
+    math::Vector3 foot_sole[2], foot_sole_global[2], d_foot_pos[2], d_foot_vel[2];
+
+    // coordinate systems
+    CoordSys hip_CS;
 
     double gazebo_max_step_size = 0.003;
 
@@ -178,7 +211,7 @@ private:
     double k_v, k_h, k_p_theta_left[4], k_p_theta_right[4], k_d_theta_left[4], k_d_theta_right[4], k_p_phi[2],
             k_d_phi[2];
     // target force torque gains
-    double k_V, k_P, k_Q, k_omega;
+    double k_V = 1.0, k_P = 1.0, k_Q = 1.0, k_omega = 1.0;
     // feedback gains
     double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_knee_lift = 1.0, c_stance_lift = 0.2, c_swing_prep = 0.2;
     // target features
@@ -198,7 +231,7 @@ private:
     map<string,vector<uint>> muscles_spanning_joint;
 
     double theta_groin_0[2], phi_groin_0[2], theta_trunk_0, phi_trunk_0, theta_knee[2], theta_ankle[2];
-    double d_s, d_c, v_s, v_c;
+    double d_s[2], d_c[2], v_s[2], v_c[2];
 
     math::Vector3 center_of_mass[2];
 
@@ -207,14 +240,15 @@ private:
         COM,
         Force,
         MomentArm,
-        Mesh
+        Mesh,
+        StateMachineParameters
     }visualization;
 
     double *cmd, *pos, *vel, *eff;
 
     int8_t recording;
 
-    ros::Subscriber steer_recording_sub, record_sub, init_sub, init_walk_controller_sub;
+    ros::Subscriber steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub;
     ros::Publisher roboy_pub, recordResult_pub, leg_state_pub, simulation_state_pub;
 
     common_utilities::RoboyState roboyStateMsg;

@@ -3,6 +3,13 @@
 namespace roboy_simulation {
 
     DummyMusclePlugin::DummyMusclePlugin() {
+        if (!ros::isInitialized()) {
+            int argc = 0;
+            char **argv = NULL;
+            ros::init(argc, argv, "DummyMusclePlugin",
+                      ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+        }
+        nh = ros::NodeHandlePtr(new ros::NodeHandle);
     }
 
     void ITendon::GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p)//try later with pointer
@@ -29,7 +36,8 @@ namespace roboy_simulation {
         return acos(_v1.Dot(_v2) / _v1.GetLength() * _v2.GetLength());
     }
 
-    void DummyMusclePlugin::Init(MyoMuscleInfo &myoMuscle) {
+    void DummyMusclePlugin::Init(MyoMuscleInfo &myoMuscle, int id) {
+        roboyID = id;
         link_index = myoMuscle.link_index;
         links = myoMuscle.links;
         joint = myoMuscle.spanning_joint;
@@ -39,6 +47,10 @@ namespace roboy_simulation {
         force = myoMuscle.viaPoints;
         name = myoMuscle.name;
         tendon.see = myoMuscle.see;
+
+        char topic[100];
+        snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
+        actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
 
     void DummyMusclePlugin::Update( ros::Time &time, ros::Duration &period ) {
@@ -60,8 +72,14 @@ namespace roboy_simulation {
 
         actuatorForce = cmd * F_max;
 
+        std_msgs::Float32 msg;
+        msg.data = actuatorForce;
+        actuatorForce_pub.publish(msg);
+        ros::spinOnce();
+
         for (uint i = 0; i < viaPointsInGlobalFrame.size(); i++) {
-            force[i] = actuatorForce * newTendon.Orientation[i];
+            force[i] = newTendon.Orientation[i];
+            force[i] *= actuatorForce;
             ROS_INFO_THROTTLE(1.0, "force: %f orientation: %f %f %f", actuatorForce, newTendon.Orientation[i].x,
                               newTendon.Orientation[i].y, newTendon.Orientation[i].z);
         }

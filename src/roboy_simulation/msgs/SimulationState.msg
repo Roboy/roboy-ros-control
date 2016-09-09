@@ -30,7 +30,7 @@ float64 theta_trunk_0
 float64 phi_trunk_0
 float64[] theta_knee
 float64[] theta_ankle
-float64 d_s
-float64 d_c
-float64 v_s
-float64 v_c
+float64[] d_s
+float64[] d_c
+float64[] v_s
+float64[] v_c

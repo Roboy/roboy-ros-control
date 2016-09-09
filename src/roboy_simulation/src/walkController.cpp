@@ -8,7 +8,7 @@ WalkController::WalkController() {
         ros::init(argc, argv, "WalkController",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
-    nh = new ros::NodeHandle;
+    nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
     force_torque_ankle_left_sub = nh->subscribe("/roboy/force_torque_ankle_left", 1,
                                                 &WalkController::finite_state_machine, this);
@@ -24,6 +24,9 @@ WalkController::WalkController() {
     id_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     simulation_state_pub = nh->advertise<roboy_simulation::SimulationState>("/roboy/simulationState", 1);
 
+    toggle_walk_controller_sub = nh->subscribe("/roboy/toggle_walk_controller", 10,
+                                               &WalkController::toggleWalkController, this);
+
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
     link_names.push_back("thigh_left");
@@ -36,39 +39,10 @@ WalkController::WalkController() {
     leg_state[LEG::LEFT] = Stance;
     leg_state[LEG::RIGHT] = Swing;
 
-    k_v = 1.0;
-    k_h = 1.0;
-    k_p_theta_left[0] = 1.0;
-    k_p_theta_left[1] = 1.0;
-    k_p_theta_left[2] = 1.0;
-    k_p_theta_left[3] = 1.0;
-    k_p_theta_right[0] = 1.0;
-    k_p_theta_right[1] = 1.0;
-    k_p_theta_right[2] = 1.0;
-    k_p_theta_right[3] = 1.0;
-    k_d_theta_left[0] = 1.0;
-    k_d_theta_left[1] = 1.0;
-    k_d_theta_left[2] = 1.0;
-    k_d_theta_left[3] = 1.0;
-    k_d_theta_right[0] = 1.0;
-    k_d_theta_right[1] = 1.0;
-    k_d_theta_right[2] = 1.0;
-    k_d_theta_right[3] = 1.0;
-    k_p_phi[0] = 1.0;
-    k_p_phi[1] = 1.0;
-    k_d_phi[0] = 1.0;
-    k_d_phi[1] = 1.0;
-    // target force torque gains
-    k_V = 1.0;
-    k_P = 1.0;
-    k_Q = 1.0;
-    k_omega = 1.0;
-
-    ID = gazebo::physics::getUniqueId();
+    roboyID = gazebo::physics::getUniqueId();
 }
 
 WalkController::~WalkController() {
-    delete nh;
 }
 
 void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf_) {
@@ -161,7 +135,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
             ROS_INFO("Loading Dummy Muscle Plugin for %s",
                            myoMuscles[muscle].name.c_str());
             sim_muscles.push_back(class_loader->createInstance("roboy_simulation::DummyMusclePlugin"));
-            sim_muscles.back()->Init(myoMuscles[muscle]);
+            sim_muscles.back()->Init(myoMuscles[muscle], roboyID);
 
             muscles_spanning_joint[sim_muscles[muscle]->joint->GetName()].push_back(muscle);
 
@@ -182,7 +156,6 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
             }
 
             a[sim_muscles[muscle]->name] = 0.0;
-
         }
         catch (pluginlib::PluginlibException &ex) {
             //handle the class failing to load
@@ -190,7 +163,11 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         }
     }
 
+    hip_CS = CoordSys(new CoordinateSystem(parent_model->GetLink("hip")));
+
     updateFootDisplacementAndVelocity();
+
+    initializeValues();
 
     publishID();
 
@@ -208,10 +185,21 @@ void WalkController::Update() {
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
 
-    // Compute the controller commands
-    if(updateTargetFeatures()) {
+    updateFootDisplacementAndVelocity();
+
+    if(getLegInState(Stance)==LEG::NONE) {
+        ROS_WARN_THROTTLE(1.0, "legs are not touching the ground");
+    }
+
+    if(control) {
+        // Compute the controller commands
+        updateTargetFeatures();
         updateMuscleForces();
         updateMuscleActivities();
+    }else{ // relax the muscles
+        for(uint muscle=0; muscle<sim_muscles.size(); muscle++){
+            sim_muscles[muscle]->cmd = 0;
+        }
     }
 
     // Check if we should update the controllers
@@ -240,6 +228,9 @@ void WalkController::Update() {
             publishMomentArm();
         if(visualizeMesh)
             publishModel();
+        if(visualizeStateMachineParameters)
+            publishStateMachineParameters();
+
         publishSimulationState();
         publishID();
         publishLegState();
@@ -535,6 +526,33 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
         }
         myoMuscles.push_back(myoMuscle);
     }
+    TiXmlElement *foot_sole_left = NULL;
+    foot_sole_left = root->FirstChildElement("foot_sole_left");
+    if (foot_sole_left) {
+        float x, y, z;
+        if (sscanf(foot_sole_left->GetText(), "%lf %lf %lf", &foot_sole[LEG::LEFT].x, &foot_sole[LEG::LEFT].y,
+                   &foot_sole[LEG::LEFT].z) != 3) {
+            ROS_ERROR_STREAM_NAMED("parser", "error reading [foot_sole_left] (x y z)");
+            return false;
+        }
+    } else {
+        ROS_WARN_STREAM_NAMED("parser", "No foot_sole_left element found, using " << foot_sole[LEG::LEFT]);
+    }
+    TiXmlElement *foot_sole_right = NULL;
+    foot_sole_right = root->FirstChildElement("foot_sole_right");
+    if (foot_sole_right) {
+        float x, y, z;
+        if (sscanf(foot_sole_right->GetText(), "%lf %lf %lf", &foot_sole[LEG::RIGHT].x, &foot_sole[LEG::RIGHT].y,
+                   &foot_sole[LEG::RIGHT].z) != 3) {
+            ROS_ERROR_STREAM_NAMED("parser", "error reading [foot_sole_right] (x y z)");
+            return false;
+        }
+    } else {
+        ROS_WARN_STREAM_NAMED("parser", "No foot_sole_right element found, using " << foot_sole[LEG::RIGHT]);
+    }
+
+    ROS_INFO_STREAM("foot_soles: " << foot_sole[LEG::LEFT] << " / " << foot_sole[LEG::RIGHT]);
+
     return true;
 }
 
@@ -617,41 +635,81 @@ map<string, math::Vector3> WalkController::calculateTrunk() {
     return r;
 }
 
-bool WalkController::updateFootDisplacementAndVelocity(){
+void WalkController::initializeValues(){
+    math::Vector3 euler = parent_model->GetLink("hip")->GetWorldPose().rot.GetAsEuler();
+    phi_trunk_0 = euler.x;
+    theta_trunk_0 = euler.y;
+
+    euler = parent_model->GetLink("thigh_left")->GetWorldPose().rot.GetAsEuler();
+    phi_groin_0[LEG::LEFT] = euler.x;
+    theta_groin_0[LEG::LEFT] = euler.y;
+
+    euler = parent_model->GetLink("thigh_right")->GetWorldPose().rot.GetAsEuler();
+    phi_groin_0[LEG::RIGHT] = euler.x;
+    theta_groin_0[LEG::RIGHT] = euler.y;
+
+    k_v = 0.1;
+    k_h = 0.1;
+    k_p_theta_left[0] = 0.1;
+    k_p_theta_left[1] = 0.1;
+    k_p_theta_left[2] = 0.1;
+    k_p_theta_left[3] = 0.1;
+    k_p_theta_right[0] = 0.1;
+    k_p_theta_right[1] = 0.1;
+    k_p_theta_right[2] = 0.1;
+    k_p_theta_right[3] = 0.1;
+    k_d_theta_left[0] = 0.1;
+    k_d_theta_left[1] = 0.1;
+    k_d_theta_left[2] = 0.1;
+    k_d_theta_left[3] = 0.1;
+    k_d_theta_right[0] = 0.1;
+    k_d_theta_right[1] = 0.1;
+    k_d_theta_right[2] = 0.1;
+    k_d_theta_right[3] = 0.1;
+    k_p_phi[0] = 0.1;
+    k_p_phi[1] = 0.1;
+    k_d_phi[0] = 0.1;
+    k_d_phi[1] = 0.1;
+    // target force torque gains
+    k_V = 0.1;
+    k_P = 0.1;
+    k_Q = 0.1;
+    k_omega = 0.1;
+}
+
+void WalkController::updateFootDisplacementAndVelocity(){
     // calculate the COM position and velocity
     calculateCOM(POSITION, center_of_mass[POSITION]);
     calculateCOM(VELOCITY, center_of_mass[VELOCITY]);
 
+    // calculate foot_sole position in world frame
+    math::Pose foot_pose = parent_model->GetLink(FOOT[LEG::LEFT])->GetWorldPose();
+    foot_sole_global[LEG::LEFT] = foot_pose.pos + foot_pose.rot.RotateVector(foot_sole[LEG::LEFT]);
+    foot_pose = parent_model->GetLink(FOOT[LEG::RIGHT])->GetWorldPose();
+    foot_sole_global[LEG::RIGHT] = foot_pose.pos + foot_pose.rot.RotateVector(foot_sole[LEG::RIGHT]);
+
+    // update coordinate systems
+    hip_CS->Update();
+
     // calculate signed horizontal distance between foot_pos and COM
-    math::Pose hip_pose = parent_model->GetLink("hip")->GetWorldPose();
+    for(uint leg=LEG::LEFT; leg<2; leg++) {
+        // get the foot velocity
+        math::Vector3 foot_vel = parent_model->GetLink(FOOT[leg])->GetWorldCoGLinearVel();
 
-    // get the stance leg
-    LEG stance_leg = getLegInState(Stance);
+        // calculate the distance and velocity between foot and center of mass in world frame
+        d_foot_pos[leg] = foot_sole_global[leg] - center_of_mass[POSITION];
+        d_foot_vel[leg] = foot_vel - center_of_mass[VELOCITY];
 
-    if(stance_leg == LEG::NONE){
-        return false;
+        // rotate into hip coordinate system
+        d_foot_pos[leg] = hip_CS->rot.RotateVector(d_foot_pos[leg]);
+        d_foot_vel[leg] = hip_CS->rot.RotateVector(d_foot_vel[leg]);
+
+        // calculate signed sagittal and coronal foot displacement and velocity
+        d_s[leg] = d_foot_pos[leg].Dot(hip_CS->X);
+        d_c[leg] = d_foot_pos[leg].Dot(hip_CS->Y);
+        v_s[leg] = d_foot_vel[leg].Dot(hip_CS->X);
+        v_c[leg] = d_foot_vel[leg].Dot(hip_CS->Y);
     }
-
-    // get the foot position and velocity
-    math::Vector3 foot_pos = parent_model->GetLink(FOOT[stance_leg])->GetWorldPose().pos;
-    math::Vector3 foot_vel = parent_model->GetLink(FOOT[stance_leg])->GetWorldCoGLinearVel();
-
-    // calculate the distance and velocity between foot and center of mass in world frame
-    math::Vector3 d_foot_pos = foot_pos - center_of_mass[POSITION];
-    math::Vector3 d_foot_vel = foot_vel - center_of_mass[VELOCITY];
-
-    // rotate into hip frame
-    d_foot_pos = hip_pose.rot.RotateVector(d_foot_pos);
-    d_foot_vel = hip_pose.rot.RotateVector(d_foot_vel);
-    v_COM = hip_pose.rot.RotateVector(hip_pose.pos).x;
-
-    // calculate signed sagittal and coronal foot displacement and velocity
-    d_s = d_foot_pos.x;
-    d_c = d_foot_pos.y;
-    v_s = d_foot_vel.x;
-    v_c = d_foot_vel.y;
-
-    return true;
 }
 
 void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::ConstPtr &msg) {
@@ -660,9 +718,9 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
 
     switch (leg_state[msg->leg]) {
         case Stance: {
-            if (d_s < d_lift || (leg_state[LEG::LEFT] == Stance && leg_state[LEG::RIGHT] == Stance)) {
+            if (d_s[msg->leg] < d_lift || (leg_state[LEG::LEFT] == Stance && leg_state[LEG::RIGHT] == Stance)) {
                 state_transition = true;
-                ROS_INFO("ds: %f d_lift: %f", d_s, d_lift);
+                ROS_INFO("ds: %f d_lift: %f", d_s[msg->leg] , d_lift);
             }
             break;
         }
@@ -675,9 +733,9 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
             break;
         }
         case Swing: {
-            if (d_s > d_prep) {
+            if (d_s[msg->leg] > d_prep) {
                 state_transition = true;
-                ROS_INFO("d_s: %f d_prep: %f", d_s, d_prep);
+                ROS_INFO("d_s: %f d_prep: %f", d_s[msg->leg] , d_prep);
             }
             break;
         }
@@ -728,12 +786,7 @@ LEG WalkController::getLegInState(LEG_STATE s) {
         return LEG::NONE;
 }
 
-bool WalkController::updateTargetFeatures() {
-    if(!updateFootDisplacementAndVelocity()){
-        ROS_WARN_THROTTLE(1.0, "legs are not touching the ground");
-        return false;
-    }
-
+void WalkController::updateTargetFeatures() {
     // target velocity
     math::Quaternion heading(0, 0, psi_heading);
     math::Vector3 v_target(v_forward, 0, 0);
@@ -755,9 +808,9 @@ bool WalkController::updateTargetFeatures() {
 
     // thigh left
     physics::LinkPtr thigh_left = parent_model->GetLink("thigh_left");
-    double theta_groin_left = theta_groin_0[LEG::LEFT] + k_p_theta_left[leg_state[LEG::LEFT]] * d_s
-                              + k_d_theta_left[leg_state[LEG::LEFT]] * (v_forward - v_s);
-    double phi_groin_left = phi_groin_0[LEG::LEFT] + k_p_phi[LEG::LEFT] * d_c - k_d_phi[LEG::LEFT] * v_c;
+    double theta_groin_left = theta_groin_0[LEG::LEFT] + k_p_theta_left[leg_state[LEG::LEFT]] * d_s[LEG::LEFT]
+                              + k_d_theta_left[leg_state[LEG::LEFT]] * (v_forward - v_s[LEG::LEFT]);
+    double phi_groin_left = phi_groin_0[LEG::LEFT] + k_p_phi[LEG::LEFT] * d_c[LEG::LEFT] - k_d_phi[LEG::LEFT] * v_c[LEG::LEFT];
     // target orientation for the hip
     Q["thigh_left"] = math::Quaternion(phi_groin_left, theta_groin_left, psi_heading);
     // there is no target position, so we set it to the current position
@@ -772,9 +825,9 @@ bool WalkController::updateTargetFeatures() {
 
     // thigh right
     physics::LinkPtr thigh_right = parent_model->GetLink("thigh_right");
-    double theta_groin_right = theta_groin_0[LEG::RIGHT] + k_p_theta_right[leg_state[LEG::RIGHT]] * d_s
-                               + k_d_theta_right[leg_state[LEG::RIGHT]] * (v_forward - v_s);
-    double phi_groin_right = phi_groin_0[LEG::RIGHT] + k_p_phi[LEG::RIGHT] * d_c - k_d_phi[LEG::RIGHT] * v_c;
+    double theta_groin_right = theta_groin_0[LEG::RIGHT] + k_p_theta_right[leg_state[LEG::RIGHT]] * d_s[LEG::LEFT]
+                               + k_d_theta_right[leg_state[LEG::RIGHT]] * (v_forward - v_s[LEG::LEFT]);
+    double phi_groin_right = phi_groin_0[LEG::RIGHT] + k_p_phi[LEG::RIGHT] * d_c[LEG::LEFT] - k_d_phi[LEG::RIGHT] * v_c[LEG::LEFT];
     // target orientation for the hip
     Q["thigh_right"] = math::Quaternion(phi_groin_right, theta_groin_right, psi_heading);
     // there is no target position, so we set it to the current position
@@ -834,8 +887,6 @@ bool WalkController::updateTargetFeatures() {
     v["foot_right"] = foot_right->GetWorldCoGLinearVel();
     // target angular velocity is zero
     omega["foot_right"] = foot_right->GetWorldAngularVel();
-
-    return true;
 }
 
 void WalkController::updateMuscleForces() {
@@ -857,14 +908,20 @@ void WalkController::updateMuscleForces() {
             // calculate the target Force of each muscle spanning this joint
             for (uint muscle:muscles_spanning_joint[joint->GetName()]) {
                 math::Vector3 momentArm = sim_muscles[muscle]->momentArm;
+                double length = momentArm.GetLength();
                 math::Vector3 momentArm_normalized = momentArm.Normalize();
                 tau[sim_muscles[muscle]->name] =
                         momentArm_normalized.Cross(link->GetWorldPose().pos - joint->GetWorldPose().pos)
                                 .Dot(F[link_name]) + momentArm_normalized.Dot(T[link_name]);
-                F_tilde[sim_muscles[muscle]->name] = tau[sim_muscles[muscle]->name] / momentArm.GetLength();
+                if(length>0.0)
+                    F_tilde[sim_muscles[muscle]->name] = tau[sim_muscles[muscle]->name] / momentArm.GetLength();
+                else
+                    F_tilde[sim_muscles[muscle]->name] = 0.0;
             }
         }
     }
+    ROS_INFO_STREAM("\nF_tilde: " << F_tilde["motor0"] << "\ntau: " << tau["motor0"] << "\nF: " <<
+             F["motor0"] << "\nT: " <<  T["motor0"]);
 }
 
 void WalkController::updateMuscleActivities(){
@@ -972,6 +1029,8 @@ void WalkController::updateMuscleActivities(){
         activity[sim_muscles[muscle]->name].pop_front();
         sim_muscles[muscle]->cmd = a[sim_muscles[muscle]->name];
     }
+    ROS_INFO("a: %lf, activity: %lf, feedback %lf", a["motor0"], activity["motor0"].front(),
+             feedback["motor0"]);
 }
 
 void WalkController::updateEnergies(){
@@ -979,7 +1038,7 @@ void WalkController::updateEnergies(){
 }
 
 void WalkController::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
-    if(msg->id == ID) { // only react to messages with my id
+    if(msg->id == roboyID) { // only react to messages with my roboyID
         switch (msg->control) {
             case Tendon: {
                 visualizeTendon = msg->value;
@@ -1031,6 +1090,16 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
                 }
                 break;
             }
+            case StateMachineParameters: {
+                visualizeStateMachineParameters = msg->value;
+                if(!visualizeStateMachineParameters){
+                    visualization_msgs::Marker marker;
+                    marker.header.frame_id = "world";
+                    marker.action = visualization_msgs::Marker::DELETEALL;
+                    marker_visualization_pub.publish(marker);
+                }
+                break;
+            }
         }
     }
 }
@@ -1041,7 +1110,7 @@ void WalkController::publishTendon() {
     line_strip.header.frame_id = "world";
     line_strip.header.stamp = ros::Time::now();
     char tendonnamespace[20];
-    sprintf(tendonnamespace, "tendon_%d", ID);
+    sprintf(tendonnamespace, "tendon_%d", roboyID);
     line_strip.ns = tendonnamespace;
     if (add) {
         line_strip.action = visualization_msgs::Marker::ADD;
@@ -1079,10 +1148,9 @@ void WalkController::publishTendon() {
 void WalkController::publishCOM() {
     static bool add = true;
     visualization_msgs::Marker sphere;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     sphere.header.frame_id = "world";
     char comnamespace[20];
-    sprintf(comnamespace, "COM_%d", ID);
+    sprintf(comnamespace, "COM_%d", roboyID);
     sphere.ns = comnamespace;
     sphere.type = visualization_msgs::Marker::SPHERE;
     sphere.color.r = 0.0f;
@@ -1102,28 +1170,25 @@ void WalkController::publishCOM() {
     sphere.header.stamp = ros::Time::now();
     sphere.points.clear();
     sphere.id = 1001;
-    math::Vector3 comPosition;
-    calculateCOM(POSITION, comPosition);
-    sphere.pose.position.x = comPosition.x;
-    sphere.pose.position.y = comPosition.y;
-    sphere.pose.position.z = comPosition.z;
+    sphere.pose.position.x = center_of_mass[POSITION].x;
+    sphere.pose.position.y = center_of_mass[POSITION].y;
+    sphere.pose.position.z = center_of_mass[POSITION].z;
     marker_visualization_pub.publish(sphere);
 }
 
 void WalkController::publishForce() {
     uint id = 1000;
     visualization_msgs::Marker arrow;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     arrow.header.frame_id = "world";
     char forcenamespace[20];
-    sprintf(forcenamespace, "force_%d", ID);
+    sprintf(forcenamespace, "force_%d", roboyID);
     arrow.ns = forcenamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
     arrow.color.a = 1.0;
     arrow.lifetime = ros::Duration();
     arrow.scale.x = 0.005;
-    arrow.scale.y = 0.005;
-    arrow.scale.z = 0.1;
+    arrow.scale.y = 0.03;
+    arrow.scale.z = 0.03;
     arrow.action = visualization_msgs::Marker::ADD;
 
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -1168,10 +1233,9 @@ void WalkController::publishForce() {
 void WalkController::publishMomentArm() {
     uint id = 100000;
     visualization_msgs::Marker arrow;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     arrow.header.frame_id = "world";
     char momentarmnamespace[20];
-    sprintf(momentarmnamespace, "momentarm_%d", ID);
+    sprintf(momentarmnamespace, "momentarm_%d", roboyID);
     arrow.ns = momentarmnamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
     arrow.color.r = 0.0f;
@@ -1180,8 +1244,8 @@ void WalkController::publishMomentArm() {
     arrow.color.a = 1.0;
     arrow.lifetime = ros::Duration();
     arrow.scale.x = 0.005;
-    arrow.scale.y = 0.005;
-    arrow.scale.z = 0.1;
+    arrow.scale.y = 0.03;
+    arrow.scale.z = 0.03;
     arrow.action = visualization_msgs::Marker::ADD;
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         arrow.id = id++;
@@ -1204,10 +1268,9 @@ void WalkController::publishMomentArm() {
 void WalkController::publishModel(){
     static bool add = true;
     visualization_msgs::Marker mesh;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     mesh.header.frame_id = "world";
     char modelnamespace[20];
-    sprintf(modelnamespace, "model_%d", ID);
+    sprintf(modelnamespace, "model_%d", roboyID);
     mesh.ns = modelnamespace;
     mesh.type = visualization_msgs::Marker::MESH_RESOURCE;
     mesh.color.r = 1.0f;
@@ -1247,7 +1310,7 @@ void WalkController::publishModel(){
 
 void WalkController::publishSimulationState(){
     roboy_simulation::SimulationState msg;
-    msg.id = ID;
+    msg.id = roboyID;
     msg.F_contact = F_contact;
     msg.d_lift = d_lift;
     msg.d_prep = d_prep;
@@ -1280,30 +1343,193 @@ void WalkController::publishSimulationState(){
     msg.phi_trunk_0 = phi_trunk_0;
     msg.theta_knee.assign(theta_knee, theta_knee+2);
     msg.theta_ankle.assign(theta_ankle, theta_ankle+2);
-    msg.d_s = d_s;
-    msg.d_c = d_c;
-    msg.v_s = v_s;
-    msg.v_c = v_c;
+    msg.d_s.assign(d_s, d_s+2);
+    msg.d_c.assign(d_c, d_c+2);
+    msg.v_s.assign(v_s, v_s+2);
+    msg.v_c.assign(v_c, v_c+2);
     simulation_state_pub.publish(msg);
 }
 
 void WalkController::publishID(){
     std_msgs::Int32 msg;
-    msg.data = ID;
+    msg.data = roboyID;
     id_pub.publish(msg);
 }
 
 void WalkController::publishLegState(){
     roboy_simulation::LegState msgLeft;
-    msgLeft.id = ID;
+    msgLeft.id = roboyID;
     msgLeft.leg = LEG::LEFT;
     msgLeft.state = leg_state[LEG::LEFT];
     leg_state_pub.publish(msgLeft);
     roboy_simulation::LegState msgRight;
-    msgRight.id = ID;
+    msgRight.id = roboyID;
     msgRight.leg = LEG::RIGHT;
     msgRight.state = leg_state[LEG::RIGHT];
     leg_state_pub.publish(msgRight);
+}
+
+void WalkController::publishStateMachineParameters(){
+    uint id = 999;
+    visualization_msgs::Marker arrow;
+    arrow.header.frame_id = "world";
+    char momentarmnamespace[20];
+    sprintf(momentarmnamespace, "statemachineparams_%d", roboyID);
+    arrow.ns = momentarmnamespace;
+    arrow.type = visualization_msgs::Marker::ARROW;
+    arrow.color.r = 1.0f;
+    arrow.color.g = 1.0f;
+    arrow.color.b = 0.0f;
+    arrow.lifetime = ros::Duration();
+    arrow.scale.x = 0.005;
+    arrow.scale.y = 0.03;
+    arrow.scale.z = 0.03;
+    arrow.action = visualization_msgs::Marker::ADD;
+
+    visualization_msgs::Marker text;
+    text.header.frame_id = "world";
+    text.ns = momentarmnamespace;
+    text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    text.color.r = 1.0;
+    text.color.g = 1.0;
+    text.color.b = 1.0;
+    text.color.a = 1.0;
+    text.lifetime = ros::Duration();
+    text.scale.z = 0.03;
+    text.action = visualization_msgs::Marker::ADD;
+    text.id = id++;
+    text.header.stamp = ros::Time::now();
+    text.pose.orientation.w = 1.0;
+
+    geometry_msgs::Point p;
+
+    arrow.color.a = 0.2;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = center_of_mass[POSITION].z;
+    arrow.points.push_back(p);
+    p.x = foot_sole_global[LEG::LEFT].x;
+    p.y = foot_sole_global[LEG::LEFT].y;
+    p.z = foot_sole_global[LEG::LEFT].z;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "foot_sole[left]";
+    marker_visualization_pub.publish(text);
+
+    arrow.color.a = 0.2;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = center_of_mass[POSITION].z;
+    arrow.points.push_back(p);
+    p.x = foot_sole_global[LEG::RIGHT].x;
+    p.y = foot_sole_global[LEG::RIGHT].y;
+    p.z = foot_sole_global[LEG::RIGHT].z;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "foot_sole[right]";
+    marker_visualization_pub.publish(text);
+
+    math::Pose hip_pose = parent_model->GetLink("hip")->GetWorldPose();
+
+    // d_s
+    arrow.color.a = 1.0;
+    arrow.color.r = 1.0f;
+    arrow.color.g = 0.0f;
+    arrow.color.b = 0.0f;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    p.x += d_s[LEG::LEFT];
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "d_s[left]";
+    marker_visualization_pub.publish(text);
+
+    // d_c
+    arrow.color.r = 0.0f;
+    arrow.color.g = 1.0f;
+    arrow.color.b = 0.0f;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    p.x = center_of_mass[POSITION].x;
+    p.y += d_c[LEG::LEFT];
+    p.z = 0;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "d_c[left]";
+    marker_visualization_pub.publish(text);
+
+    // d_s
+    arrow.color.a = 1.0;
+    arrow.color.r = 1.0f;
+    arrow.color.g = 0.0f;
+    arrow.color.b = 0.0f;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    p.x += d_s[LEG::RIGHT];
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "d_s[right]";
+    marker_visualization_pub.publish(text);
+
+    // d_c
+    arrow.color.r = 0.0f;
+    arrow.color.g = 1.0f;
+    arrow.color.b = 0.0f;
+    arrow.id = id++;
+    arrow.header.stamp = ros::Time::now();
+    arrow.points.clear();
+    p.x = center_of_mass[POSITION].x;
+    p.y = center_of_mass[POSITION].y;
+    p.z = 0;
+    arrow.points.push_back(p);
+    p.x = center_of_mass[POSITION].x;
+    p.y += d_c[LEG::RIGHT];
+    p.z = 0;
+    arrow.points.push_back(p);
+    marker_visualization_pub.publish(arrow);
+    text.id = id++;
+    text.pose.position = p;
+    text.text = "d_c[right]";
+    marker_visualization_pub.publish(text);
+}
+
+void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){
+    control = msg->data;
 }
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

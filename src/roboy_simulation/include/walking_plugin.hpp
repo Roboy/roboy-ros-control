@@ -23,6 +23,7 @@
 #include "CommonDefinitions.h"
 #include <std_msgs/Int32.h>
 #include <map>
+#include <std_srvs/Trigger.h>
 #endif
 
 using namespace std;
@@ -90,7 +91,7 @@ public:
 
 public Q_SLOTS:
 
-    void initWalkController();
+    void toggleWalkController();
 
     void shutDownWalkController();
 
@@ -104,9 +105,13 @@ public Q_SLOTS:
 
     void showMomentArm();
 
+    void showStateMachineParameters();
+
     void changeID(int index);
 
     void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
+
+    void resetWorld();
 
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
@@ -116,15 +121,16 @@ private:
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
-//    map<uint, ros::Publisher> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, init_walk_controller_pub;
+    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub;
     ros::Subscriber id_sub, simulation_state_sub;
+    ros::ServiceClient reset_world_srv;
     enum {
         Tendon,
         COM,
         Force,
         MomentArm,
-        Mesh
+        Mesh,
+        StateMachineParameters
     } visualization;
 };

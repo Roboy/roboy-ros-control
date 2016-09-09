@@ -108,14 +108,14 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     frameLayout->addLayout(swinglegstatelayout);
     frameLayout->addLayout(stancepreplegstatelayout);
 
-    QPushButton *initwalkcontroller = new QPushButton(tr("initialize WalkController"));
-    initwalkcontroller->setObjectName("initwalkcontroller");
-    connect(initwalkcontroller, SIGNAL(clicked()), this, SLOT(initWalkController()));
-    frameLayout->addWidget(initwalkcontroller);
+    QCheckBox *togglewalkcontroller = new QCheckBox(tr("toggle WalkController"));
+    togglewalkcontroller->setObjectName("togglewalkcontroller");
+    connect(togglewalkcontroller, SIGNAL(clicked()), this, SLOT(toggleWalkController()));
+    frameLayout->addWidget(togglewalkcontroller);
 
-    QPushButton *shutdowncontroller = new QPushButton(tr("shutdown WalkController"));
-    connect(shutdowncontroller, SIGNAL(clicked()), this, SLOT(shutDownWalkController()));
-    frameLayout->addWidget(shutdowncontroller);
+    QPushButton *resetworld = new QPushButton(tr("reset world"));
+    connect(resetworld, SIGNAL(clicked()), this, SLOT(resetWorld()));
+    frameLayout->addWidget(resetworld);
 
     QCheckBox *visualizeMesh= new QCheckBox(tr("show mesh"));
     visualizeMesh->setObjectName("visualizeMesh");
@@ -141,6 +141,11 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     visualizeMomentArm->setObjectName("visualizeMomentArm");
     connect(visualizeMomentArm, SIGNAL(clicked()), this, SLOT(showMomentArm()));
     frameLayout->addWidget(visualizeMomentArm);
+
+    QCheckBox *visualizeStateMachineParameters = new QCheckBox(tr("show state machine parameters"));
+    visualizeStateMachineParameters->setObjectName("visualizeStateMachineParameters");
+    connect(visualizeStateMachineParameters, SIGNAL(clicked()), this, SLOT(showStateMachineParameters()));
+    frameLayout->addWidget(visualizeStateMachineParameters);
 
     QTableWidget* table = new QTableWidget(35,2);
     table->setObjectName("table");
@@ -242,9 +247,10 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     spinner = new ros::AsyncSpinner(1);
 
     roboy_visualization_control_pub = nh->advertise<roboy_simulation::VisualizationControl>("/roboy/visualization_control", 1);
-    init_walk_controller_pub = nh->advertise<std_msgs::Bool>("/roboy/init_walk_controller", 1);
+    toggle_walk_controller_pub = nh->advertise<std_msgs::Bool>("/roboy/toggle_walk_controller", 1);
     id_sub = nh->subscribe("/roboy/id", 1, &WalkingPlugin::updateId, this);
     simulation_state_sub = nh->subscribe("/roboy/simulationState", 1, &WalkingPlugin::updateSimulationState, this);
+    reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
 }
 
 WalkingPlugin::~WalkingPlugin(){
@@ -260,18 +266,17 @@ void WalkingPlugin::load(const rviz::Config &config) {
     rviz::Panel::load(config);
 }
 
-void WalkingPlugin::initWalkController(){
+void WalkingPlugin::toggleWalkController(){
+    QCheckBox* w = this->findChild<QCheckBox*>("togglewalkcontroller");
     std_msgs::Bool msg;
-    msg.data = true;
-    init_walk_controller_pub.publish(msg);
-    QPushButton* w = this->findChild<QPushButton*>("initwalkcontroller");
-    w->setText("fuck me");
+    msg.data = w->isChecked();
+    toggle_walk_controller_pub.publish(msg);
 }
 
 void WalkingPlugin::shutDownWalkController(){
     std_msgs::Bool msg;
     msg.data = false;
-    init_walk_controller_pub.publish(msg);
+//    init_walk_controller_pub.publish(msg);
 }
 
 void WalkingPlugin::showCOM() {
@@ -315,6 +320,15 @@ void WalkingPlugin::showMomentArm() {
     roboy_simulation::VisualizationControl msg;
     msg.id = currentID.second;
     msg.control = MomentArm;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
+void WalkingPlugin::showStateMachineParameters(){
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeStateMachineParameters");
+    roboy_simulation::VisualizationControl msg;
+    msg.id = currentID.second;
+    msg.control = StateMachineParameters;
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
 }
@@ -403,6 +417,14 @@ void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
         showForce();
         showTendon();
     }
+    // republish visualization
+    showMesh();
+    showCOM();
+    showMomentArm();
+    showForce();
+    showTendon();
+    toggleWalkController();
+    showStateMachineParameters();
 }
 
 void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg){
@@ -453,10 +475,14 @@ void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationStat
         QTableWidgetItem *item29 = new QTableWidgetItem(str);
         sprintf(str, "{%lf, %lf}", msg->theta_ankle[0], msg->theta_ankle[1]);
         QTableWidgetItem *item30 = new QTableWidgetItem(str);
-        QTableWidgetItem *item31 = new QTableWidgetItem(QString::number(msg->d_s));
-        QTableWidgetItem *item32 = new QTableWidgetItem(QString::number(msg->d_c));
-        QTableWidgetItem *item33 = new QTableWidgetItem(QString::number(msg->v_s));
-        QTableWidgetItem *item34 = new QTableWidgetItem(QString::number(msg->v_c));
+        sprintf(str, "{%lf, %lf}", msg->d_s[0], msg->d_s[1]);
+        QTableWidgetItem *item31 = new QTableWidgetItem(str);
+        sprintf(str, "{%lf, %lf}", msg->d_c[0], msg->d_c[1]);
+        QTableWidgetItem *item32 = new QTableWidgetItem(str);
+        sprintf(str, "{%lf, %lf}", msg->v_s[0], msg->v_s[1]);
+        QTableWidgetItem *item33 = new QTableWidgetItem(str);
+        sprintf(str, "{%lf, %lf}", msg->v_c[0], msg->v_c[1]);
+        QTableWidgetItem *item34 = new QTableWidgetItem(str);
         QTableWidget* table = this->findChild<QTableWidget*>("table");
         table->setItem(0,1,item0);
         table->setItem(1,1,item1);
@@ -494,6 +520,11 @@ void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationStat
         table->setItem(33,1,item33);
         table->setItem(34,1,item34);
     }
+}
+
+void WalkingPlugin::resetWorld(){
+    std_srvs::Trigger srv;
+    reset_world_srv.call(srv);
 }
 
 PLUGINLIB_EXPORT_CLASS(WalkingPlugin, rviz::Panel)

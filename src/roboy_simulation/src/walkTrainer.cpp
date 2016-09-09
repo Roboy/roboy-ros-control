@@ -23,11 +23,14 @@ WalkTrainer::WalkTrainer(){
         ros::init(argc, argv, "WalkTrainer", ros::init_options::NoSigintHandler);
     }
 
-    nh = new ros::NodeHandle;
+    resetPub = node->Advertise<gazebo::msgs::WorldControl>("/gazebo/default/world_control");
+
+    nh = ros::NodeHandlePtr(new ros::NodeHandle);
+
+    reset_world_srv = nh->advertiseService("/roboy/reset_world", &WalkTrainer::resetWorld, this);
 };
 
 WalkTrainer::~WalkTrainer() {
-    delete nh;
 }
 
 void WalkTrainer::initializeWorlds(uint numberOfWorlds){
@@ -67,6 +70,15 @@ void WalkTrainer::simulate(){
     }
 }
 
+bool WalkTrainer::resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res){
+    gazebo::msgs::WorldControl w_ctrl;
+    w_ctrl.mutable_reset()->set_all(true);
+    resetPub->Publish(w_ctrl);
+    res.success = true;
+    res.message = "resetting worlds";
+    return true;
+}
+
 int main(int _argc, char **_argv) {
     // setup Gazebo server
     if (gazebo::setupServer()) {
@@ -77,7 +89,7 @@ int main(int _argc, char **_argv) {
 
     WalkTrainer walkTrainer;
 
-    walkTrainer.initializeWorlds(2);
+    walkTrainer.initializeWorlds(1);
 
     while(ros::ok()){
         walkTrainer.simulate();
