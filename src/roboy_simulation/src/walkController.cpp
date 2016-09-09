@@ -862,7 +862,6 @@ void WalkController::updateMuscleForces() {
                         momentArm_normalized.Cross(link->GetWorldPose().pos - joint->GetWorldPose().pos)
                                 .Dot(F[link_name]) + momentArm_normalized.Dot(T[link_name]);
                 F_tilde[sim_muscles[muscle]->name] = tau[sim_muscles[muscle]->name] / momentArm.GetLength();
-//                ROS_INFO("F_tilde: %f tau: %f", tau[sim_muscles[muscle]->name],F_tilde[sim_muscles[muscle]->name]);
             }
         }
     }
@@ -966,11 +965,17 @@ void WalkController::updateMuscleActivities(){
         }
     }
     // integrate the activity and feedback and pop the first activity
+    // set command of each muscle to the integrated activity
     for(uint muscle=0; muscle<sim_muscles.size(); muscle++) {
         a[sim_muscles[muscle]->name] += 100.0*gazebo_max_step_size*
                         (feedback[sim_muscles[muscle]->name] - activity[sim_muscles[muscle]->name].front());
         activity[sim_muscles[muscle]->name].pop_front();
+        sim_muscles[muscle]->cmd = a[sim_muscles[muscle]->name];
     }
+}
+
+void WalkController::updateEnergies(){
+
 }
 
 void WalkController::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
@@ -1266,7 +1271,7 @@ void WalkController::publishSimulationState(){
     msg.k_omega = k_omega;
     msg.k_M_Fplus = k_M_Fplus;
     msg.c_hip_lift = c_hip_lift;
-    msg.c_lift_kee = c_lift_kee;
+    msg.c_knee_lift = c_knee_lift;
     msg.c_stance_lift = c_stance_lift;
     msg.c_swing_prep = c_swing_prep;
     msg.theta_groin_0.assign(theta_groin_0, theta_groin_0+2);

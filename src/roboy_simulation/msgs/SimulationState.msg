@@ -21,7 +21,7 @@ float64 k_Q
 float64 k_omega
 float64 k_M_Fplus
 float64 c_hip_lift
-float64 c_lift_kee
+float64 c_knee_lift
 float64 c_stance_lift
 float64 c_swing_prep
 float64[] theta_groin_0

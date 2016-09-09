@@ -40,9 +40,12 @@
 #include <common_utilities/Steer.h>
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
+// libcmaes
+#include "cmaes.h"
 
 using namespace gazebo;
 using namespace std;
+using namespace libcmaes;
 
 static const char * FOOT[] = { "foot_left", "foot_right" };
 
@@ -96,6 +99,8 @@ public:
     void updateMuscleForces();
 
     void updateMuscleActivities();
+
+    void updateEnergies();
 
     void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
 
@@ -175,7 +180,7 @@ private:
     // target force torque gains
     double k_V, k_P, k_Q, k_omega;
     // feedback gains
-    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_lift_kee = 1.0, c_stance_lift = 1.0, c_swing_prep = 1.0;
+    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_knee_lift = 1.0, c_stance_lift = 0.2, c_swing_prep = 0.2;
     // target features
     map<string,math::Quaternion> Q;
     map<string,math::Vector3> P;

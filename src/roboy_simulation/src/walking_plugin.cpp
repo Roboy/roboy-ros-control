@@ -167,7 +167,7 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     QTableWidgetItem *item19 = new QTableWidgetItem("k_omega");
     QTableWidgetItem *item20 = new QTableWidgetItem("k_M_Fplus");
     QTableWidgetItem *item21 = new QTableWidgetItem("c_hip_lift");
-    QTableWidgetItem *item22 = new QTableWidgetItem("c_lift_kee");
+    QTableWidgetItem *item22 = new QTableWidgetItem("c_knee_lift");
     QTableWidgetItem *item23 = new QTableWidgetItem("c_stance_lift");
     QTableWidgetItem *item24 = new QTableWidgetItem("c_swing_prep");
     QTableWidgetItem *item25 = new QTableWidgetItem("theta_groin_0");
@@ -440,7 +440,7 @@ void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationStat
         QTableWidgetItem *item19 = new QTableWidgetItem(QString::number(msg->k_omega));
         QTableWidgetItem *item20 = new QTableWidgetItem(QString::number(msg->k_M_Fplus));
         QTableWidgetItem *item21 = new QTableWidgetItem(QString::number(msg->c_hip_lift));
-        QTableWidgetItem *item22 = new QTableWidgetItem(QString::number(msg->c_lift_kee));
+        QTableWidgetItem *item22 = new QTableWidgetItem(QString::number(msg->c_knee_lift));
         QTableWidgetItem *item23 = new QTableWidgetItem(QString::number(msg->c_stance_lift));
         QTableWidgetItem *item24 = new QTableWidgetItem(QString::number(msg->c_swing_prep));
         sprintf(str, "{%lf, %lf}", msg->theta_groin_0[0], msg->theta_groin_0[1]);
