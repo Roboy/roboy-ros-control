@@ -1,10 +1,7 @@
 #pragma once
 
 #ifndef Q_MOC_RUN
-
-#include <ros/ros.h>
-#include <rviz/panel.h>
-#include <stdio.h>
+// qt
 #include <QPainter>
 #include <QCheckBox>
 #include <QPushButton>
@@ -15,15 +12,23 @@
 #include <QTableWidget>
 #include <QComboBox>
 #include <QTimer>
-#include <geometry_msgs/Twist.h>
+// std
+#include <map>
+// ros
+#include <ros/ros.h>
+#include <rviz/panel.h>
 #include <pluginlib/class_list_macros.h>
+#include <interactive_markers/interactive_marker_server.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/tf.h>
+//messages
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/SimulationState.h"
-#include "CommonDefinitions.h"
-#include <std_msgs/Int32.h>
-#include <map>
 #include <std_srvs/Trigger.h>
+#include <std_msgs/Int32.h>
+// common definitions
+#include "CommonDefinitions.h"
 #endif
 
 using namespace std;
@@ -107,6 +112,8 @@ public Q_SLOTS:
 
     void showStateMachineParameters();
 
+    void showCoordinateSystems();
+
     void changeID(int index);
 
     void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
@@ -118,6 +125,8 @@ private:
 
     void updateId(const std_msgs::Int32::ConstPtr &msg);
 
+    void frameCallback(const ros::TimerEvent&);
+
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
@@ -125,12 +134,15 @@ private:
     ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub;
     ros::Subscriber id_sub, simulation_state_sub;
     ros::ServiceClient reset_world_srv;
+    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
+    ros::Timer frame_timer;
     enum {
         Tendon,
         COM,
         Force,
         MomentArm,
         Mesh,
-        StateMachineParameters
+        StateMachineParameters,
+        CoordinateSystems
     } visualization;
 };

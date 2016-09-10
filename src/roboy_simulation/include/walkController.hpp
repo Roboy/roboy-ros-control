@@ -12,6 +12,8 @@
 #include <transmission_interface/transmission_parser.h>
 #include <pluginlib/class_loader.h>
 #include <pluginlib/class_list_macros.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/tf.h>
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -128,7 +130,7 @@ public:
     LEG_STATE leg_state[2];
 
     bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false;
+            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeCoordinateSystems;
 private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
@@ -181,6 +183,8 @@ private:
 
     void publishStateMachineParameters();
 
+    void publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time time, bool child_link=false);
+
     void toggleWalkController(const std_msgs::Bool::ConstPtr &msg);
 
     ros::NodeHandlePtr nh;
@@ -189,7 +193,7 @@ private:
     ros::Publisher visualizeTendon_pub, marker_visualization_pub, id_pub;
     vector<string> link_names;
 
-    bool control = true;
+    bool control = false;
 
     // these values are used for visualization
     math::Vector3 foot_sole[2], foot_sole_global[2], d_foot_pos[2], d_foot_vel[2];
@@ -241,7 +245,8 @@ private:
         Force,
         MomentArm,
         Mesh,
-        StateMachineParameters
+        StateMachineParameters,
+        CoordinateSystems
     }visualization;
 
     double *cmd, *pos, *vel, *eff;
@@ -281,4 +286,8 @@ private:
     boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>> class_loader;
     vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> sim_muscles;
     vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
+
+    tf::TransformBroadcaster tf_broadcaster;
+
+    uint message_counter = 0;
 };

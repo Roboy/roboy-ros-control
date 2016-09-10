@@ -218,6 +218,7 @@ void WalkController::Update() {
 
     // publish every now and then
     if((gz_time_now.nsec*gz_time_now.nsInMs)%100){
+        message_counter = 1000;
         if (visualizeTendon)
             publishTendon();
         if (visualizeForce)
@@ -230,10 +231,14 @@ void WalkController::Update() {
             publishModel();
         if(visualizeStateMachineParameters)
             publishStateMachineParameters();
+        if(visualizeCoordinateSystems)
+            publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
 
         publishSimulationState();
         publishID();
         publishLegState();
+        // publish tf transform
+
     }
 
     ros::spinOnce();
@@ -1042,65 +1047,44 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
         switch (msg->control) {
             case Tendon: {
                 visualizeTendon = msg->value;
-                if(!visualizeTendon){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
                 break;
             }
             case COM: {
                 visualizeCOM = msg->value;
-                if(!visualizeCOM){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
                 break;
             }
             case Force: {
                 visualizeForce = msg->value;
-                if(!visualizeForce){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
                 break;
             }
             case MomentArm: {
                 visualizeMomentArm = msg->value;
-                if(!visualizeMomentArm){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
+
                 break;
             }
             case Mesh: {
                 visualizeMesh = msg->value;
-                if(!visualizeMesh){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
                 break;
             }
             case StateMachineParameters: {
                 visualizeStateMachineParameters = msg->value;
-                if(!visualizeStateMachineParameters){
-                    visualization_msgs::Marker marker;
-                    marker.header.frame_id = "world";
-                    marker.action = visualization_msgs::Marker::DELETEALL;
-                    marker_visualization_pub.publish(marker);
-                }
+
+                break;
+            }
+            case CoordinateSystems: {
+                visualizeCoordinateSystems = msg->value;
                 break;
             }
         }
+        if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
+                !visualizeMesh || !visualizeStateMachineParameters){
+            visualization_msgs::Marker marker;
+            marker.header.frame_id = "world";
+            marker.id = message_counter++;
+            marker.action = visualization_msgs::Marker::DELETEALL;
+            marker_visualization_pub.publish(marker);
+        }
+
     }
 }
 
@@ -1127,7 +1111,7 @@ void WalkController::publishTendon() {
     roboy_simulation::Tendon msg;
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         line_strip.points.clear();
-        line_strip.id = 1000 + muscle;
+        line_strip.id = message_counter++;
         for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
             geometry_msgs::Vector3 vp;
             vp.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
@@ -1169,7 +1153,7 @@ void WalkController::publishCOM() {
     }
     sphere.header.stamp = ros::Time::now();
     sphere.points.clear();
-    sphere.id = 1001;
+    sphere.id = message_counter++;
     sphere.pose.position.x = center_of_mass[POSITION].x;
     sphere.pose.position.y = center_of_mass[POSITION].y;
     sphere.pose.position.z = center_of_mass[POSITION].z;
@@ -1177,7 +1161,7 @@ void WalkController::publishCOM() {
 }
 
 void WalkController::publishForce() {
-    uint id = 1000;
+    uint id = 99999999;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char forcenamespace[20];
@@ -1231,7 +1215,7 @@ void WalkController::publishForce() {
 }
 
 void WalkController::publishMomentArm() {
-    uint id = 100000;
+    uint id = 999999;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char momentarmnamespace[20];
@@ -1266,7 +1250,6 @@ void WalkController::publishMomentArm() {
 }
 
 void WalkController::publishModel(){
-    static bool add = true;
     visualization_msgs::Marker mesh;
     mesh.header.frame_id = "world";
     char modelnamespace[20];
@@ -1281,16 +1264,9 @@ void WalkController::publishModel(){
     mesh.scale.y = 1.0;
     mesh.scale.z = 1.0;
     mesh.lifetime = ros::Duration();
-    if (add) {
-        mesh.action = visualization_msgs::Marker::ADD;
-        add = false;
-    } else {
-        mesh.action = visualization_msgs::Marker::MODIFY;
-    }
     mesh.header.stamp = ros::Time::now();
-    mesh.id = 80;
     for(auto link_name:link_names){
-        mesh.id+=1;
+        mesh.id = message_counter++;
         physics::LinkPtr link = parent_model->GetLink(link_name);
         math::Pose pose = link->GetWorldPose();
         mesh.pose.position.x = pose.pos.x;
@@ -1370,7 +1346,6 @@ void WalkController::publishLegState(){
 }
 
 void WalkController::publishStateMachineParameters(){
-    uint id = 999;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char momentarmnamespace[20];
@@ -1397,14 +1372,14 @@ void WalkController::publishStateMachineParameters(){
     text.lifetime = ros::Duration();
     text.scale.z = 0.03;
     text.action = visualization_msgs::Marker::ADD;
-    text.id = id++;
+    text.id = message_counter++;
     text.header.stamp = ros::Time::now();
     text.pose.orientation.w = 1.0;
 
     geometry_msgs::Point p;
 
     arrow.color.a = 0.2;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1416,13 +1391,13 @@ void WalkController::publishStateMachineParameters(){
     p.z = foot_sole_global[LEG::LEFT].z;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "foot_sole[left]";
     marker_visualization_pub.publish(text);
 
     arrow.color.a = 0.2;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1434,7 +1409,7 @@ void WalkController::publishStateMachineParameters(){
     p.z = foot_sole_global[LEG::RIGHT].z;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "foot_sole[right]";
     marker_visualization_pub.publish(text);
@@ -1446,7 +1421,7 @@ void WalkController::publishStateMachineParameters(){
     arrow.color.r = 1.0f;
     arrow.color.g = 0.0f;
     arrow.color.b = 0.0f;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1458,7 +1433,7 @@ void WalkController::publishStateMachineParameters(){
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "d_s[left]";
     marker_visualization_pub.publish(text);
@@ -1467,7 +1442,7 @@ void WalkController::publishStateMachineParameters(){
     arrow.color.r = 0.0f;
     arrow.color.g = 1.0f;
     arrow.color.b = 0.0f;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1479,7 +1454,7 @@ void WalkController::publishStateMachineParameters(){
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "d_c[left]";
     marker_visualization_pub.publish(text);
@@ -1489,7 +1464,7 @@ void WalkController::publishStateMachineParameters(){
     arrow.color.r = 1.0f;
     arrow.color.g = 0.0f;
     arrow.color.b = 0.0f;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1501,7 +1476,7 @@ void WalkController::publishStateMachineParameters(){
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "d_s[right]";
     marker_visualization_pub.publish(text);
@@ -1510,7 +1485,7 @@ void WalkController::publishStateMachineParameters(){
     arrow.color.r = 0.0f;
     arrow.color.g = 1.0f;
     arrow.color.b = 0.0f;
-    arrow.id = id++;
+    arrow.id = message_counter++;
     arrow.header.stamp = ros::Time::now();
     arrow.points.clear();
     p.x = center_of_mass[POSITION].x;
@@ -1522,10 +1497,33 @@ void WalkController::publishStateMachineParameters(){
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
-    text.id = id++;
+    text.id = message_counter++;
     text.pose.position = p;
     text.text = "d_c[right]";
     marker_visualization_pub.publish(text);
+}
+
+void WalkController::publishCoordinateSystems(physics::LinkPtr parent_link, ros::Time time, bool child_link){
+    tf::Transform tf0, tf1;
+    math::Pose pose = parent_link->GetRelativePose();
+    tf0.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
+    tf0.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
+    if(!child_link) { // parent_link is top link and connected to world frame
+        tf_broadcaster.sendTransform(tf::StampedTransform(tf0, time, "world", parent_link->GetName()));
+    }
+    physics::Link_V child_links = parent_link->GetChildJointsLinks();
+    if (child_links.empty()) {
+        return;
+    } else {
+        for (auto child_link:child_links) { // each child relative pose to parent
+            math::Pose pose = child_link->GetRelativePose();
+            tf1.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, pose.pos.z));
+            tf1.setRotation(tf::Quaternion(pose.rot.x, pose.rot.y, pose.rot.z, pose.rot.w));
+            tf1 = tf0.inverseTimes(tf1);
+            tf_broadcaster.sendTransform(tf::StampedTransform(tf1, time, parent_link->GetName(), child_link->GetName()));
+            publishCoordinateSystems(child_link, time, true);
+        }
+    }
 }
 
 void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){

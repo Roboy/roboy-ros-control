@@ -108,44 +108,57 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     frameLayout->addLayout(swinglegstatelayout);
     frameLayout->addLayout(stancepreplegstatelayout);
 
+    QHBoxLayout *options = new QHBoxLayout();
+    QVBoxLayout *options0 = new QVBoxLayout();
+    QVBoxLayout *options1 = new QVBoxLayout();
+
     QCheckBox *togglewalkcontroller = new QCheckBox(tr("toggle WalkController"));
     togglewalkcontroller->setObjectName("togglewalkcontroller");
     connect(togglewalkcontroller, SIGNAL(clicked()), this, SLOT(toggleWalkController()));
-    frameLayout->addWidget(togglewalkcontroller);
+    options0->addWidget(togglewalkcontroller);
 
     QPushButton *resetworld = new QPushButton(tr("reset world"));
     connect(resetworld, SIGNAL(clicked()), this, SLOT(resetWorld()));
-    frameLayout->addWidget(resetworld);
+    options0->addWidget(resetworld);
 
     QCheckBox *visualizeMesh= new QCheckBox(tr("show mesh"));
     visualizeMesh->setObjectName("visualizeMesh");
     connect(visualizeMesh, SIGNAL(clicked()), this, SLOT(showMesh()));
-    frameLayout->addWidget(visualizeMesh);
+    options0->addWidget(visualizeMesh);
 
     QCheckBox *visualizeTendon= new QCheckBox(tr("show tendon"));
     visualizeTendon->setObjectName("visualizeTendon");
     connect(visualizeTendon, SIGNAL(clicked()), this, SLOT(showTendon()));
-    frameLayout->addWidget(visualizeTendon);
+    options0->addWidget(visualizeTendon);
 
     QCheckBox *visualizeCOM = new QCheckBox(tr("show COM"));
     visualizeCOM->setObjectName("visualizeCOM");
     connect(visualizeCOM, SIGNAL(clicked()), this, SLOT(showCOM()));
-    frameLayout->addWidget(visualizeCOM);
+    options0->addWidget(visualizeCOM);
 
     QCheckBox *visualizeForce = new QCheckBox(tr("show force"));
     visualizeForce->setObjectName("visualizeForce");
     connect(visualizeForce, SIGNAL(clicked()), this, SLOT(showForce()));
-    frameLayout->addWidget(visualizeForce);
+    options0->addWidget(visualizeForce);
 
     QCheckBox *visualizeMomentArm = new QCheckBox(tr("show momentArms"));
     visualizeMomentArm->setObjectName("visualizeMomentArm");
     connect(visualizeMomentArm, SIGNAL(clicked()), this, SLOT(showMomentArm()));
-    frameLayout->addWidget(visualizeMomentArm);
+    options0->addWidget(visualizeMomentArm);
 
     QCheckBox *visualizeStateMachineParameters = new QCheckBox(tr("show state machine parameters"));
     visualizeStateMachineParameters->setObjectName("visualizeStateMachineParameters");
     connect(visualizeStateMachineParameters, SIGNAL(clicked()), this, SLOT(showStateMachineParameters()));
-    frameLayout->addWidget(visualizeStateMachineParameters);
+    options0->addWidget(visualizeStateMachineParameters);
+
+    QCheckBox *visualizeCoordinateSystems = new QCheckBox(tr("show coordinate systems"));
+    visualizeCoordinateSystems->setObjectName("visualizeCoordinateSystems");
+    connect(visualizeCoordinateSystems, SIGNAL(clicked()), this, SLOT(showCoordinateSystems()));
+    options1->addWidget(visualizeCoordinateSystems);
+
+    options->addLayout(options0);
+    options->addLayout(options1);
+    frameLayout->addLayout(options);
 
     QTableWidget* table = new QTableWidget(35,2);
     table->setObjectName("table");
@@ -238,7 +251,7 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "GazeboRoboyOverlay",
+        ros::init(argc, argv, "RvizWalkingPlugin",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
 
@@ -251,6 +264,10 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     id_sub = nh->subscribe("/roboy/id", 1, &WalkingPlugin::updateId, this);
     simulation_state_sub = nh->subscribe("/roboy/simulationState", 1, &WalkingPlugin::updateSimulationState, this);
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
+
+    // create a timer to update the published transforms
+//    frame_timer = nh->createTimer(ros::Duration(0.01), &WalkingPlugin::frameCallback, this);
+//    interactive_marker_server.reset( new interactive_markers::InteractiveMarkerServer("RvizWalkingPlugin","",false) );
 }
 
 WalkingPlugin::~WalkingPlugin(){
@@ -333,90 +350,18 @@ void WalkingPlugin::showStateMachineParameters(){
     roboy_visualization_control_pub.publish(msg);
 }
 
+void WalkingPlugin::showCoordinateSystems(){
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
+    roboy_simulation::VisualizationControl msg;
+    msg.id = currentID.second;
+    msg.control = CoordinateSystems;
+    msg.value = w->isChecked();
+    roboy_visualization_control_pub.publish(msg);
+}
+
 void WalkingPlugin::changeID(int index){
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     currentID = make_pair(index, roboyID->currentText().toInt());
-    // republish visualization
-    showMesh();
-    showCOM();
-    showMomentArm();
-    showForce();
-    showTendon();
-}
-
-void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
-    if(msg->id == currentID.second) {
-        LightWidget *stance;
-        LightWidget *lift;
-        LightWidget *swing;
-        LightWidget *prep;
-        switch (msg->leg) {
-            case LEG::LEFT: {
-                stance = this->findChild<LightWidget *>("StanceLeft");
-                lift = this->findChild<LightWidget *>("LiftOffLeft");
-                swing = this->findChild<LightWidget *>("SwingLeft");
-                prep = this->findChild<LightWidget *>("StancePrepLeft");
-                break;
-            }
-            case LEG::RIGHT: {
-                stance = this->findChild<LightWidget *>("StanceRight");
-                lift = this->findChild<LightWidget *>("LiftOffRight");
-                swing = this->findChild<LightWidget *>("SwingRight");
-                prep = this->findChild<LightWidget *>("StancePrepRight");
-                break;
-            }
-        }
-        switch (msg->state) {
-            case LEG_STATE::Stance: {
-                stance->turnOn();
-                lift->turnOff();
-                swing->turnOff();
-                prep->turnOff();
-                break;
-            }
-            case LEG_STATE::Lift_off: {
-                stance->turnOff();
-                lift->turnOn();
-                swing->turnOff();
-                prep->turnOff();
-                break;
-            }
-            case LEG_STATE::Swing: {
-                stance->turnOff();
-                lift->turnOff();
-                swing->turnOn();
-                prep->turnOff();
-                break;
-            }
-            case LEG_STATE::Stance_Preparation: {
-                stance->turnOff();
-                lift->turnOff();
-                swing->turnOff();
-                prep->turnOn();
-                break;
-            }
-        }
-        stance->repaint();
-        lift->repaint();
-        swing->repaint();
-        prep->repaint();
-    }
-}
-
-void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
-    QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
-    int index = roboyID->findText(QString::number(msg->data));
-    if(index==-1) {
-        roboyID->addItem(QString::number(msg->data));
-        leg_state_sub[msg->data] = nh->subscribe("/roboy/leg_state", 2, &WalkingPlugin::updateLegStates, this);
-        roboyID->repaint();
-        // republish visualization
-        showMesh();
-        showCOM();
-        showMomentArm();
-        showForce();
-        showTendon();
-    }
     // republish visualization
     showMesh();
     showCOM();
@@ -525,6 +470,104 @@ void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationStat
 void WalkingPlugin::resetWorld(){
     std_srvs::Trigger srv;
     reset_world_srv.call(srv);
+}
+
+void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
+    if(msg->id == currentID.second) {
+        LightWidget *stance;
+        LightWidget *lift;
+        LightWidget *swing;
+        LightWidget *prep;
+        switch (msg->leg) {
+            case LEG::LEFT: {
+                stance = this->findChild<LightWidget *>("StanceLeft");
+                lift = this->findChild<LightWidget *>("LiftOffLeft");
+                swing = this->findChild<LightWidget *>("SwingLeft");
+                prep = this->findChild<LightWidget *>("StancePrepLeft");
+                break;
+            }
+            case LEG::RIGHT: {
+                stance = this->findChild<LightWidget *>("StanceRight");
+                lift = this->findChild<LightWidget *>("LiftOffRight");
+                swing = this->findChild<LightWidget *>("SwingRight");
+                prep = this->findChild<LightWidget *>("StancePrepRight");
+                break;
+            }
+        }
+        switch (msg->state) {
+            case LEG_STATE::Stance: {
+                stance->turnOn();
+                lift->turnOff();
+                swing->turnOff();
+                prep->turnOff();
+                break;
+            }
+            case LEG_STATE::Lift_off: {
+                stance->turnOff();
+                lift->turnOn();
+                swing->turnOff();
+                prep->turnOff();
+                break;
+            }
+            case LEG_STATE::Swing: {
+                stance->turnOff();
+                lift->turnOff();
+                swing->turnOn();
+                prep->turnOff();
+                break;
+            }
+            case LEG_STATE::Stance_Preparation: {
+                stance->turnOff();
+                lift->turnOff();
+                swing->turnOff();
+                prep->turnOn();
+                break;
+            }
+        }
+        stance->repaint();
+        lift->repaint();
+        swing->repaint();
+        prep->repaint();
+    }
+}
+
+void WalkingPlugin::updateId(const std_msgs::Int32::ConstPtr &msg){
+    QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
+    int index = roboyID->findText(QString::number(msg->data));
+    if(index==-1) {
+        roboyID->addItem(QString::number(msg->data));
+        leg_state_sub[msg->data] = nh->subscribe("/roboy/leg_state", 2, &WalkingPlugin::updateLegStates, this);
+        roboyID->repaint();
+        // republish visualization
+        showMesh();
+        showCOM();
+        showMomentArm();
+        showForce();
+        showTendon();
+        toggleWalkController();
+        showStateMachineParameters();
+    }
+}
+
+void WalkingPlugin::frameCallback(const ros::TimerEvent&)
+{
+    static uint32_t counter = 0;
+
+    static tf::TransformBroadcaster br;
+
+    tf::Transform t;
+
+    ros::Time time = ros::Time::now();
+
+    t.setOrigin(tf::Vector3(0.0, 0.0, sin(float(counter)/140.0) * 2.0));
+    t.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
+    br.sendTransform(tf::StampedTransform(t, time, "hip", "moving_frame"));
+
+    t.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+    t.setRotation(tf::createQuaternionFromRPY(0.0, float(counter)/140.0, 0.0));
+    br.sendTransform(tf::StampedTransform(t, time, "hip", "rotating_frame"));
+
+    counter++;
 }
 
 PLUGINLIB_EXPORT_CLASS(WalkingPlugin, rviz::Panel)

@@ -19,7 +19,8 @@ include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 message(STATUS ${GAZEBO_INCLUDE_DIRS})
 
-find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs geometry_msgs message_generation rviz)
+find_package(catkin REQUIRED COMPONENTS roscpp controller_manager gazebo_ros_control std_msgs
+        geometry_msgs message_generation rviz tf interactive_markers visualization_msgs)
 
 add_message_files(
         DIRECTORY
