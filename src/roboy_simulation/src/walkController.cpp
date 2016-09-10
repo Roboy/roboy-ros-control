@@ -21,9 +21,9 @@ WalkController::WalkController() {
     visualizeTendon_pub = nh->advertise<roboy_simulation::Tendon>("/visual/tendon", 1);
     marker_visualization_pub = nh->advertise<visualization_msgs::Marker>("visualization_marker", 100);
     leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 2);
-    id_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
+    roboyID_pub = nh->advertise<std_msgs::Int32>("/roboy/id",1);
     simulation_state_pub = nh->advertise<roboy_simulation::SimulationState>("/roboy/simulationState", 1);
-
+    abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
     toggle_walk_controller_sub = nh->subscribe("/roboy/toggle_walk_controller", 10,
                                                &WalkController::toggleWalkController, this);
 
@@ -181,7 +181,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 
 void WalkController::Update() {
     // Get the simulation time and period
-    gazebo::common::Time gz_time_now = parent_model->GetWorld()->GetSimTime();
+    gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
 
@@ -237,9 +237,9 @@ void WalkController::Update() {
         publishSimulationState();
         publishID();
         publishLegState();
-        // publish tf transform
-
     }
+
+    checkAbort();
 
     ros::spinOnce();
 }
@@ -645,6 +645,8 @@ void WalkController::initializeValues(){
     phi_trunk_0 = euler.x;
     theta_trunk_0 = euler.y;
 
+    calculateCOM(POSITION, initial_center_of_mass_height);
+
     euler = parent_model->GetLink("thigh_left")->GetWorldPose().rot.GetAsEuler();
     phi_groin_0[LEG::LEFT] = euler.x;
     theta_groin_0[LEG::LEFT] = euler.y;
@@ -693,11 +695,14 @@ void WalkController::updateFootDisplacementAndVelocity(){
     foot_pose = parent_model->GetLink(FOOT[LEG::RIGHT])->GetWorldPose();
     foot_sole_global[LEG::RIGHT] = foot_pose.pos + foot_pose.rot.RotateVector(foot_sole[LEG::RIGHT]);
 
-    // update coordinate systems
-    hip_CS->Update();
+    // update coordinate system wrt heading
+    hip_CS->UpdateHeading();
+
+    // v_COM is the velocity of center_of_mass projected onto forward direction
+    v_COM = center_of_mass[VELOCITY].Dot(hip_CS->Xn);
 
     // calculate signed horizontal distance between foot_pos and COM
-    for(uint leg=LEG::LEFT; leg<2; leg++) {
+    for(uint leg=LEG::LEFT; leg<=LEG::RIGHT; leg++) {
         // get the foot velocity
         math::Vector3 foot_vel = parent_model->GetLink(FOOT[leg])->GetWorldCoGLinearVel();
 
@@ -761,6 +766,57 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
                  LEG_STATE_STRING[new_state] );
         leg_state[msg->leg] = new_state;
     }
+
+    if(visualizeForceTorqueSensors){
+        visualization_msgs::Marker arrow;
+        arrow.header.frame_id = "world";
+        char forcetorquenamespace[20];
+        sprintf(forcetorquenamespace, "forceTorqueSensors_%d", roboyID);
+        arrow.ns = forcetorquenamespace;
+        arrow.type = visualization_msgs::Marker::ARROW;
+        arrow.color.r = 1.0f;
+        arrow.color.g = 1.0f;
+        arrow.color.b = 0.0f;
+        arrow.lifetime = ros::Duration();
+        arrow.scale.x = 0.005;
+        arrow.scale.y = 0.03;
+        arrow.scale.z = 0.03;
+        arrow.action = visualization_msgs::Marker::ADD;
+        arrow.color.a = 1.0;
+        arrow.id = 10000 + msg->leg;
+        arrow.header.stamp = ros::Time::now();
+        arrow.points.clear();
+        geometry_msgs::Point p;
+        math::Vector3 pos = parent_model->GetJoint(msg->joint)->GetWorldPose().pos;
+        p.x = pos.x;
+        p.y = pos.y;
+        p.z = pos.z;
+        arrow.points.push_back(p);
+        p.x += msg->force.x;
+        p.y += msg->force.y;
+        p.z += msg->force.z;
+        arrow.points.push_back(p);
+        marker_visualization_pub.publish(arrow);
+//        text.id = message_counter++;
+//        text.pose.position = p;
+//        text.text = "foot_sole[left]";
+//        marker_visualization_pub.publish(text);
+//
+//        visualization_msgs::Marker text;
+//        text.header.frame_id = "world";
+//        text.ns = momentarmnamespace;
+//        text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+//        text.color.r = 1.0;
+//        text.color.g = 1.0;
+//        text.color.b = 1.0;
+//        text.color.a = 1.0;
+//        text.lifetime = ros::Duration();
+//        text.scale.z = 0.03;
+//        text.action = visualization_msgs::Marker::ADD;
+//        text.id = message_counter++;
+//        text.header.stamp = ros::Time::now();
+//        text.pose.orientation.w = 1.0;
+    }
 }
 
 LEG_STATE WalkController::NextState(LEG_STATE s) {
@@ -793,9 +849,8 @@ LEG WalkController::getLegInState(LEG_STATE s) {
 
 void WalkController::updateTargetFeatures() {
     // target velocity
-    math::Quaternion heading(0, 0, psi_heading);
     math::Vector3 v_target(v_forward, 0, 0);
-    v_target = heading.RotateVector(v_target);
+    v_target = hip_CS->rot.RotateVector(v_target);
 
     math::Pose hip_pose = parent_model->GetLink("hip")->GetWorldPose();
 
@@ -1042,8 +1097,45 @@ void WalkController::updateEnergies(){
 
 }
 
+bool WalkController::checkAbort(){
+    if(center_of_mass[POSITION].z<0.1*initial_center_of_mass_height.z) {
+        roboy_simulation::Abortion msg;
+        msg.roboyID = roboyID;
+        msg.reason = COMheight;
+        abort_pub.publish(msg);
+        ROS_WARN_THROTTLE(1.0,"center of mass below threshold, aborting");
+        return true;
+    }
+    if(radiansToDegrees(fabs(hip_CS->rot.GetYaw())-fabs(psi_heading)) > 45.0f) {
+        roboy_simulation::Abortion msg;
+        msg.roboyID = roboyID;
+        msg.reason = headingDeviation;
+        abort_pub.publish(msg);
+        ROS_WARN_THROTTLE(1.0,"deviation from target heading above threshold, aborting");
+        return true;
+    }
+    for(auto link_name:link_names){
+        physics::Collision_V collisions = parent_model->GetLink(link_name)->GetCollisions();
+        for(auto collision:collisions){
+            physics::LinkPtr link = collision->GetLink();
+            if(link->GetName().find("foot")!=string::npos || link->GetName().find("hip")!=string::npos)// collsions for
+                // the feed are ok or hip?!
+                continue;
+            else {
+                roboy_simulation::Abortion msg;
+                msg.roboyID = roboyID;
+                msg.reason = selfCollision;
+                abort_pub.publish(msg);
+                ROS_WARN_THROTTLE(1.0, "self collision detected with %s, aborting", link->GetName().c_str());
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void WalkController::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
-    if(msg->id == roboyID) { // only react to messages with my roboyID
+    if(msg->roboyID == roboyID) { // only react to messages with my roboyID
         switch (msg->control) {
             case Tendon: {
                 visualizeTendon = msg->value;
@@ -1053,13 +1145,12 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
                 visualizeCOM = msg->value;
                 break;
             }
-            case Force: {
+            case Forces: {
                 visualizeForce = msg->value;
                 break;
             }
             case MomentArm: {
                 visualizeMomentArm = msg->value;
-
                 break;
             }
             case Mesh: {
@@ -1075,9 +1166,13 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
                 visualizeCoordinateSystems = msg->value;
                 break;
             }
+            case ForceTorqueSensors: {
+                visualizeForceTorqueSensors = msg->value;
+                break;
+            }
         }
         if(!visualizeTendon || !visualizeCOM || !visualizeForce || !visualizeMomentArm ||
-                !visualizeMesh || !visualizeStateMachineParameters){
+                !visualizeMesh || !visualizeStateMachineParameters || !visualizeForceTorqueSensors){
             visualization_msgs::Marker marker;
             marker.header.frame_id = "world";
             marker.id = message_counter++;
@@ -1286,7 +1381,7 @@ void WalkController::publishModel(){
 
 void WalkController::publishSimulationState(){
     roboy_simulation::SimulationState msg;
-    msg.id = roboyID;
+    msg.roboyID = roboyID;
     msg.F_contact = F_contact;
     msg.d_lift = d_lift;
     msg.d_prep = d_prep;
@@ -1323,23 +1418,24 @@ void WalkController::publishSimulationState(){
     msg.d_c.assign(d_c, d_c+2);
     msg.v_s.assign(v_s, v_s+2);
     msg.v_c.assign(v_c, v_c+2);
+    msg.sim_time = gz_time_now.Float();
     simulation_state_pub.publish(msg);
 }
 
 void WalkController::publishID(){
     std_msgs::Int32 msg;
     msg.data = roboyID;
-    id_pub.publish(msg);
+    roboyID_pub.publish(msg);
 }
 
 void WalkController::publishLegState(){
     roboy_simulation::LegState msgLeft;
-    msgLeft.id = roboyID;
+    msgLeft.roboyID = roboyID;
     msgLeft.leg = LEG::LEFT;
     msgLeft.state = leg_state[LEG::LEFT];
     leg_state_pub.publish(msgLeft);
     roboy_simulation::LegState msgRight;
-    msgRight.id = roboyID;
+    msgRight.roboyID = roboyID;
     msgRight.leg = LEG::RIGHT;
     msgRight.state = leg_state[LEG::RIGHT];
     leg_state_pub.publish(msgRight);
@@ -1428,8 +1524,8 @@ void WalkController::publishStateMachineParameters(){
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += d_s[LEG::LEFT];
-    p.y = center_of_mass[POSITION].y;
+    p.x += d_s[LEG::LEFT]*hip_CS->Xn.x;
+    p.y += d_s[LEG::LEFT]*hip_CS->Xn.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -1449,8 +1545,8 @@ void WalkController::publishStateMachineParameters(){
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x = center_of_mass[POSITION].x;
-    p.y += d_c[LEG::LEFT];
+    p.x += d_c[LEG::LEFT]*hip_CS->Yn.x;
+    p.y += d_c[LEG::LEFT]*hip_CS->Yn.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -1471,8 +1567,8 @@ void WalkController::publishStateMachineParameters(){
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += d_s[LEG::RIGHT];
-    p.y = center_of_mass[POSITION].y;
+    p.x += d_s[LEG::RIGHT]*hip_CS->Xn.x;
+    p.y += d_s[LEG::RIGHT]*hip_CS->Xn.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -1492,8 +1588,8 @@ void WalkController::publishStateMachineParameters(){
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x = center_of_mass[POSITION].x;
-    p.y += d_c[LEG::RIGHT];
+    p.x += d_c[LEG::RIGHT]*hip_CS->Yn.x;
+    p.y += d_c[LEG::RIGHT]*hip_CS->Yn.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);

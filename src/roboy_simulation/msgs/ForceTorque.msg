@@ -1,4 +1,5 @@
-int32 id
+int32 roboyID
 int32 leg
-geometry_msgs/Vector3 force
-geometry_msgs/Vector3 torque
+string joint
+geometry_msgs/Point force
+geometry_msgs/Point torque

@@ -10,6 +10,7 @@
 #include <string>
 // messages
 #include "roboy_simulation/ForceTorque.h"
+#include <std_msgs/Int32.h>
 
 using namespace gazebo;
 
@@ -32,6 +33,8 @@ private:
     /// \brief Callback that receives the contact sensor's update signal.
     virtual void OnUpdate();
 
+    void updateID(const std_msgs::Int32::ConstPtr &msg);
+
     /// \brief Pointer to the force torque sensor
     sensors::ForceTorqueSensorPtr parentSensor;
 
@@ -41,6 +44,7 @@ private:
 
     ros::NodeHandle *nh;
     ros::Publisher force_torque_pub;
-
+    ros::Subscriber roboyID_sub;
+    int roboyID;
     int leg;
 };

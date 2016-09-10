@@ -42,6 +42,7 @@
 #include <common_utilities/Steer.h>
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
+#include "roboy_simulation/Abortion.h"
 // libcmaes
 #include "cmaes.h"
 
@@ -76,8 +77,22 @@ public:
         X = pose.rot.RotateVector(math::Vector3::UnitX);
         Y = pose.rot.RotateVector(math::Vector3::UnitY);
         Z = pose.rot.RotateVector(math::Vector3::UnitZ);
+        Xn = X.Normalize();
+        Yn = Y.Normalize();
+        Zn = Z.Normalize();
     }
-    math::Vector3 origin, X, Y, Z;
+    void UpdateHeading(){
+        math::Pose pose = m_link->GetWorldPose();
+        math::Quaternion q(0,0,pose.rot.GetAsEuler().z);
+        origin = pose.pos;
+        X = q.RotateVector(math::Vector3::UnitX);
+        Y = q.RotateVector(math::Vector3::UnitY);
+        Z = q.RotateVector(math::Vector3::UnitZ);
+        Xn = X.Normalize();
+        Yn = Y.Normalize();
+        Zn = Z.Normalize();
+    }
+    math::Vector3 origin, X, Y, Z, Xn, Yn, Zn;
     math::Quaternion rot;
 private:
     physics::LinkPtr m_link;
@@ -125,12 +140,15 @@ public:
 
     void updateEnergies();
 
+    bool checkAbort();
+
     void visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg);
 
     LEG_STATE leg_state[2];
 
     bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeCoordinateSystems;
+            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeCoordinateSystems = false,
+            visualizeForceTorqueSensors = false;
 private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);
@@ -190,7 +208,7 @@ private:
     ros::NodeHandlePtr nh;
     int roboyID;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
-    ros::Publisher visualizeTendon_pub, marker_visualization_pub, id_pub;
+    ros::Publisher visualizeTendon_pub, marker_visualization_pub, roboyID_pub, abort_pub;
     vector<string> link_names;
 
     bool control = false;
@@ -200,6 +218,8 @@ private:
 
     // coordinate systems
     CoordSys hip_CS;
+
+    gazebo::common::Time gz_time_now;
 
     double gazebo_max_step_size = 0.003;
 
@@ -237,17 +257,7 @@ private:
     double theta_groin_0[2], phi_groin_0[2], theta_trunk_0, phi_trunk_0, theta_knee[2], theta_ankle[2];
     double d_s[2], d_c[2], v_s[2], v_c[2];
 
-    math::Vector3 center_of_mass[2];
-
-    enum{
-        Tendon,
-        COM,
-        Force,
-        MomentArm,
-        Mesh,
-        StateMachineParameters,
-        CoordinateSystems
-    }visualization;
+    math::Vector3 center_of_mass[2], initial_center_of_mass_height;
 
     double *cmd, *pos, *vel, *eff;
 

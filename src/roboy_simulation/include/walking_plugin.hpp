@@ -27,6 +27,7 @@
 #include "roboy_simulation/SimulationState.h"
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
+#include "roboy_simulation/Abortion.h"
 // common definitions
 #include "CommonDefinitions.h"
 #endif
@@ -45,6 +46,10 @@ public:
     bool isOn() const { return m_on; }
 
     void setOn(bool on) {
+        if(on)
+            m_color = Qt::green;
+        else
+            m_color = Qt::gray;
         if (on == m_on)
             return;
         m_on = on;
@@ -54,16 +59,14 @@ public:
 
     void turnOn() { setOn(true); }
 
+    void setColor(Qt::GlobalColor color){m_color = color;}
+
 protected:
     virtual void paintEvent(QPaintEvent *)
     {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
-        if (m_on) {
-            painter.setBrush(Qt::green);
-        }else{
-            painter.setBrush(Qt::gray);
-        }
+        painter.setBrush(m_color);
         painter.drawEllipse(0, 0, width(), height());
     }
 
@@ -72,7 +75,7 @@ private:
     bool m_on;
 };
 
-class WalkingPlugin : public rviz::Panel {
+class WalkingPlugin : public rviz::Panel{
 Q_OBJECT
 
 public:
@@ -114,6 +117,8 @@ public Q_SLOTS:
 
     void showCoordinateSystems();
 
+    void showForceTorqueSensors();
+
     void changeID(int index);
 
     void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
@@ -125,6 +130,8 @@ private:
 
     void updateId(const std_msgs::Int32::ConstPtr &msg);
 
+    void abortion(const roboy_simulation::Abortion::ConstPtr &msg);
+
     void frameCallback(const ros::TimerEvent&);
 
     ros::NodeHandle *nh;
@@ -132,17 +139,8 @@ private:
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
     ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub;
-    ros::Subscriber id_sub, simulation_state_sub;
+    ros::Subscriber id_sub, simulation_state_sub, abort_sub;
     ros::ServiceClient reset_world_srv;
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
     ros::Timer frame_timer;
-    enum {
-        Tendon,
-        COM,
-        Force,
-        MomentArm,
-        Mesh,
-        StateMachineParameters,
-        CoordinateSystems
-    } visualization;
 };
