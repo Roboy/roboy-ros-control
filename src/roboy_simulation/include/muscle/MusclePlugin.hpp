@@ -37,8 +37,6 @@ namespace roboy_simulation {
 	using namespace boost::numeric::odeint;
 	using namespace gazebo;
 
-	const int linkNumber = 3; //later read this number from some table or .txt files
-
 	struct MyoMuscleInfo{
 		string name;
 		vector<IViaPoints> viaPoints;
@@ -46,7 +44,6 @@ namespace roboy_simulation {
 		Gear gear;
 		Spindle spindle;
 		SEE see;
-		MyoMuscleInfo():viaPoints(){};
 	};
 
 	class MusclePlugin{
@@ -65,17 +62,12 @@ namespace roboy_simulation {
 		vector<IViaPoints> viaPoints;
 		double cmd = 0;
 	private:
-		event::ConnectionPtr connection;
-		common::Time prevUpdateTime;
 
 		IActuator::state_type x;
 		ITendon tendon;
 		IActuator actuator;
 
 		double actuatorForce;
-
-		transport::NodePtr node;
-		transport::PublisherPtr visPub;
 	};
 
 }
