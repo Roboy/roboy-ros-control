@@ -51,10 +51,10 @@ namespace roboy_simulation {
 		SEE see;
 	};
 
-	class MusclePlugin{
+	class IMuscle{
 
 	public:
-		MusclePlugin();
+		IMuscle();
 
         ////////////////////
 		/// \brief The Init function.

@@ -1,13 +1,13 @@
-#include "MusclePlugin.hpp"
+#include "IMuscle.hpp"
 
 namespace roboy_simulation {
 
-	MusclePlugin::MusclePlugin() : muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
+	IMuscle::IMuscle() : muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
 	{
 		x.resize(2);
 	}
 
-	void MusclePlugin::Init(MyoMuscleInfo &myoMuscle) {
+	void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
 		//state initialization
 		x[0] = 0.0;
 		x[1] = 0.0;
@@ -31,7 +31,7 @@ namespace roboy_simulation {
 		see.see.force = 0.0;
 	}
 
-	void MusclePlugin::Update( ros::Time &time, ros::Duration &period ) {
+	void IMuscle::Update( ros::Time &time, ros::Duration &period ) {
 
 		// TODO: calculate PID result
 //		pid.calc_output(cmd,pos,period);
@@ -112,4 +112,4 @@ namespace roboy_simulation {
 	}
 }
 // make it a plugin loadable via pluginlib
-PLUGINLIB_EXPORT_CLASS(roboy_simulation::MusclePlugin, roboy_simulation::MusclePlugin)
+PLUGINLIB_EXPORT_CLASS(roboy_simulation::IMuscle, roboy_simulation::IMuscle)
