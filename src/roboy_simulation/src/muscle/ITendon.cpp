@@ -7,21 +7,6 @@ using namespace roboy_simulation;
 
     };
 
-	double ITendon::ElectricMotorModel(const double _current, const double _torqueConstant,
-									   const double _spindleRadius) {
-		double motorForce;
-
-		if (_current >= 0) {
-			motorForce = _current * _torqueConstant / _spindleRadius;
-		}
-		else {
-			motorForce = 0;
-		}
-
-		return motorForce;
-	}
-
-
 	double ITendon::ElasticElementModel(const double _length0, const double _length, double _stiffness,
 										const double _speed, const double _spindleRadius, const double _time) {
 		// double realTimeUpdateRate=1000;

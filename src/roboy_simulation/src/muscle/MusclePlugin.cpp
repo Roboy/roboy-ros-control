@@ -102,7 +102,7 @@ namespace roboy_simulation {
 		actuator.spindle.angVel = x[1];
 
 		//calculate motor force
-		actuatorForce = tendon.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
+		actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
 												  actuator.spindle.radius);
 		ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 

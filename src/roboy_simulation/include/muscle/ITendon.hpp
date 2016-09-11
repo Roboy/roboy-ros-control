@@ -42,15 +42,6 @@ namespace roboy_simulation
         ITendon();
 
 		////////////////////////////////////////
-		/// \brief Calculate torque for an electric motor model.
-		/// \param[in] _current Input electric current
-		/// \param[in] _torqueConstant Motor's torque constant
-		/// \param[in] _spindleRadius Radius of the spindle that coils up the tendon
-		/// \return Calculated force according to the model
-		double ElectricMotorModel(const double _current, const double _torqueConstant,
-								  const double _spindleRadius);
-
-		////////////////////////////////////////
 		/// \brief Calculate elastic force of the series elastic element
 		/// \param[in] _length0 Resting length of the SEE
 		/// \param[in] _length Current length of the SEE
