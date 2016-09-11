@@ -13,6 +13,14 @@ namespace roboy_simulation {
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
 		viaPoints = myoMuscle.viaPoints;
+		//linked list
+        for(int i = 0; i < viaPoints.size(); i++){
+            if(i>0)
+            {
+                viaPoints[i].prevPoint = &(viaPoints[i-1]);
+                viaPoints[i-1].nextPoint = &(viaPoints[i]);
+            }
+        }
 		actuator.motor = myoMuscle.motor;
 		actuator.gear = myoMuscle.gear;
 		actuator.spindle = myoMuscle.spindle;
@@ -30,9 +38,6 @@ namespace roboy_simulation {
 
         for(int i = 0; i < viaPoints.size(); i++){
             // absolute position + relative position=actual position of each via point
-            math::Pose linkPose = viaPoints[i].link->GetWorldPose();
-            viaPoints[i].linkPosition = linkPose.pos;
-            viaPoints[i].linkRotation = linkPose.rot;
             viaPoints[i].globalCoordinates = viaPoints[i].linkPosition + viaPoints[i].linkRotation.RotateVector(viaPoints[i].localCoordinates);
         }
 
@@ -56,6 +61,24 @@ namespace roboy_simulation {
         actuator.elasticForce = tendon.see.force;
         //set elastic force zero to compare with old plugin functionality
         actuator.elasticForce = 0;
+
+        for(int i = 0; i < viaPoints.size(); i++)
+        {
+            if(viaPoints[i].prevPoint && viaPoints[i].nextPoint)
+            {
+                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
+                viaPoints[i].fb = viaPoints[i].prevPoint->fb;
+            } else if (!viaPoints[i].prevPoint){
+                viaPoints[i].fa = 0;
+                //use this to compare with old functionality of plugin
+                viaPoints[i].fb = actuator.elasticForce + actuatorForce;
+                //viaPoint[i].fb = tendon.see.force;
+            } else if (!viaPoints[i].nextPoint){
+                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
+                viaPoints[i].fb = 0;
+            }
+            viaPoints[i].CalculateForce();
+        };
 
 		// calculate the approximation of gear's efficiency
 		actuator.gear.appEfficiency = actuator.EfficiencyApproximation();
@@ -83,26 +106,8 @@ namespace roboy_simulation {
 												  actuator.spindle.radius);
 		ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
-		actuator.gear.position += actuator.spindle.angVel*period.nsec*1e-9;
+		actuator.gear.position += actuator.spindle.angVel*period.toSec();
         tendon.tendonLength = tendon.initialTendonLength - actuator.spindle.radius*actuator.gear.position;
-
-        for(int i = 0; i < viaPoints.size(); i++)
-        {
-            if(viaPoints[i].prevPoint && viaPoints[i].nextPoint)
-            {
-                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
-                viaPoints[i].fb = viaPoints[i].prevPoint->fb;
-            } else if (!viaPoints[i].prevPoint){
-                viaPoints[i].fa = 0;
-                //use this to compare with old functionality of plugin
-                viaPoints[i].fb = actuator.elasticForce + actuatorForce;
-                //viaPoint[i].fb = tendon.see.force;
-            } else if (!viaPoints[i].nextPoint){
-                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
-                viaPoints[i].fb = 0;
-            }
-            viaPoints[i].CalculateForce();
-        };
 	}
 }
 // make it a plugin loadable via pluginlib
