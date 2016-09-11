@@ -27,7 +27,7 @@ namespace roboy_simulation
 	};
 */
 	struct SEE {
-		double stiffness = 1.0;
+		double stiffness = 30680.0; // N/m
 		double length = 0.1;
 		double expansion = 0.0;
 		double force = 0.0;
