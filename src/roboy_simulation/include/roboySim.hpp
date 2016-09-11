@@ -39,7 +39,7 @@
 #include <vector>
 #include <thread>
 // muscle plugin
-#include "muscle/MusclePlugin.hpp"
+#include "muscle/IMuscle.hpp"
 // messages
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
@@ -210,8 +210,8 @@ namespace gazebo_ros_control {
         vector<control_toolbox::Pid> pid_controllers;
 
         vector<gazebo::physics::JointPtr> sim_joints;
-        boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::MusclePlugin>> class_loader;
-        vector<boost::shared_ptr<roboy_simulation::MusclePlugin>> sim_muscles;
+        boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
+        vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
         vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
         enum{

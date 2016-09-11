@@ -63,7 +63,7 @@ namespace gazebo_ros_control {
 
             try {
                 ROS_INFO("Loading Muscle Plugin");
-                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
+                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
                 sim_muscles.back()->Init(myoMuscles[i]);
             }
             catch (pluginlib::PluginlibException &ex) {
@@ -221,9 +221,9 @@ namespace gazebo_ros_control {
         ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
         // class laoder for loading muscle plugins
-        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
+        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::IMuscle>
                                    ("roboy_simulation",
-                                    "roboy_simulation::MusclePlugin"));
+                                    "roboy_simulation::IMuscle"));
 
         // Listen to the update event. This event is broadcast every simulation iteration.
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
