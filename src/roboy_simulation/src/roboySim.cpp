@@ -235,6 +235,11 @@ namespace gazebo_ros_control {
         ROS_DEBUG("read simulation");
         // update muscle plugins
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+            for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+                math::Pose linkPose = sim_muscles[muscle]->viaPoints[i].link->GetWorldPose();
+                sim_muscles[muscle]->viaPoints[i].linkPosition = linkPose.pos;
+                sim_muscles[muscle]->viaPoints[i].linkRotation = linkPose.rot;
+            }
             sim_muscles[muscle]->Update(time, period);
         }
         if(visualizeTendon)
@@ -614,9 +619,9 @@ namespace gazebo_ros_control {
                      link_child_it = link_child_it->NextSiblingElement("link")) {
                     string linkname = link_child_it->Attribute("name");
                     physics::LinkPtr link = parent_model->GetLink(linkname);
-                    if (!linkname.empty()) {
-                        TiXmlElement *viaPoint_child_it = NULL;
+                    if ((!linkname.empty()) && link) {
                         vector<roboy_simulation::IViaPoints> &viaPoints = myoMuscle.viaPoints;
+                        TiXmlElement *viaPoint_child_it = NULL;
                         for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                              viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
                             float x, y, z;
@@ -684,14 +689,6 @@ namespace gazebo_ros_control {
 //                }
                 ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
 
-                //linked-list for via-points
-                for(int i = 0; myoMuscle.viaPoints.size(); i++){
-                    if(i>0)
-                    {
-                        myoMuscle.viaPoints[i].prevPoint = &(myoMuscle.viaPoints[i-1]);
-                        myoMuscle.viaPoints[i-1].nextPoint = &(myoMuscle.viaPoints[i]);
-                    }
-                }
                 //check if wrapping surfaces are enclosed by fixpoints
                 for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
                     if(i == 0 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
@@ -704,7 +701,7 @@ namespace gazebo_ros_control {
                     }
                     if(myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
                         if(myoMuscle.viaPoints[i-1].type != roboy_simulation::IViaPoints::FIXPOINT
-                           || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
+                            || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
                             ROS_ERROR_STREAM_NAMED("parser", "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
                             return false;
                         }
