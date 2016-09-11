@@ -3,7 +3,12 @@
 #include "CommonDefinitions.h"
 #include "CommunicationData.h"
 
+#include "IActuator.hpp"
 #include "ISee.hpp"
+#include "IViaPoints.hpp"
+#include "SphericalWrapping.hpp"
+#include "CylindricalWrapping.hpp"
+#include "MeshWrapping.hpp"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>

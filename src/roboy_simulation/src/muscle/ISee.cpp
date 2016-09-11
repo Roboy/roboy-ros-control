@@ -84,7 +84,7 @@ using namespace roboy_simulation;
 		}
 	}
 */
-
+/*
 	double ISee::DotProduct(const math::Vector3 &_v1, const math::Vector3 &_v2) {
 		return _v1.x * _v2.x + _v1.y * _v2.y + _v1.z * _v2.z;
 	}
@@ -93,3 +93,4 @@ using namespace roboy_simulation;
 	double ISee::Angle(const math::Vector3 &_v1, const math::Vector3 &_v2) {
 		return acos(_v1.Dot(_v2) / _v1.GetLength() * _v2.GetLength());
 	}
+*/

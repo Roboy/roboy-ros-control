@@ -1,13 +1,6 @@
 #ifndef _GAZEBO_ITENDON_HPP_
 #define _GAZEBO_ITENDON_HPP_
 
-#include "IActuator.hpp"
-#include "IViaPoints.hpp"
-#include "SphericalWrapping.hpp"
-#include "CylindricalWrapping.hpp"
-#include "MeshWrapping.hpp"
-
-
 #include <vector>
 #include <boost/numeric/odeint.hpp>
 
@@ -15,7 +8,7 @@ namespace roboy_simulation
 {
     using namespace std;
 	using namespace boost::numeric::odeint;
-	using namespace gazebo;
+	//using namespace gazebo;
 /*
     struct tendonType {
 		vector<math::Vector3> MidPoint;
@@ -58,7 +51,7 @@ namespace roboy_simulation
 	    void ElasticElementModel(SEE &see, const double &length);
 
 		//static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
-
+/*
 	private:
 		////////////////////////////////////////
 		/// \brief Calculate the dot product between two vectors
@@ -73,6 +66,7 @@ namespace roboy_simulation
 		/// \param[in] _v2 vector 2 coordinates
 		/// \return Angle between two vectors in radians
 		double Angle(const math::Vector3 &_v1, const math::Vector3 &_v2);
+*/
 	};
 }
 
