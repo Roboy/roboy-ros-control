@@ -24,10 +24,10 @@ namespace roboy_simulation {
 		actuator.motor = myoMuscle.motor;
 		actuator.gear = myoMuscle.gear;
 		actuator.spindle = myoMuscle.spindle;
-		tendon.see = myoMuscle.see;
+		see.see = myoMuscle.see;
         name = myoMuscle.name;
-		tendon.see.expansion = 0.0;
-		tendon.see.force = 0.0;
+		see.see.expansion = 0.0;
+		see.see.force = 0.0;
 	}
 
 	void MusclePlugin::Update( ros::Time &time, ros::Duration &period ) {
@@ -45,20 +45,20 @@ namespace roboy_simulation {
         for(int i = 0; i < viaPoints.size(); i++)
         {
             viaPoints[i].UpdateForcePoints();
-            tendon.muscleLength += viaPoints[i].previousSegmentLength;
+            see.muscleLength += viaPoints[i].previousSegmentLength;
         };
 
-		if (tendon.firstUpdate)
+		if (see.firstUpdate)
         {
-            tendon.initialTendonLength = tendon.muscleLength;
-            tendon.tendonLength = tendon.muscleLength;
-            tendon.firstUpdate = false;
+            see.initialTendonLength = see.muscleLength;
+            see.tendonLength = see.muscleLength;
+            see.firstUpdate = false;
         }
 
         //calculate elastic force
-        tendon.see.length = tendon.muscleLength - tendon.tendonLength;
-        tendon.ElasticElementModel(tendon.see, tendon.see.length);
-        actuator.elasticForce = tendon.see.force;
+        see.see.length = see.muscleLength - see.tendonLength;
+        see.ElasticElementModel(see.see, see.see.length);
+        actuator.elasticForce = see.see.force;
         //set elastic force zero to compare with old plugin functionality
         actuator.elasticForce = 0;
 
@@ -72,7 +72,7 @@ namespace roboy_simulation {
                 viaPoints[i].fa = 0;
                 //use this to compare with old functionality of plugin
                 viaPoints[i].fb = actuator.elasticForce + actuatorForce;
-                //viaPoint[i].fb = tendon.see.force;
+                //viaPoint[i].fb = see.see.force;
             } else if (!viaPoints[i].nextPoint){
                 viaPoints[i].fa = viaPoints[i].prevPoint->fb;
                 viaPoints[i].fb = 0;
@@ -107,7 +107,7 @@ namespace roboy_simulation {
 		ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
 		actuator.gear.position += actuator.spindle.angVel*period.toSec();
-        tendon.tendonLength = tendon.initialTendonLength - actuator.spindle.radius*actuator.gear.position;
+        see.tendonLength = see.initialTendonLength - actuator.spindle.radius*actuator.gear.position;
 	}
 }
 // make it a plugin loadable via pluginlib

@@ -3,7 +3,7 @@
 #include "CommonDefinitions.h"
 #include "CommunicationData.h"
 
-#include "ITendon.hpp"
+#include "ISee.hpp"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -64,7 +64,7 @@ namespace roboy_simulation {
 	private:
 
 		IActuator::state_type x;
-		ITendon tendon;
+		ISee see;
 		IActuator actuator;
 
 		double actuatorForce;
