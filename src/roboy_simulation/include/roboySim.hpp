@@ -39,7 +39,7 @@
 #include <vector>
 #include <thread>
 // muscle plugin
-#include "MusclePlugin.hpp"
+#include "muscle/MusclePlugin.hpp"
 // messages
 #include "roboy_simulation/Tendon.h"
 #include "roboy_simulation/VisualizationControl.h"
