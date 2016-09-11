@@ -36,9 +36,9 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(CATKIN_DEPENDS message_runtime message_generation)
 
-find_package(PkgConfig)
-pkg_check_modules(libcmaes REQUIRED libcmaes)
-include_directories(${libcmaes_INCLUDE_DIRS})
+#find_package(PkgConfig)
+#pkg_check_modules(libcmaes REQUIRED libcmaes)
+#include_directories(${libcmaes_INCLUDE_DIRS})
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
@@ -51,16 +51,16 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-add_library(muscle_plugin SHARED src/muscle/MusclePlugin.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp
-        src/muscle/ITendon.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp
-        src/muscle/StateMachine.cpp)
-target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
+#add_library(muscle_plugin SHARED src/muscle/MusclePlugin.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp
+#        src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp
+#        src/muscle/StateMachine.cpp)
+#target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(roboySim SHARED src/roboySim.cpp src/muscle/MusclePlugin.cpp src/muscle/CylindricalWrapping.cpp
-				src/muscle/IActuator.cpp src/muscle/ITendon.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp
+				src/muscle/IActuator.cpp src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp
 				src/muscle/SphericalWrapping.cpp src/muscle/StateMachine.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
@@ -77,18 +77,18 @@ add_library(force_torque_plugin SHARED src/ForceTorquePlugin.cpp)
 add_dependencies(force_torque_plugin roboy_simulation_gencpp)
 target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_executable(walkTrainer src/walkTrainer.cpp)
-add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+#add_executable(walkTrainer src/walkTrainer.cpp)
+#add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
+#target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(WalkController SHARED src/walkController.cpp)
-add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+#add_library(WalkController SHARED src/walkController.cpp)
+#add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
+#target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 #==============================================================================
 # Installation
 #==============================================================================
 install(TARGETS
-        muscle_plugin
+#        muscle_plugin
         dummy_muscle_plugin
         roboySim
         roboy_rviz
