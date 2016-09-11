@@ -68,6 +68,10 @@ namespace roboy_simulation {
 		IActuator actuator;
 
 		double actuatorForce;
+        double muscleLength;
+        double tendonLength;
+        double initialTendonLength;
+        bool firstUpdate;
 	};
 
 }

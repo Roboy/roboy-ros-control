@@ -59,11 +59,6 @@ namespace roboy_simulation
 
 		//static void GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p);
 
-        double muscleLength;
-        double tendonLength;
-        double initialTendonLength;
-        bool firstUpdate;
-
 	private:
 		////////////////////////////////////////
 		/// \brief Calculate the dot product between two vectors

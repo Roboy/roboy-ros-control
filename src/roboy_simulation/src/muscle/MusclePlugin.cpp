@@ -2,7 +2,8 @@
 
 namespace roboy_simulation {
 
-	MusclePlugin::MusclePlugin() {
+	MusclePlugin::MusclePlugin() : muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
+	{
 		x.resize(2);
 	}
 
@@ -45,18 +46,18 @@ namespace roboy_simulation {
         for(int i = 0; i < viaPoints.size(); i++)
         {
             viaPoints[i].UpdateForcePoints();
-            see.muscleLength += viaPoints[i].previousSegmentLength;
+            muscleLength += viaPoints[i].previousSegmentLength;
         };
 
-		if (see.firstUpdate)
+		if (firstUpdate)
         {
-            see.initialTendonLength = see.muscleLength;
-            see.tendonLength = see.muscleLength;
-            see.firstUpdate = false;
+            initialTendonLength = muscleLength;
+            tendonLength = muscleLength;
+            firstUpdate = false;
         }
 
         //calculate elastic force
-        see.see.length = see.muscleLength - see.tendonLength;
+        see.see.length = muscleLength - tendonLength;
         see.ElasticElementModel(see.see, see.see.length);
         actuator.elasticForce = see.see.force;
         //set elastic force zero to compare with old plugin functionality
@@ -107,7 +108,7 @@ namespace roboy_simulation {
 		ROS_INFO_THROTTLE(1,"electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current, actuator.spindle.angVel, actuatorForce);
 
 		actuator.gear.position += actuator.spindle.angVel*period.toSec();
-        see.tendonLength = see.initialTendonLength - actuator.spindle.radius*actuator.gear.position;
+        tendonLength = initialTendonLength - actuator.spindle.radius*actuator.gear.position;
 	}
 }
 // make it a plugin loadable via pluginlib

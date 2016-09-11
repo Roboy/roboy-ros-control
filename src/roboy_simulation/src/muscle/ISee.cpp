@@ -2,7 +2,7 @@
 
 using namespace roboy_simulation;
 
-    ISee::ISee(): muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
+    ISee::ISee()
     {
 
     };
