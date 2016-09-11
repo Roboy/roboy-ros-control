@@ -40,9 +40,9 @@ void CylindricalWrapping::UpdateForcePoints()
     //if muscle is not wrapping, use straight line calculation
     if (stateMachine.state == StateMachine::NOTWRAPPING)
     {
-        prevForcePoint = globalCoordinates;
-        nextForcePoint = globalCoordinates;
-        previousSegmentLength = (prevCoord - prevForcePoint).GetLength();
+        prevForcePoint = nextCoord;
+        nextForcePoint = prevCoord;
+        previousSegmentLength = 0;
     }
 
     //compute tangent points
@@ -106,4 +106,33 @@ void CylindricalWrapping::UpdateForcePoints()
 
     //calculate the lines of action and the muscle's length
     previousSegmentLength = (prevCoord - this->prevForcePoint).GetLength() + sqrt(distance*distance + l_arc*l_arc) + (this->nextForcePoint - nextCoord).GetLength();
+};
+
+
+void CylindricalWrapping::CalculateForce()
+{
+    if(stateMachine.state == StateMachine::NOTWRAPPING){
+        prevForce = 0;
+        nextForce = 0;
+        return;
+    }
+    if(prevPoint && nextPoint)
+    {
+        //TODO: change fa, fb with respect to friction
+        // need to know if before or behind see
+        //previousSegmentKiteLineVelocity needed
+    }
+
+    if (prevPoint)
+    {
+        math::Vector3 A = prevPoint->nextForcePoint - this->prevForcePoint;
+        prevForce = A/A.GetLength() * fa;
+        //link->AddForceAtRelativePosition(Fa, this->prevForcePoint);
+    }
+    else if (nextPoint)
+    {
+        math::Vector3 B = nextPoint->prevForcePoint - this->nextForcePoint;
+        nextForce = B/B.GetLength() * fb;
+        //link->AddForceAtRelativePosition(Fb, this->nextForcePoint);
+    }
 };
