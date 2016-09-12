@@ -231,9 +231,8 @@ void WalkController::Update() {
             publishModel();
         if(visualizeStateMachineParameters)
             publishStateMachineParameters();
-        if(visualizeCoordinateSystems)
-            publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
 
+        publishCoordinateSystems(parent_model->GetLink("halterung"), ros::Time::now(), false);
         publishSimulationState();
         publishID();
         publishLegState();
@@ -1159,11 +1158,6 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
             }
             case StateMachineParameters: {
                 visualizeStateMachineParameters = msg->value;
-
-                break;
-            }
-            case CoordinateSystems: {
-                visualizeCoordinateSystems = msg->value;
                 break;
             }
             case ForceTorqueSensors: {
@@ -1625,5 +1619,6 @@ void WalkController::publishCoordinateSystems(physics::LinkPtr parent_link, ros:
 void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){
     control = msg->data;
 }
+
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

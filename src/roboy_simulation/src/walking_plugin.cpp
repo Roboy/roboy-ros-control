@@ -108,6 +108,7 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     frameLayout->addLayout(swinglegstatelayout);
     frameLayout->addLayout(stancepreplegstatelayout);
 
+    QHBoxLayout *simcontrol = new QHBoxLayout();
     QHBoxLayout *options = new QHBoxLayout();
     QVBoxLayout *options0 = new QVBoxLayout();
     QVBoxLayout *options1 = new QVBoxLayout();
@@ -128,9 +129,27 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     controllerOptions->addWidget(statusString);
     frameLayout->addLayout(controllerOptions);
 
-    QPushButton *resetworld = new QPushButton(tr("reset world"));
-    connect(resetworld, SIGNAL(clicked()), this, SLOT(resetWorld()));
-    options0->addWidget(resetworld);
+    QPushButton *button = new QPushButton(tr("reset"));
+    connect(button, SIGNAL(clicked()), this, SLOT(resetWorld()));
+    simcontrol->addWidget(button);
+
+    button= new QPushButton(tr("play"));
+    connect(button, SIGNAL(clicked()), this, SLOT(play()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("pause"));
+    connect(button, SIGNAL(clicked()), this, SLOT(pause()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("slow motion"));
+    connect(button, SIGNAL(clicked()), this, SLOT(slowMotion()));
+    simcontrol->addWidget(button);
+
+    button = new QPushButton(tr("update interactive marker"));
+    connect(button, SIGNAL(clicked()), this, SLOT(updateInteractiveMarker()));
+    simcontrol->addWidget(button);
+
+    frameLayout->addLayout(simcontrol);
 
     QCheckBox *visualizeMesh= new QCheckBox(tr("show mesh"));
     visualizeMesh->setObjectName("visualizeMesh");
@@ -283,10 +302,10 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     simulation_state_sub = nh->subscribe("/roboy/simulationState", 1, &WalkingPlugin::updateSimulationState, this);
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
     abort_sub = nh->subscribe("/roboy/abort", 1, &WalkingPlugin::abortion, this);
+    sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
 
     // create a timer to update the published transforms
 //    frame_timer = nh->createTimer(ros::Duration(0.01), &WalkingPlugin::frameCallback, this);
-//    interactive_marker_server.reset( new interactive_markers::InteractiveMarkerServer("RvizWalkingPlugin","",false) );
 }
 
 WalkingPlugin::~WalkingPlugin(){
@@ -380,12 +399,12 @@ void WalkingPlugin::showStateMachineParameters(){
 }
 
 void WalkingPlugin::showCoordinateSystems(){
-    QCheckBox* w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
-    roboy_simulation::VisualizationControl msg;
-    msg.roboyID = currentID.second;
-    msg.control = CoordinateSystems;
-    msg.value = w->isChecked();
-    roboy_visualization_control_pub.publish(msg);
+//    QCheckBox* w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
+//    roboy_simulation::VisualizationControl msg;
+//    msg.roboyID = currentID.second;
+//    msg.control = CoordinateSystems;
+//    msg.value = w->isChecked();
+//    roboy_visualization_control_pub.publish(msg);
 }
 
 void WalkingPlugin::showForceTorqueSensors(){
@@ -516,6 +535,30 @@ void WalkingPlugin::resetWorld(){
     reset_world_srv.call(srv);
 }
 
+void WalkingPlugin::play(){
+    std_msgs::Int32 msg;
+    msg.data = Play;
+    sim_control_pub.publish(msg);
+}
+
+void WalkingPlugin::pause(){
+    std_msgs::Int32 msg;
+    msg.data = Pause;
+    sim_control_pub.publish(msg);
+}
+
+void WalkingPlugin::slowMotion(){
+    std_msgs::Int32 msg;
+    msg.data = Slow_Motion;
+    sim_control_pub.publish(msg);
+}
+
+void WalkingPlugin::updateInteractiveMarker(){
+    std_msgs::Int32 msg;
+    msg.data = UpdateInteractiveMarker;
+    sim_control_pub.publish(msg);
+}
+
 void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
     if(msg->roboyID == currentID.second) {
         LightWidget *stance;
@@ -619,27 +662,6 @@ void WalkingPlugin::abortion(const roboy_simulation::Abortion::ConstPtr &msg){
         }
         status->repaint();
     }
-}
-
-void WalkingPlugin::frameCallback(const ros::TimerEvent&)
-{
-    static uint32_t counter = 0;
-
-    static tf::TransformBroadcaster br;
-
-    tf::Transform t;
-
-    ros::Time time = ros::Time::now();
-
-    t.setOrigin(tf::Vector3(0.0, 0.0, sin(float(counter)/140.0) * 2.0));
-    t.setRotation(tf::Quaternion(0.0, 0.0, 0.0, 1.0));
-    br.sendTransform(tf::StampedTransform(t, time, "hip", "moving_frame"));
-
-    t.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-    t.setRotation(tf::createQuaternionFromRPY(0.0, float(counter)/140.0, 0.0));
-    br.sendTransform(tf::StampedTransform(t, time, "hip", "rotating_frame"));
-
-    counter++;
 }
 
 PLUGINLIB_EXPORT_CLASS(WalkingPlugin, rviz::Panel)

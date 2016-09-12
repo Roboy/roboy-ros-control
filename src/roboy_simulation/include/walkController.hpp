@@ -147,8 +147,7 @@ public:
     LEG_STATE leg_state[2];
 
     bool visualizeTendon = false, visualizeCOM = false, visualizeForce = false, visualizeMomentArm = false,
-            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeCoordinateSystems = false,
-            visualizeForceTorqueSensors = false;
+            visualizeMesh = false, visualizeStateMachineParameters = false, visualizeForceTorqueSensors = false;
 private:
     /** Emergency stop callback */
     void eStopCB(const std_msgs::BoolConstPtr &e_stop_active);

@@ -18,7 +18,7 @@
 #include <ros/ros.h>
 #include <rviz/panel.h>
 #include <pluginlib/class_list_macros.h>
-#include <interactive_markers/interactive_marker_server.h>
+
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
 //messages
@@ -125,6 +125,14 @@ public Q_SLOTS:
 
     void resetWorld();
 
+    void play();
+
+    void pause();
+
+    void slowMotion();
+
+    void updateInteractiveMarker();
+
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 
@@ -132,15 +140,15 @@ private:
 
     void abortion(const roboy_simulation::Abortion::ConstPtr &msg);
 
-    void frameCallback(const ros::TimerEvent&);
+
 
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub;
+    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub, sim_control_pub;
     ros::Subscriber id_sub, simulation_state_sub, abort_sub;
     ros::ServiceClient reset_world_srv;
-    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
+
     ros::Timer frame_timer;
 };
