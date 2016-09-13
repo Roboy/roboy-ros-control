@@ -24,11 +24,11 @@ namespace roboy_simulation
         /// \brief This function updates the position of the attachment point.
         ///
         /// Retrives the links position from Gazebo.
-        void UpdateForcePoints();
+        virtual void UpdateForcePoints();
 
         ////////////////////
         /// \brief This function applies the muscle force to the attachment point
-        void CalculateForce();
+        virtual void CalculateForce();
 
     public:
         StateMachine stateMachine;
