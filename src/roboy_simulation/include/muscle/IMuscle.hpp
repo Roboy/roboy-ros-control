@@ -35,6 +35,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <memory>
 
 namespace roboy_simulation {
 
@@ -44,7 +45,7 @@ namespace roboy_simulation {
 
 	struct MyoMuscleInfo{
 		string name;
-		vector<IViaPoints> viaPoints;
+		vector<ViaPointInfo> viaPoints;
 		Motor motor;
 		Gear gear;
 		Spindle spindle;
@@ -64,7 +65,7 @@ namespace roboy_simulation {
 		void Init(MyoMuscleInfo &myoMuscle);
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
-		vector<IViaPoints> viaPoints;
+		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
 	private:
 
