@@ -13,13 +13,26 @@ namespace roboy_simulation {
 		x[1] = 0.0;
 		actuator.motor.voltage = 0.0;
 		actuator.spindle.angVel = 0;
-		viaPoints = myoMuscle.viaPoints;
+		for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
+            ViaPointInfo vp = myoMuscle.viaPoints[i];
+            if(vp.type == IViaPoints::FIXPOINT){
+                viaPoints.push_back(std::make_shared<IViaPoints>(vp.point, vp.link));
+            } else if (vp.type == IViaPoints::SPHERICAL) {
+                viaPoints.push_back(std::make_shared<SphericalWrapping>(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+                ROS_INFO("state %d", vp.state);
+            } else if (vp.type == IViaPoints::CYLINDRICAL) {
+                viaPoints.push_back(std::make_shared<CylindricalWrapping>(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+            } else if (vp.type == IViaPoints::MESH){
+
+            }
+		}
+
 		//linked list
         for(int i = 0; i < viaPoints.size(); i++){
             if(i>0)
             {
-                viaPoints[i].prevPoint = &(viaPoints[i-1]);
-                viaPoints[i-1].nextPoint = &(viaPoints[i]);
+                viaPoints[i]->prevPoint = viaPoints[i-1];
+                viaPoints[i-1]->nextPoint = viaPoints[i];
             }
         }
 		actuator.motor = myoMuscle.motor;
@@ -39,18 +52,27 @@ namespace roboy_simulation {
 
         for(int i = 0; i < viaPoints.size(); i++){
             // absolute position + relative position=actual position of each via point
-            viaPoints[i].globalCoordinates = viaPoints[i].linkPosition + viaPoints[i].linkRotation.RotateVector(viaPoints[i].localCoordinates);
+            viaPoints[i]->globalCoordinates = viaPoints[i]->linkPosition + viaPoints[i]->linkRotation.RotateVector(viaPoints[i]->localCoordinates);
         }
 
         //update force points and calculate muscle length
+        muscleLength = 0;
+
         for(int i = 0; i < viaPoints.size(); i++)
         {
-            viaPoints[i].UpdateForcePoints();
-            muscleLength += viaPoints[i].previousSegmentLength;
+            viaPoints[i]->UpdateForcePoints();
+            muscleLength += viaPoints[i]->previousSegmentLength;
+            if(firstUpdate){
+                ROS_INFO("global coordinates are %f %f %f ", viaPoints[i]->globalCoordinates.x, viaPoints[i]->globalCoordinates.y, viaPoints[i]->globalCoordinates.z);
+                ROS_INFO("prevForcePoint is %f %f %f ", viaPoints[i]->prevForcePoint.x, viaPoints[i]->prevForcePoint.y, viaPoints[i]->prevForcePoint.z);
+                ROS_INFO("nextForcePoint is %f %f %f", viaPoints[i]->nextForcePoint.x, viaPoints[i]->nextForcePoint.y, viaPoints[i]->nextForcePoint.z);
+                ROS_INFO("segmentlength is %f ", viaPoints[i]->previousSegmentLength);
+            }
         };
 
 		if (firstUpdate)
         {
+            ROS_INFO("Calculated musclelength is %f m", muscleLength);
             initialTendonLength = muscleLength;
             tendonLength = muscleLength;
             firstUpdate = false;
@@ -65,20 +87,20 @@ namespace roboy_simulation {
 
         for(int i = 0; i < viaPoints.size(); i++)
         {
-            if(viaPoints[i].prevPoint && viaPoints[i].nextPoint)
+            if(viaPoints[i]->prevPoint && viaPoints[i]->nextPoint)
             {
-                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
-                viaPoints[i].fb = viaPoints[i].prevPoint->fb;
-            } else if (!viaPoints[i].prevPoint){
-                viaPoints[i].fa = 0;
+                viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
+                viaPoints[i]->fb = viaPoints[i]->prevPoint->fb;
+            } else if (!viaPoints[i]->prevPoint){
+                viaPoints[i]->fa = 0;
                 //use this to compare with old functionality of plugin
-                viaPoints[i].fb = actuator.elasticForce + actuatorForce;
-                //viaPoint[i].fb = see.see.force;
-            } else if (!viaPoints[i].nextPoint){
-                viaPoints[i].fa = viaPoints[i].prevPoint->fb;
-                viaPoints[i].fb = 0;
+                viaPoints[i]->fb = actuator.elasticForce + actuatorForce;
+                //viaPoint[i]->fb = see.see.force;
+            } else if (!viaPoints[i]->nextPoint){
+                viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
+                viaPoints[i]->fb = 0;
             }
-            viaPoints[i].CalculateForce();
+            viaPoints[i]->CalculateForce();
         };
 
 		// calculate the approximation of gear's efficiency
