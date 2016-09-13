@@ -51,10 +51,10 @@ include_directories(
 #==============================================================================
 # Application
 #==============================================================================
-#add_library(muscle_plugin SHARED src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp
-#        src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp
-#        src/muscle/StateMachine.cpp)
-#target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
+add_library(muscle_plugin SHARED src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp src/muscle/IActuator.cpp
+        src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp src/muscle/SphericalWrapping.cpp
+        src/muscle/StateMachine.cpp)
+target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARMADILLO_LIBRARIES} ${catkin_LIBRARIES})
 
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
@@ -88,7 +88,7 @@ target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES
 # Installation
 #==============================================================================
 install(TARGETS
-#        muscle_plugin
+        muscle_plugin
         dummy_muscle_plugin
         roboySim
         roboy_rviz
