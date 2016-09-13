@@ -7,8 +7,6 @@ namespace roboy_simulation
 {
 	using namespace gazebo;
 
-	//class ITendon;
-
 	class IViaPoints
 	{
 
@@ -39,11 +37,11 @@ namespace roboy_simulation
         /// \brief This function updates the position of the attachment point.
         ///
         /// Retrives the links position from Gazebo.
-        void UpdateForcePoints();
+        virtual void UpdateForcePoints();
 
         ////////////////////
         /// \brief This function applies the muscle force to the attachment point
-        void CalculateForce();
+        virtual void CalculateForce();
 
     public:
         physics::LinkPtr link;
@@ -52,8 +50,8 @@ namespace roboy_simulation
         math::Vector3 localCoordinates;
         math::Vector3 globalCoordinates;
         Type type;
-        IViaPoints* prevPoint;
-        IViaPoints* nextPoint;
+        std::shared_ptr<IViaPoints> prevPoint;
+        std::shared_ptr<IViaPoints> nextPoint;
         math::Vector3 prevForcePoint; //global
         math::Vector3 nextForcePoint; //global
         double fa;
@@ -61,6 +59,15 @@ namespace roboy_simulation
         math::Vector3 prevForce;
         math::Vector3 nextForce;
         double previousSegmentLength;
+	};
+
+	struct ViaPointInfo{
+		math::Vector3 point;
+		IViaPoints::Type type;
+		double radius;
+		int state;
+		int revCounter;
+		physics::LinkPtr link;
 	};
 }
 
