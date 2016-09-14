@@ -314,11 +314,52 @@ WalkingPlugin::~WalkingPlugin(){
 }
 
 void WalkingPlugin::save(rviz::Config config) const {
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeTendon");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeCOM");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeForce");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeMomentArm");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeStateMachineParameters");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
+    config.mapSetValue(w->objectName(), w->isChecked());
+    w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
+    config.mapSetValue(w->objectName(), w->isChecked());
     rviz::Panel::save(config);
 }
 
 void WalkingPlugin::load(const rviz::Config &config) {
     rviz::Panel::load(config);
+    QCheckBox* w = this->findChild<QCheckBox*>("visualizeMesh");
+    bool checked = false;
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeTendon");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeCOM");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeForce");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeMomentArm");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeStateMachineParameters");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeCoordinateSystems");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
+    w = this->findChild<QCheckBox*>("visualizeForceTorqueSensors");
+    config.mapGetBool(w->objectName(), &checked);
+    w->setChecked(checked);
 }
 
 void WalkingPlugin::toggleWalkController(){
