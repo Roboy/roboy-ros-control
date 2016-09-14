@@ -6,26 +6,25 @@
 namespace gazebo{
 
     struct Motor {
-		double current = 0.0;
-		double torqueConst = 1.0;
-		double resistance = 0.797;
-		double inductance = 0.118;
-		double voltage = 0.0;
-		double BEMFConst = 0.001488; // back electromagnetic force constant
-		double inertiaMoment = 4.09;
+        double current = 0.0; // [A]
+        double torqueConst = 11.2; // [V/s]
+        double resistance = 0.797; // [Ohm]
+        double inductance = 0.118e-03; // [H]
+        double voltage = 0.0; // [V]
+        double BEMFConst = 14.2e-03; // [Nm/A]
+        double inertiaMoment = 4.09e-07; // [kgm^2]
 	};
 
 	struct Gear {
-		double inertiaMoment = 0.4;
-		double ratio = 53;
-		double efficiency = 0.59; // gear efficciency
-		double appEfficiency; // approximated efficiency
-		double position = 0.0;
+        double inertiaMoment = 0.4e-07; // [kgm^2]
+        double ratio = 53; // [1]
+        double efficiency = 0.59; // [1]
+        double appEfficiency; // approximated efficiency
 	};
 
 	struct Spindle {
-		double angVel = 0.0; // angular velocity of the spindle
-		double radius = 0.005;
+        double angVel = 0.0; // [1/s]
+        double radius = 4.5e-03; // [m]
 	};
 
     class IActuator {
