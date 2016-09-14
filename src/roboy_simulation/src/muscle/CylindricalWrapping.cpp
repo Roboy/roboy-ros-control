@@ -14,7 +14,7 @@ CylindricalWrapping::CylindricalWrapping(): IViaPoints(math::Vector3(0,0,0), Typ
 CylindricalWrapping::CylindricalWrapping(math::Vector3 point, physics::LinkPtr link): CylindricalWrapping()
 {
     localCoordinates = point;
-    link = link;
+    this->link = link;
 };
 
 CylindricalWrapping::CylindricalWrapping(math::Vector3 point, double radius, int state, int counter, physics::LinkPtr link): CylindricalWrapping(point, link)
