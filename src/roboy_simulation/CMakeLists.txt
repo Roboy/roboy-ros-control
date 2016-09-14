@@ -59,9 +59,13 @@ target_link_libraries(muscle_plugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${ARM
 add_library(dummy_muscle_plugin SHARED src/muscle/DummyMusclePlugin.cpp)
 target_link_libraries(dummy_muscle_plugin ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
 
-add_library(roboySim SHARED src/roboySim.cpp src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp
-				src/muscle/IActuator.cpp src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp
-				src/muscle/SphericalWrapping.cpp src/muscle/StateMachine.cpp)
+#add_library(roboySim SHARED src/roboySim.cpp src/muscle/IMuscle.cpp src/muscle/CylindricalWrapping.cpp
+#				src/muscle/IActuator.cpp src/muscle/ISee.cpp src/muscle/IViaPoints.cpp src/muscle/MeshWrapping.cpp
+#				src/muscle/SphericalWrapping.cpp src/muscle/StateMachine.cpp)
+#add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
+#target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+
+add_library(roboySim SHARED src/roboySim.cpp)
 add_dependencies(roboySim common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(roboySim ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
