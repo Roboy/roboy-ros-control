@@ -26,6 +26,7 @@ WalkController::WalkController() {
     abort_pub = nh->advertise<roboy_simulation::Abortion>("/roboy/abort", 1000);
     toggle_walk_controller_sub = nh->subscribe("/roboy/toggle_walk_controller", 10,
                                                &WalkController::toggleWalkController, this);
+    motor_control_sub = nh->subscribe("/roboy/motor_control", 100, &WalkController::motorControl, this);
 
     // the following links are part of my robot (this is useful if the model.sdf contains additional links)
     link_names.push_back("hip");
@@ -180,6 +181,7 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 }
 
 void WalkController::Update() {
+    static long unsigned int counter = 0;
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
@@ -196,10 +198,6 @@ void WalkController::Update() {
         updateTargetFeatures();
         updateMuscleForces();
         updateMuscleActivities();
-    }else{ // relax the muscles
-        for(uint muscle=0; muscle<sim_muscles.size(); muscle++){
-            sim_muscles[muscle]->cmd = 0;
-        }
     }
 
     // Check if we should update the controllers
@@ -217,7 +215,7 @@ void WalkController::Update() {
     last_write_sim_time_ros = sim_time_ros;
 
     // publish every now and then
-    if((gz_time_now.nsec*gz_time_now.nsInMs)%100){
+    if(counter%100==0){
         message_counter = 1000;
         if (visualizeTendon)
             publishTendon();
@@ -257,10 +255,11 @@ void WalkController::writeSim(ros::Time time, ros::Duration period) {
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         uint j = 0;
         for (uint i = 0; i < sim_muscles[muscle]->force.size(); i++) {
-            if (sim_muscles[muscle]->force[i].GetLength() > 0.0) {  // using zero forces makes the model collapse
+            if (sim_muscles[muscle]->force[i].GetLength() > 0.0001 && j<1) {  // using zero forces makes the model
+                // collapse
                 sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(-sim_muscles[muscle]->force[i],
                                                                        sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
-                sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(sim_muscles[muscle]->force[i],
+                sim_muscles[muscle]->links[j+1]->AddForceAtWorldPosition(sim_muscles[muscle]->force[i],
                                                                        sim_muscles[muscle]->viaPointsInGlobalFrame[
                                                                                i + 1]);
                 if (i == sim_muscles[muscle]->link_index - 1) {
@@ -1178,24 +1177,25 @@ void WalkController::visualization_control(const roboy_simulation::Visualization
 }
 
 void WalkController::publishTendon() {
-    static bool add = true;
+//    static bool add = true;
     visualization_msgs::Marker line_strip;
     line_strip.header.frame_id = "world";
     line_strip.header.stamp = ros::Time::now();
     char tendonnamespace[20];
     sprintf(tendonnamespace, "tendon_%d", roboyID);
     line_strip.ns = tendonnamespace;
-    if (add) {
+//    if (add) {
         line_strip.action = visualization_msgs::Marker::ADD;
-        add = false;
-    } else {
-        line_strip.action = visualization_msgs::Marker::MODIFY;
-    }
+//        add = false;
+//    } else {
+//        line_strip.action = visualization_msgs::Marker::MODIFY;
+//    }
     line_strip.type = visualization_msgs::Marker::LINE_STRIP;
     line_strip.scale.x = 0.003;
     line_strip.color.r = 1.0;
     line_strip.color.a = 1.0;
     line_strip.pose.orientation.w = 1.0;
+    line_strip.lifetime = ros::Duration(0);
 
     roboy_simulation::Tendon msg;
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
@@ -1219,7 +1219,7 @@ void WalkController::publishTendon() {
 }
 
 void WalkController::publishCOM() {
-    static bool add = true;
+//    static bool add = true;
     visualization_msgs::Marker sphere;
     sphere.header.frame_id = "world";
     char comnamespace[20];
@@ -1230,16 +1230,16 @@ void WalkController::publishCOM() {
     sphere.color.g = 0.0f;
     sphere.color.b = 1.0f;
     sphere.color.a = 1.0;
-    sphere.lifetime = ros::Duration();
+    sphere.lifetime = ros::Duration(0);
     sphere.scale.x = 0.1;
     sphere.scale.y = 0.1;
     sphere.scale.z = 0.1;
-    if (add) {
+//    if (add) {
         sphere.action = visualization_msgs::Marker::ADD;
-        add = false;
-    } else {
-        sphere.action = visualization_msgs::Marker::MODIFY;
-    }
+//        add = false;
+//    } else {
+//        sphere.action = visualization_msgs::Marker::MODIFY;
+//    }
     sphere.header.stamp = ros::Time::now();
     sphere.points.clear();
     sphere.id = message_counter++;
@@ -1250,7 +1250,7 @@ void WalkController::publishCOM() {
 }
 
 void WalkController::publishForce() {
-    uint id = 99999999;
+//    static bool add = true;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char forcenamespace[20];
@@ -1258,53 +1258,56 @@ void WalkController::publishForce() {
     arrow.ns = forcenamespace;
     arrow.type = visualization_msgs::Marker::ARROW;
     arrow.color.a = 1.0;
-    arrow.lifetime = ros::Duration();
+    arrow.lifetime = ros::Duration(0);
     arrow.scale.x = 0.005;
     arrow.scale.y = 0.03;
     arrow.scale.z = 0.03;
-    arrow.action = visualization_msgs::Marker::ADD;
+//    if (add) {
+        arrow.action = visualization_msgs::Marker::ADD;
+//        add = false;
+//    } else {
+//        arrow.action = visualization_msgs::Marker::MODIFY;
+//    }
 
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        for (uint i = 0; i < sim_muscles[muscle]->force.size(); i++) {
             // actio
-            arrow.id = id++;
+            arrow.id = message_counter++;
             arrow.color.r = 0.0f;
             arrow.color.g = 1.0f;
             arrow.color.b = 0.0f;
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
             geometry_msgs::Point p;
-            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
+            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[0].x;
+            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[0].y;
+            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[0].z;
             arrow.points.push_back(p);
-            p.x -= sim_muscles[muscle]->force[i].x;
-            p.y -= sim_muscles[muscle]->force[i].y;
-            p.z -= sim_muscles[muscle]->force[i].z;
+            p.x -= sim_muscles[muscle]->force[0].x;
+            p.y -= sim_muscles[muscle]->force[0].y;
+            p.z -= sim_muscles[muscle]->force[0].z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
             // reactio
-            arrow.id = id++;
+            arrow.id = message_counter++;
             arrow.color.r = 1.0f;
             arrow.color.g = 1.0f;
             arrow.color.b = 0.0f;
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
-            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i + 1].x;
-            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i + 1].y;
-            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i + 1].z;
+            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[1].x;
+            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[1].y;
+            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[1].z;
             arrow.points.push_back(p);
-            p.x += sim_muscles[muscle]->force[i].x;
-            p.y += sim_muscles[muscle]->force[i].y;
-            p.z += sim_muscles[muscle]->force[i].z;
+            p.x += sim_muscles[muscle]->force[0].x;
+            p.y += sim_muscles[muscle]->force[0].y;
+            p.z += sim_muscles[muscle]->force[0].z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
-        }
     }
 }
 
 void WalkController::publishMomentArm() {
-    uint id = 999999;
+//    static bool add = true;
     visualization_msgs::Marker arrow;
     arrow.header.frame_id = "world";
     char momentarmnamespace[20];
@@ -1315,13 +1318,18 @@ void WalkController::publishMomentArm() {
     arrow.color.g = 0.0f;
     arrow.color.b = 1.0f;
     arrow.color.a = 1.0;
-    arrow.lifetime = ros::Duration();
+    arrow.lifetime = ros::Duration(0);
     arrow.scale.x = 0.005;
     arrow.scale.y = 0.03;
     arrow.scale.z = 0.03;
-    arrow.action = visualization_msgs::Marker::ADD;
+//    if (add) {
+        arrow.action = visualization_msgs::Marker::ADD;
+//        add = false;
+//    } else {
+//        arrow.action = visualization_msgs::Marker::MODIFY;
+//    }
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        arrow.id = id++;
+        arrow.id = message_counter++;
         arrow.header.stamp = ros::Time::now();
         arrow.points.clear();
         geometry_msgs::Point p;
@@ -1339,6 +1347,7 @@ void WalkController::publishMomentArm() {
 }
 
 void WalkController::publishModel(){
+//    static bool add = true;
     visualization_msgs::Marker mesh;
     mesh.header.frame_id = "world";
     char modelnamespace[20];
@@ -1352,12 +1361,19 @@ void WalkController::publishModel(){
     mesh.scale.x = 1.0;
     mesh.scale.y = 1.0;
     mesh.scale.z = 1.0;
-    mesh.lifetime = ros::Duration();
+    mesh.lifetime = ros::Duration(0);
     mesh.header.stamp = ros::Time::now();
+//    if (add) {
+        mesh.action = visualization_msgs::Marker::ADD;
+//        add = false;
+//    } else {
+//        mesh.action = visualization_msgs::Marker::MODIFY;
+//    }
     for(auto link_name:link_names){
         mesh.id = message_counter++;
         physics::LinkPtr link = parent_model->GetLink(link_name);
         math::Pose pose = link->GetWorldPose();
+        pose.rot.Normalize();
         mesh.pose.position.x = pose.pos.x;
         mesh.pose.position.y = pose.pos.y;
         mesh.pose.position.z = pose.pos.z;
@@ -1620,5 +1636,18 @@ void WalkController::toggleWalkController(const std_msgs::Bool::ConstPtr &msg){
     control = msg->data;
 }
 
+void WalkController::motorControl(const roboy_simulation::MotorControl::ConstPtr &msg){
+    // only react to messages for me
+    if(msg->roboyID == roboyID) {
+        // switch to manual control
+        control = false;
+        // update commanded motor voltages
+        if(msg->voltage.size() == sim_muscles.size()) {
+            for (uint i = 0; i < sim_muscles.size(); i++) {
+                sim_muscles[i]->cmd = msg->voltage[i];
+            }
+        }
+    }
+}
 
 GZ_REGISTER_MODEL_PLUGIN(WalkController)

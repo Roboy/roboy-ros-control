@@ -32,6 +32,7 @@ add_message_files(
         LegState.msg
         SimulationState.msg
         Abortion.msg
+        MotorControl.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)

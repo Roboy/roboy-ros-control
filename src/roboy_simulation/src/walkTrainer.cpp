@@ -121,7 +121,7 @@ void WalkTrainer::initializeInterActiveMarkers(boost::shared_ptr<interactive_mar
 //            int_marker.header.frame_id = "world";
 //        else
         int_marker.header.frame_id = "world";
-        ROS_INFO_STREAM(int_marker.header.frame_id);
+//        ROS_INFO_STREAM(int_marker.header.frame_id);
         int_marker.header.stamp=ros::Time::now();
         math::Pose pose = link->GetWorldPose();
         int_marker.pose.position.x = pose.pos.x;

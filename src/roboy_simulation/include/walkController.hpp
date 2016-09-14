@@ -43,6 +43,7 @@
 #include "common_utilities/Trajectory.h"
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
+#include "roboy_simulation/MotorControl.h"
 // libcmaes
 #include "cmaes.h"
 
@@ -204,9 +205,12 @@ private:
 
     void toggleWalkController(const std_msgs::Bool::ConstPtr &msg);
 
+    void motorControl(const roboy_simulation::MotorControl::ConstPtr &msg);
+
     ros::NodeHandlePtr nh;
     int roboyID;
-    ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub;
+    ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, roboy_visualization_control_sub,
+            motor_control_sub;
     ros::Publisher visualizeTendon_pub, marker_visualization_pub, roboyID_pub, abort_pub;
     vector<string> link_names;
 

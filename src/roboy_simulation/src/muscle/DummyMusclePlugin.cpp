@@ -70,7 +70,7 @@ namespace roboy_simulation {
 
         tendon.GetTendonInfo(viaPointsInGlobalFrame, &newTendon);
 
-        actuatorForce = cmd * F_max;
+        actuatorForce = cmd;
 
         std_msgs::Float32 msg;
         msg.data = actuatorForce;

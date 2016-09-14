@@ -28,6 +28,7 @@
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
 #include "roboy_simulation/Abortion.h"
+#include "roboy_simulation/MotorControl.h"
 // common definitions
 #include "CommonDefinitions.h"
 #endif
@@ -133,6 +134,8 @@ public Q_SLOTS:
 
     void updateInteractiveMarker();
 
+    void sendMotorControl();
+
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 
@@ -146,7 +149,7 @@ private:
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub, sim_control_pub;
+    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub, sim_control_pub, motor_control_pub;
     ros::Subscriber id_sub, simulation_state_sub, abort_sub;
     ros::ServiceClient reset_world_srv;
 

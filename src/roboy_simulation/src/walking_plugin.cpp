@@ -13,8 +13,7 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     QVBoxLayout *frameLayout = new QVBoxLayout();
 
     QHBoxLayout *roboyIdlayout = new QHBoxLayout();
-    QLineEdit *roboyIDlabel= new QLineEdit(tr("roboy ID:"));
-    roboyIDlabel->setReadOnly(true);
+    QLabel *roboyIDlabel= new QLabel(tr("roboy ID:"));
     roboyIdlayout->addWidget(roboyIDlabel);
 
     QComboBox *roboyID = new QComboBox();
@@ -195,6 +194,8 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     options->addLayout(options1);
     frameLayout->addLayout(options);
 
+    QHBoxLayout *parameters = new QHBoxLayout();
+
     QTableWidget* table = new QTableWidget(36,2);
     table->setObjectName("table");
 
@@ -271,7 +272,25 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     table->setItem(34,0,item34);
     table->setItem(35,0,item35);
 
-    frameLayout->addWidget(table);
+    parameters->addWidget(table);
+
+    QVBoxLayout *motorcontrol0 = new QVBoxLayout();
+    QVBoxLayout *motorcontrol1 = new QVBoxLayout();
+
+    for(uint i=0; i<16; i++){
+        QString m("motor");
+        QLabel *label = new QLabel(m+QString::number(i));
+        motorcontrol0->addWidget(label);
+        QLineEdit* line = new QLineEdit("0");
+        line->setObjectName(m+QString::number(i));
+        connect(line, SIGNAL(editingFinished()), this, SLOT(sendMotorControl()));
+        motorcontrol1->addWidget(line);
+    }
+
+    parameters->addLayout(motorcontrol0);
+    parameters->addLayout(motorcontrol1);
+
+    frameLayout->addLayout(parameters);
 
     // Add frameLayout to the frame
     mainFrame->setLayout(frameLayout);
@@ -303,6 +322,7 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     reset_world_srv = nh->serviceClient<std_srvs::Trigger>("/roboy/reset_world");
     abort_sub = nh->subscribe("/roboy/abort", 1, &WalkingPlugin::abortion, this);
     sim_control_pub = nh->advertise<std_msgs::Int32>("/roboy/sim_control", 1);
+    motor_control_pub = nh->advertise<roboy_simulation::MotorControl>("/roboy/motor_control", 100);
 
     // create a timer to update the published transforms
 //    frame_timer = nh->createTimer(ros::Duration(0.01), &WalkingPlugin::frameCallback, this);
@@ -456,6 +476,7 @@ void WalkingPlugin::showForceTorqueSensors(){
     msg.value = w->isChecked();
     roboy_visualization_control_pub.publish(msg);
 }
+
 void WalkingPlugin::changeID(int index){
     QComboBox* roboyID = this->findChild<QComboBox*>("roboyID");
     currentID = make_pair(index, roboyID->currentText().toInt());
@@ -598,6 +619,20 @@ void WalkingPlugin::updateInteractiveMarker(){
     std_msgs::Int32 msg;
     msg.data = UpdateInteractiveMarker;
     sim_control_pub.publish(msg);
+}
+
+void WalkingPlugin::sendMotorControl(){
+    roboy_simulation::MotorControl msg;
+    msg.roboyID = currentID.second;
+    QString m("motor");
+    for(uint i=0; i<16; i++){
+        QLineEdit* line = this->findChild<QLineEdit *>(m+QString::number(i));
+        bool ok = false;
+        msg.voltage.push_back(line->text().toFloat(&ok));
+        if(!ok)
+            line->setText("invalid value");
+    }
+    motor_control_pub.publish(msg);
 }
 
 void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
