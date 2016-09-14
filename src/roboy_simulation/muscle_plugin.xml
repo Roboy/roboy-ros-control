@@ -1,6 +1,6 @@
 <library path="libmuscle_plugin">
-  <class type="roboy_simulation::MusclePlugin" 
-	 base_class_type="roboy_simulation::MusclePlugin">
+  <class type="roboy_simulation::IMuscle" 
+	 base_class_type="roboy_simulation::IMuscle">
   <description>
   	This is a tendon muscle plugin
   </description>

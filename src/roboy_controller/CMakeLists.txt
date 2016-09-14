@@ -15,6 +15,7 @@ include_directories(
         include
         ${catkin_INCLUDE_DIRS}
         ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../devel/include
 )
 
 #==============================================================================
