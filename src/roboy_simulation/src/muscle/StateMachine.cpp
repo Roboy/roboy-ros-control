@@ -55,26 +55,22 @@ void StateMachine::UpdateState(math::Vector3& prevPoint, math::Vector3& nextPoin
             if((height < radius) && (j1.Dot(j2) < 0))
             {
                 state = POSITIVE;
-                gzdbg << "state POSITIVE\n";
             }
             break;
         case POSITIVE:
             if ((height >= radius) && (revCounter == 0))
             {
                 state = NOTWRAPPING;
-                gzdbg << "state NOTWRAPPING\n";
             }
             else if (normal.Dot(this->normal) < 0)
             {
                 state = NEGATIVE;
-                gzdbg << "state NEGATIVE\n";
             }
             break;
         case NEGATIVE:
             if (normal.Dot(this->normal) < 0)
             {
                 state = POSITIVE;
-                gzdbg << "state POSITIVE\n";
             }
             break;
     }

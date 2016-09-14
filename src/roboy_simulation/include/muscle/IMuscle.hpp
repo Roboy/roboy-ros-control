@@ -3,7 +3,12 @@
 #include "CommonDefinitions.h"
 #include "CommunicationData.h"
 
-#include "ITendon.hpp"
+#include "IActuator.hpp"
+#include "ISee.hpp"
+#include "IViaPoints.hpp"
+#include "SphericalWrapping.hpp"
+#include "CylindricalWrapping.hpp"
+#include "MeshWrapping.hpp"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/common/Plugin.hh>
@@ -30,6 +35,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <memory>
 
 namespace roboy_simulation {
 
@@ -37,22 +43,19 @@ namespace roboy_simulation {
 	using namespace boost::numeric::odeint;
 	using namespace gazebo;
 
-	const int linkNumber = 3; //later read this number from some table or .txt files
-
 	struct MyoMuscleInfo{
 		string name;
-		vector<IViaPoints> viaPoints;
+		vector<ViaPointInfo> viaPoints;
 		Motor motor;
 		Gear gear;
 		Spindle spindle;
 		SEE see;
-		MyoMuscleInfo():viaPoints(){};
 	};
 
-	class MusclePlugin{
+	class IMuscle{
 
 	public:
-		MusclePlugin();
+		IMuscle();
 
         ////////////////////
 		/// \brief The Init function.
@@ -62,20 +65,19 @@ namespace roboy_simulation {
 		void Init(MyoMuscleInfo &myoMuscle);
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
-		vector<IViaPoints> viaPoints;
+		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
 	private:
-		event::ConnectionPtr connection;
-		common::Time prevUpdateTime;
 
 		IActuator::state_type x;
-		ITendon tendon;
+		ISee see;
 		IActuator actuator;
 
 		double actuatorForce;
-
-		transport::NodePtr node;
-		transport::PublisherPtr visPub;
+        double muscleLength;
+        double tendonLength;
+        double initialTendonLength;
+        bool firstUpdate;
 	};
 
 }

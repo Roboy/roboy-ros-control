@@ -1,28 +1,13 @@
-#include "ITendon.hpp"
+#include "ISee.hpp"
 
 using namespace roboy_simulation;
 
-    ITendon::ITendon(): muscleLength(0), tendonLength(0), initialTendonLength(0), firstUpdate(true)
+    ISee::ISee()
     {
 
     };
 
-	double ITendon::ElectricMotorModel(const double _current, const double _torqueConstant,
-									   const double _spindleRadius) {
-		double motorForce;
-
-		if (_current >= 0) {
-			motorForce = _current * _torqueConstant / _spindleRadius;
-		}
-		else {
-			motorForce = 0;
-		}
-
-		return motorForce;
-	}
-
-
-	double ITendon::ElasticElementModel(const double _length0, const double _length, double _stiffness,
+	double ISee::ElasticElementModel(const double _length0, const double _length, double _stiffness,
 										const double _speed, const double _spindleRadius, const double _time) {
 		// double realTimeUpdateRate=1000;
 		double windingLength = _spindleRadius * _speed * _time;
@@ -52,7 +37,7 @@ using namespace roboy_simulation;
 
 	}
 
-	void ITendon::ElasticElementModel(SEE &see, const double &length)
+	void ISee::ElasticElementModel(SEE &see, const double &length)
     {
         see.expansion = length - see.length0;
 
@@ -67,7 +52,7 @@ using namespace roboy_simulation;
     }
 
 /*
-	math::Vector3 ITendon::CalculateForce(double _elasticForce, double _motorForce,
+	math::Vector3 ISee::CalculateForce(double _elasticForce, double _motorForce,
 										  const math::Vector3 &_tendonOrien) {
 		// math::Vector3 diff = _fixationP - _instertionP;
 
@@ -87,7 +72,7 @@ using namespace roboy_simulation;
 	}
 */
 /*
-	void ITendon::GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p)//try later with pointer
+	void ISee::GetTendonInfo(vector<math::Vector3> &viaPointPos, tendonType *tendon_p)//try later with pointer
 	{
 		for (int i = 0; i < viaPointPos.size() - 1; i++) {
 			tendon_p->MidPoint.push_back((viaPointPos[i] + viaPointPos[i + 1]) / 2);
@@ -99,12 +84,13 @@ using namespace roboy_simulation;
 		}
 	}
 */
-
-	double ITendon::DotProduct(const math::Vector3 &_v1, const math::Vector3 &_v2) {
+/*
+	double ISee::DotProduct(const math::Vector3 &_v1, const math::Vector3 &_v2) {
 		return _v1.x * _v2.x + _v1.y * _v2.y + _v1.z * _v2.z;
 	}
 
 
-	double ITendon::Angle(const math::Vector3 &_v1, const math::Vector3 &_v2) {
+	double ISee::Angle(const math::Vector3 &_v1, const math::Vector3 &_v2) {
 		return acos(_v1.Dot(_v2) / _v1.GetLength() * _v2.GetLength());
 	}
+*/

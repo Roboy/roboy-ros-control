@@ -17,40 +17,33 @@ namespace roboy_simulation
     public:
         MeshWrapping();
 
-        void UpdateForcePoints();
+        virtual void UpdateForcePoints();
+
+        virtual void CalculateForce();
 
 
 
     public:
         math::Vector3 prevCoord;
         math::Vector3 nextCoord;
+        math::Vector3 wrappingDir;
+        std::map<int, math::Vector3> vertices;
+        std::set<math::Vector3> facets;
+        math::Vector3 x_axis;
+        math::Vector3 y_axis;
+        math::Vector3 z_axis;
+        std::map<int, math::Vector3> geodesicPathPoints;
+        std::map<int, math::Vector3> halfSpace;
+        std::map<int, math::Vector3> convexHullVertices;
+        std::map<int, math::Vector3> convexHullFacets;
+        std::map<int, math::Vector3> facetNormals;
+        double alphaMax;
 
-    /*
-        struct Mesh
-        {
-            math::Vector3 wrappingDir;
-            std::map<int, math::Vector3> vertices;
-            std::set<math::Vector3> facets;
-        };
+        void CoordinateFrame();
+        void HalfSpace();
+        void ConvexEnvelope();
+        void GeodesicPath();
 
-        public: math::Vector3 x_axis;
-        public: math::Vector3 y_axis;
-        public: math::Vector3 z_axis;
-        private: std::map<int, math::Vector3> convexHullVertices;
-        private: std::map<int, math::Vector3> convexHullFacets;
-        private: std::map<int, math::Vector3> facetNormals;
-        private: double alphaMax;
-
-        private: void CoordinateFrame();
-
-        private: std::map<int, math::Vector3> HalfSpace();
-
-        private: void ConvexEnvelope();
-
-        private: std::map<int, math::Vector3> GeodesicPath();
-
-        public: void MeshWrapping();
-    */
 	};
 }
 

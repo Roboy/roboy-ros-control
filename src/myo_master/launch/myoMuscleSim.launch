@@ -7,7 +7,7 @@
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
-    <arg name="debug" default="false"/>
+    <arg name="debug" default="true"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find myo_master)/worlds/roboy.world"/>
@@ -23,9 +23,9 @@
           <!--args="$(find roboy_simulation)/plate/model.sdf $(find roboy_simulation)/urdf/plate.urdf"/>-->
 
     <!-- Load the urdf into the ROS Parameter Server -->
-    <param name="robot_description" textfile="$(find roboy_simulation)/urdf/plate.urdf"/>
+    <!--<param name="robot_description" textfile="$(find roboy_simulation)/urdf/plate.urdf"/>-->
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot-->
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-          args="-sdf -file $(find roboy_simulation)/plate/model.sdf -model plate"/>
+          args="-sdf -file $(find roboy_models)/plate_with_muscle/model.sdf -model plate_with_muscle"/>
 </launch>
