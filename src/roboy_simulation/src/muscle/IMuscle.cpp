@@ -16,12 +16,17 @@ namespace roboy_simulation {
 		for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
             ViaPointInfo vp = myoMuscle.viaPoints[i];
             if(vp.type == IViaPoints::FIXPOINT){
-                viaPoints.push_back(std::make_shared<IViaPoints>(vp.point, vp.link));
+                std::shared_ptr<IViaPoints> ptr (new IViaPoints(vp.point, vp.link));
+                viaPoints.push_back(ptr);
             } else if (vp.type == IViaPoints::SPHERICAL) {
-                viaPoints.push_back(std::make_shared<SphericalWrapping>(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+                std::shared_ptr<SphericalWrapping> ptr (new SphericalWrapping(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+                viaPoints.push_back(ptr);
                 ROS_INFO("state %d", vp.state);
             } else if (vp.type == IViaPoints::CYLINDRICAL) {
-                viaPoints.push_back(std::make_shared<CylindricalWrapping>(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+                ROS_INFO("state %d", vp.state);
+                std::shared_ptr<CylindricalWrapping> ptr (new CylindricalWrapping(vp.point, vp.radius, vp.state, vp.revCounter, vp.link));
+                viaPoints.push_back(ptr);
+                ROS_INFO("state %d", vp.state);
             } else if (vp.type == IViaPoints::MESH){
 
             }
