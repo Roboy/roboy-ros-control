@@ -77,7 +77,7 @@ sudo apt-get install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 ```
 ### [ROS jade](http://wiki.ros.org/jade/)
-For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/). 
+For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source, but rviz will probably also need to be rebuild with the new message. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/). 
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
