@@ -45,11 +45,11 @@
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
 // libcmaes
-#include "cmaes.h"
+//#include "cmaes.h"
 
 using namespace gazebo;
 using namespace std;
-using namespace libcmaes;
+//using namespace libcmaes;
 
 static const char * FOOT[] = { "foot_left", "foot_right" };
 

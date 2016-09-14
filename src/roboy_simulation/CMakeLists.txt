@@ -39,9 +39,9 @@ generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(CATKIN_DEPENDS message_runtime message_generation)
 
-find_package(PkgConfig)
-pkg_check_modules(libcmaes REQUIRED libcmaes)
-include_directories(${libcmaes_INCLUDE_DIRS})
+#find_package(PkgConfig)
+#pkg_check_modules(libcmaes REQUIRED libcmaes)
+#include_directories(${libcmaes_INCLUDE_DIRS})
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
