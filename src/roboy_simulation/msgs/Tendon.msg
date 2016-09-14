@@ -1,2 +1,2 @@
-int32 id
+int32 roboyID
 geometry_msgs/Vector3[] viaPoints

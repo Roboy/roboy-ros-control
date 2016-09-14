@@ -41,6 +41,8 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 
     force_torque_pub = nh->advertise<roboy_simulation::ForceTorque>("/roboy/"+sdf->GetAttribute("name")->GetAsString(),
                                                                   1);
+    roboyID_sub = nh->subscribe("/roboy/id", 1, &ForceTorquePlugin::updateID, this);
+
     if(sdf->GetAttribute("name")->GetAsString().find("left")!=std::string::npos)
         leg = LEG::LEFT;
     else if(sdf->GetAttribute("name")->GetAsString().find("right")!=std::string::npos)
@@ -52,6 +54,7 @@ void ForceTorquePlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) {
 void ForceTorquePlugin::OnUpdate() {
     // Get all the contacts.
     roboy_simulation::ForceTorque msg;
+    msg.roboyID = roboyID;
     msg.leg = leg;
 #if GAZEBO_MAJOR_VERSION < 7
     math::Vector3 force = parentSensor->Force();
@@ -65,6 +68,7 @@ void ForceTorquePlugin::OnUpdate() {
 #else
     ignition::math::Vector3d force = parentSensor->Force();
     ignition::math::Vector3d torque = parentSensor->Torque();
+    msg.joint = parentSensor->Joint()->GetName();
     msg.force.x = force.X();
     msg.force.y = force.Y();
     msg.force.z = force.Z();
@@ -74,4 +78,8 @@ void ForceTorquePlugin::OnUpdate() {
 #endif
     force_torque_pub.publish(msg);
     ros::spinOnce();
+}
+
+void ForceTorquePlugin::updateID(const std_msgs::Int32::ConstPtr &msg){
+    roboyID = msg->data;
 }

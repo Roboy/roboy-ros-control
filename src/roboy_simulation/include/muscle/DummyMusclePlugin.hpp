@@ -14,6 +14,8 @@
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
 #include <CommunicationData.h>
+// messages
+#include <std_msgs/Float32.h>
 //std
 #include <math.h>
 #include <map>
@@ -111,7 +113,7 @@ namespace roboy_simulation {
     public:
         DummyMusclePlugin();
 
-        void Init(MyoMuscleInfo &myoMuscle);
+        void Init(MyoMuscleInfo &myoMuscle, int roboyID);
         void Update(ros::Time &time, ros::Duration &period );
         string name;
         vector<gazebo::physics::LinkPtr> links;
@@ -122,11 +124,12 @@ namespace roboy_simulation {
         vector<math::Vector3> viaPointsInGlobalFrame;
         vector<math::Vector3> force;
         MUSCLE_TYPE muscle_type;
-        double F_max = 500;
-        double cmd = 0;
+        double F_max = 100.0;
+        double cmd = 0.0;
     private:
-        common::Time prevUpdateTime;
-
+        ros::NodeHandlePtr nh;
+        ros::Publisher actuatorForce_pub;
+        int roboyID;
         double actuatorForce;
         ITendon tendon;
         transport::NodePtr node;

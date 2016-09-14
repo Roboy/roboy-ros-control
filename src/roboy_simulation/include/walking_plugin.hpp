@@ -1,10 +1,7 @@
 #pragma once
 
 #ifndef Q_MOC_RUN
-
-#include <ros/ros.h>
-#include <rviz/panel.h>
-#include <stdio.h>
+// qt
 #include <QPainter>
 #include <QCheckBox>
 #include <QPushButton>
@@ -15,14 +12,25 @@
 #include <QTableWidget>
 #include <QComboBox>
 #include <QTimer>
-#include <geometry_msgs/Twist.h>
+// std
+#include <map>
+// ros
+#include <ros/ros.h>
+#include <rviz/panel.h>
 #include <pluginlib/class_list_macros.h>
+
+#include <tf/transform_broadcaster.h>
+#include <tf/tf.h>
+//messages
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/SimulationState.h"
-#include "CommonDefinitions.h"
+#include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
-#include <map>
+#include "roboy_simulation/Abortion.h"
+#include "roboy_simulation/MotorControl.h"
+// common definitions
+#include "CommonDefinitions.h"
 #endif
 
 using namespace std;
@@ -39,6 +47,10 @@ public:
     bool isOn() const { return m_on; }
 
     void setOn(bool on) {
+        if(on)
+            m_color = Qt::green;
+        else
+            m_color = Qt::gray;
         if (on == m_on)
             return;
         m_on = on;
@@ -48,16 +60,14 @@ public:
 
     void turnOn() { setOn(true); }
 
+    void setColor(Qt::GlobalColor color){m_color = color;}
+
 protected:
     virtual void paintEvent(QPaintEvent *)
     {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
-        if (m_on) {
-            painter.setBrush(Qt::green);
-        }else{
-            painter.setBrush(Qt::gray);
-        }
+        painter.setBrush(m_color);
         painter.drawEllipse(0, 0, width(), height());
     }
 
@@ -66,7 +76,7 @@ private:
     bool m_on;
 };
 
-class WalkingPlugin : public rviz::Panel {
+class WalkingPlugin : public rviz::Panel{
 Q_OBJECT
 
 public:
@@ -90,7 +100,7 @@ public:
 
 public Q_SLOTS:
 
-    void initWalkController();
+    void toggleWalkController();
 
     void shutDownWalkController();
 
@@ -104,27 +114,44 @@ public Q_SLOTS:
 
     void showMomentArm();
 
+    void showStateMachineParameters();
+
+    void showCoordinateSystems();
+
+    void showForceTorqueSensors();
+
     void changeID(int index);
 
     void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
+
+    void resetWorld();
+
+    void play();
+
+    void pause();
+
+    void slowMotion();
+
+    void updateInteractiveMarker();
+
+    void sendMotorControl();
 
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 
     void updateId(const std_msgs::Int32::ConstPtr &msg);
 
+    void abortion(const roboy_simulation::Abortion::ConstPtr &msg);
+
+
+
     ros::NodeHandle *nh;
     pair<uint, uint> currentID;
     map<uint, ros::Subscriber> leg_state_sub;
-//    map<uint, ros::Publisher> leg_state_sub;
     ros::AsyncSpinner *spinner;
-    ros::Publisher roboy_visualization_control_pub, init_walk_controller_pub;
-    ros::Subscriber id_sub, simulation_state_sub;
-    enum {
-        Tendon,
-        COM,
-        Force,
-        MomentArm,
-        Mesh
-    } visualization;
+    ros::Publisher roboy_visualization_control_pub, toggle_walk_controller_pub, sim_control_pub, motor_control_pub;
+    ros::Subscriber id_sub, simulation_state_sub, abort_sub;
+    ros::ServiceClient reset_world_srv;
+
+    ros::Timer frame_timer;
 };

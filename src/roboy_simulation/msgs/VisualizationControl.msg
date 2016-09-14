@@ -1,3 +1,3 @@
-int32 id
+int32 roboyID
 int32 control
 bool value
