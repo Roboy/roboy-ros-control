@@ -7,7 +7,7 @@
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
-    <arg name="debug" default="true"/>
+    <arg name="debug" default="false"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find myo_master)/worlds/roboy.world"/>
@@ -22,9 +22,9 @@
           args="-sdf -file $(find roboy_models)/arm/model.sdf -model arm"/>
 <!--          args="-sdf -file $(find roboy_models)/legs_with_muscles_simplified/model.sdf -model legs_with_muscles_simplified"/> -->
 
-    <!-- the following two nodes transform gazebo link_states to rviz marker/tf -->
-    <!--<include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />-->
-    <!--<include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />-->
+     <!--the following two nodes transform gazebo link_states to rviz marker/tf -->
+    <include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />
+    <include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />
 
     <!--<node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>-->
 </launch>

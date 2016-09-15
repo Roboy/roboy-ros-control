@@ -329,6 +329,7 @@ namespace gazebo_ros_control {
     }
 
     void RoboySim::publishTendon(){
+        ROS_INFO_THROTTLE(1.0,"publish tendon");
         static bool add = true;
         visualization_msgs::Marker line_strip;
         line_strip.header.frame_id = "world";
@@ -351,15 +352,24 @@ namespace gazebo_ros_control {
             line_strip.points.clear();
             line_strip.id = 1000+muscle;
             for (uint i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
-                geometry_msgs::Vector3 vp;
-                vp.x = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.x;
-                vp.y = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.y;
-                vp.z = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.z;
-                msg.viaPoints.push_back(vp);
+                geometry_msgs::Vector3 v;
+                std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
+                v.x = vp->prevForcePoint.x;
+                v.y = vp->prevForcePoint.y;
+                v.z = vp->prevForcePoint.z;
+                msg.viaPoints.push_back(v);
+                v.x = vp->nextForcePoint.x;
+                v.y = vp->nextForcePoint.y;
+                v.z = vp->nextForcePoint.z;
+                msg.viaPoints.push_back(v);
                 geometry_msgs::Point p;
-                p.x = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.x;
-                p.y = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.y;
-                p.z = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.z;
+                p.x = vp->prevForcePoint.x;
+                p.y = vp->prevForcePoint.y;
+                p.z = vp->prevForcePoint.z;
+                line_strip.points.push_back(p);
+                p.x = vp->nextForcePoint.x;
+                p.y = vp->nextForcePoint.y;
+                p.z = vp->nextForcePoint.z;
                 line_strip.points.push_back(p);
             }
             marker_visualization_pub.publish(line_strip);
