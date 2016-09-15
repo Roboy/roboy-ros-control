@@ -3,7 +3,7 @@
     <rosparam file="$(find roboy_controller)/config/roboy_controller.yaml" command="load"/>
 
     <!-- these are the arguments you can pass to this launch file, for example paused:=true -->
-    <arg name="paused" default="false"/>
+    <arg name="paused" default="true"/>
     <arg name="use_sim_time" default="true"/>
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
@@ -28,4 +28,11 @@
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot-->
     <node name="sdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
           args="-sdf -file $(find roboy_models)/plate_with_muscle/model.sdf -model plate_with_muscle"/>
+
+    <!-- the following two nodes transform gazebo link_states to rviz marker/tf -->
+    <include file="$(find gazebo2rviz)/launch/gazebo2tf.launch" />
+    <include file="$(find gazebo2rviz)/launch/gazebo2marker.launch" />
+
+    <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen"/>
+
 </launch>
