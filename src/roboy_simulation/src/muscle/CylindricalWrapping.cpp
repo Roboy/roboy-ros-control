@@ -30,7 +30,8 @@ void CylindricalWrapping::UpdateForcePoints()
     nextCoord = nextPoint->globalCoordinates;
 
     //calculate normal onto plane
-    math::Vector3 unit_normal = linkRotation.operator*(math::Vector3 (0,0,1));
+    math::Vector3 unit_normal = linkRotation.RotateVector(math::Vector3 (0,0,1));
+    unit_normal = unit_normal/unit_normal.GetLength();
     //project insertion and fixation point onto xy plane of the cylinder
     prevCoordPlane = prevCoord - ((prevCoord-globalCoordinates).Dot(unit_normal))*unit_normal;
     nextCoordPlane = nextCoord - ((nextCoord-globalCoordinates).Dot(unit_normal))*unit_normal;
@@ -43,6 +44,7 @@ void CylindricalWrapping::UpdateForcePoints()
         prevForcePoint = nextCoord;
         nextForcePoint = prevCoord;
         previousSegmentLength = 0;
+        return;
     }
 
     //compute tangent points
