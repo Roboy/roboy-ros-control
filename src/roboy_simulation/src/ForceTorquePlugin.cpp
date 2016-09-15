@@ -57,14 +57,14 @@ void ForceTorquePlugin::OnUpdate() {
     msg.roboyID = roboyID;
     msg.leg = leg;
 #if GAZEBO_MAJOR_VERSION < 7
-    math::Vector3 force = parentSensor->Force();
-    math::Vector3 torque = parentSensor->Torque();
-    msg.force.x = force.X();
-    msg.force.y = force.Y();
-    msg.force.z = force.Z();
-    msg.torque.x = torque.X();
-    msg.torque.y = torque.Y();
-    msg.torque.z = torque.Z();
+    math::Vector3 force = parentSensor->GetForce();
+    math::Vector3 torque = parentSensor->GetTorque();
+    msg.force.x = force.x;
+    msg.force.y = force.y;
+    msg.force.z = force.z;
+    msg.torque.x = torque.x;
+    msg.torque.y = torque.y;
+    msg.torque.z = torque.z;
 #else
     ignition::math::Vector3d force = parentSensor->Force();
     ignition::math::Vector3d torque = parentSensor->Torque();

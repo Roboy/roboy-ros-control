@@ -20,7 +20,7 @@ sudo add-apt-repository -y ppa:letrend/roboy-ros-control
 sudo apt-get update
 ```
 ### install gazebo5
-If you dont have gazebo5 already installed on you system:
+If you dont have gazebo5 already installed on your system:
 ```
 #!bash
 sudo apt-get install gazebo5 libgazebo5-dev
@@ -68,7 +68,7 @@ sudo apt-get install libncurses5-dev
 sudo apt-get install doxygen
 ```
 ### gcc>4.8(for c++11 support).
-remove all gcc related stuff, then following the instruction in [this](http://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-on-ubuntu) forum:
+following the instruction in [this](http://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-on-ubuntu) forum:
 ```
 #!bash
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -77,7 +77,7 @@ sudo apt-get install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 ```
 ### [ROS jade](http://wiki.ros.org/jade/)
-For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). However, the following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
+For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/). 
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
@@ -201,9 +201,17 @@ roslaunch myo_master roboy.launch
 ## with simulated roboy
 ```
 #!bash
-
 roslaunch myo_master roboySim.launch
 ```
+
+## with walkTrainer
+```
+#!bash
+rviz &
+rosrun roboy_simulation walkTrainer
+```
+In rviz you can add the walking plugin panel for controlling the simulation.
+
 ## Usage
 Calling for controller types:
 ```

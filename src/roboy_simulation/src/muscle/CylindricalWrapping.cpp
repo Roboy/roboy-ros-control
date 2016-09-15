@@ -14,7 +14,7 @@ CylindricalWrapping::CylindricalWrapping(): IViaPoints(math::Vector3(0,0,0), Typ
 CylindricalWrapping::CylindricalWrapping(math::Vector3 point, physics::LinkPtr link): CylindricalWrapping()
 {
     localCoordinates = point;
-    link = link;
+    this->link = link;
 };
 
 CylindricalWrapping::CylindricalWrapping(math::Vector3 point, double radius, int state, int counter, physics::LinkPtr link): CylindricalWrapping(point, link)
@@ -26,8 +26,8 @@ CylindricalWrapping::CylindricalWrapping(math::Vector3 point, double radius, int
 
 void CylindricalWrapping::UpdateForcePoints()
 {
-    prevCoord = prevPoint->nextForcePoint;
-    nextCoord = nextPoint->prevForcePoint;
+    prevCoord = prevPoint->globalCoordinates;
+    nextCoord = nextPoint->globalCoordinates;
 
     //calculate normal onto plane
     math::Vector3 unit_normal = linkRotation.operator*(math::Vector3 (0,0,1));
@@ -40,9 +40,9 @@ void CylindricalWrapping::UpdateForcePoints()
     //if muscle is not wrapping, use straight line calculation
     if (stateMachine.state == StateMachine::NOTWRAPPING)
     {
-        prevForcePoint = globalCoordinates;
-        nextForcePoint = globalCoordinates;
-        previousSegmentLength = (prevCoord - prevForcePoint).GetLength();
+        prevForcePoint = nextCoord;
+        nextForcePoint = prevCoord;
+        previousSegmentLength = 0;
     }
 
     //compute tangent points
@@ -57,7 +57,9 @@ void CylindricalWrapping::UpdateForcePoints()
 
     //compute k1, k2
     math::Vector3 k1 = j1.Cross(normal);
+    k1 = k1/k1.GetLength();
     math::Vector3 k2 = normal.Cross(j2);
+    k2 = k2/k2.GetLength();
 
     //compute length of a1, a2, b1, b2
     double a1 = radius*radius/l_j1;
@@ -81,7 +83,7 @@ void CylindricalWrapping::UpdateForcePoints()
     stateMachine.UpdateRevCounter(projection);
 
     //calculate the wrapping angle
-    double angle = acos(1 - (this->prevForcePointPlane-this->nextForcePointPlane).GetLength()/2*radius*radius);
+    double angle = acos(1 - (pow((this->prevForcePointPlane-this->nextForcePointPlane).GetLength(),2)/(2*radius*radius)));
     arcAngle = 2*(boost::math::constants::pi<double>())*ceil(stateMachine.revCounter/2);
     arcAngle += (stateMachine.revCounter % 2 == 0)?(angle):(-angle);
 
@@ -105,5 +107,34 @@ void CylindricalWrapping::UpdateForcePoints()
     double distance = iTDistance - fTDistance;
 
     //calculate the lines of action and the muscle's length
-    previousSegmentLength = (prevCoord - this->prevForcePoint).GetLength() + sqrt(distance*distance + l_arc*l_arc) + (this->nextForcePoint - nextCoord).GetLength();
+    previousSegmentLength = (prevCoord - this->prevForcePoint).GetLength() + sqrt(distance*distance + l_arc*l_arc);
+};
+
+
+void CylindricalWrapping::CalculateForce()
+{
+    if(stateMachine.state == StateMachine::NOTWRAPPING){
+        prevForce = 0;
+        nextForce = 0;
+        return;
+    }
+    if(prevPoint && nextPoint)
+    {
+        //TODO: change fa, fb with respect to friction
+        // need to know if before or behind see
+        //previousSegmentKiteLineVelocity needed
+    }
+
+    if (prevPoint)
+    {
+        math::Vector3 A = prevPoint->nextForcePoint - this->prevForcePoint;
+        prevForce = A/A.GetLength() * fa;
+        //link->AddForceAtRelativePosition(Fa, this->prevForcePoint);
+    }
+    else if (nextPoint)
+    {
+        math::Vector3 B = nextPoint->prevForcePoint - this->nextForcePoint;
+        nextForce = B/B.GetLength() * fb;
+        //link->AddForceAtRelativePosition(Fb, this->nextForcePoint);
+    }
 };

@@ -4,7 +4,7 @@
 //#include "Definitions.hh"
 
 #include <gazebo/physics/physics.hh>
-#include <ignition/math/Vector3.hh>
+#include <gazebo/math/Vector3.hh>
 #include <math.h>
 
 namespace roboy_simulation

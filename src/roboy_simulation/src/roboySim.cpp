@@ -63,7 +63,7 @@ namespace gazebo_ros_control {
 
             try {
                 ROS_INFO("Loading Muscle Plugin");
-                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::MusclePlugin"));
+                sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
                 sim_muscles.back()->Init(myoMuscles[i]);
             }
             catch (pluginlib::PluginlibException &ex) {
@@ -221,9 +221,9 @@ namespace gazebo_ros_control {
         ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
         // class laoder for loading muscle plugins
-        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::MusclePlugin>
+        class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::IMuscle>
                                    ("roboy_simulation",
-                                    "roboy_simulation::MusclePlugin"));
+                                    "roboy_simulation::IMuscle"));
 
         // Listen to the update event. This event is broadcast every simulation iteration.
         update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RoboySim::Update, this));
@@ -235,6 +235,11 @@ namespace gazebo_ros_control {
         ROS_DEBUG("read simulation");
         // update muscle plugins
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+            for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+                math::Pose linkPose = sim_muscles[muscle]->viaPoints[i]->link->GetWorldPose();
+                sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
+                sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;
+            }
             sim_muscles[muscle]->Update(time, period);
         }
         if(visualizeTendon)
@@ -251,9 +256,9 @@ namespace gazebo_ros_control {
         // apply the calculated forces
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
-                roboy_simulation::IViaPoints vp = sim_muscles[muscle]->viaPoints[i];
-                vp.link->AddForceAtWorldPosition(vp.prevForce, vp.prevForcePoint);
-                vp.link->AddForceAtWorldPosition(vp.nextForce, vp.nextForcePoint);
+                std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
+                vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
+                vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
             }
         }
     }
@@ -347,14 +352,14 @@ namespace gazebo_ros_control {
             line_strip.id = 1000+muscle;
             for (uint i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
                 geometry_msgs::Vector3 vp;
-                vp.x = sim_muscles[muscle]->viaPoints[i].globalCoordinates.x;
-                vp.y = sim_muscles[muscle]->viaPoints[i].globalCoordinates.y;
-                vp.z = sim_muscles[muscle]->viaPoints[i].globalCoordinates.z;
+                vp.x = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.x;
+                vp.y = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.y;
+                vp.z = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.z;
                 msg.viaPoints.push_back(vp);
                 geometry_msgs::Point p;
-                p.x = sim_muscles[muscle]->viaPoints[i].globalCoordinates.x;
-                p.y = sim_muscles[muscle]->viaPoints[i].globalCoordinates.y;
-                p.z = sim_muscles[muscle]->viaPoints[i].globalCoordinates.z;
+                p.x = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.x;
+                p.y = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.y;
+                p.z = sim_muscles[muscle]->viaPoints[i]->globalCoordinates.z;
                 line_strip.points.push_back(p);
             }
             marker_visualization_pub.publish(line_strip);
@@ -420,34 +425,34 @@ namespace gazebo_ros_control {
         for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
             for (uint i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
                 arrow.id = id;
-                if (fabs(sim_muscles[muscle]->viaPoints[i].prevForce.GetSquaredLength()) > 0.0) {
+                if (fabs(sim_muscles[muscle]->viaPoints[i]->prevForce.GetSquaredLength()) > 0.0) {
                     arrow.header.stamp = ros::Time::now();
                     arrow.points.clear();
                     geometry_msgs::Point p;
-                    p.x = sim_muscles[muscle]->viaPoints[i].prevForcePoint.x;
-                    p.y = sim_muscles[muscle]->viaPoints[i].prevForcePoint.y;
-                    p.z = sim_muscles[muscle]->viaPoints[i].prevForcePoint.z;
+                    p.x = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.x;
+                    p.y = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.y;
+                    p.z = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.z;
                     arrow.points.push_back(p);
-                    p.x += sim_muscles[muscle]->viaPoints[i].prevForce.x;
-                    p.y += sim_muscles[muscle]->viaPoints[i].prevForce.y;
-                    p.z += sim_muscles[muscle]->viaPoints[i].prevForce.z;
+                    p.x += sim_muscles[muscle]->viaPoints[i]->prevForce.x;
+                    p.y += sim_muscles[muscle]->viaPoints[i]->prevForce.y;
+                    p.z += sim_muscles[muscle]->viaPoints[i]->prevForce.z;
                     arrow.points.push_back(p);
                 } else {
                     arrow.action = visualization_msgs::Marker::DELETE;
                     add = true;
                 }
                 marker_visualization_pub.publish(arrow);
-                if (fabs(sim_muscles[muscle]->viaPoints[i].nextForce.GetSquaredLength()) > 0.0) {
+                if (fabs(sim_muscles[muscle]->viaPoints[i]->nextForce.GetSquaredLength()) > 0.0) {
                     arrow.header.stamp = ros::Time::now();
                     arrow.points.clear();
                     geometry_msgs::Point p;
-                    p.x = sim_muscles[muscle]->viaPoints[i].nextForcePoint.x;
-                    p.y = sim_muscles[muscle]->viaPoints[i].nextForcePoint.y;
-                    p.z = sim_muscles[muscle]->viaPoints[i].nextForcePoint.z;
+                    p.x = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.x;
+                    p.y = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.y;
+                    p.z = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.z;
                     arrow.points.push_back(p);
-                    p.x += sim_muscles[muscle]->viaPoints[i].nextForce.x;
-                    p.y += sim_muscles[muscle]->viaPoints[i].nextForce.y;
-                    p.z += sim_muscles[muscle]->viaPoints[i].nextForce.z;
+                    p.x += sim_muscles[muscle]->viaPoints[i]->nextForce.x;
+                    p.y += sim_muscles[muscle]->viaPoints[i]->nextForce.y;
+                    p.z += sim_muscles[muscle]->viaPoints[i]->nextForce.z;
                     arrow.points.push_back(p);
                 } else {
                     arrow.action = visualization_msgs::Marker::DELETE;
@@ -614,42 +619,39 @@ namespace gazebo_ros_control {
                      link_child_it = link_child_it->NextSiblingElement("link")) {
                     string linkname = link_child_it->Attribute("name");
                     physics::LinkPtr link = parent_model->GetLink(linkname);
-                    if (!linkname.empty()) {
+                    if ((!linkname.empty()) && link) {
                         TiXmlElement *viaPoint_child_it = NULL;
-                        vector<roboy_simulation::IViaPoints> &viaPoints = myoMuscle.viaPoints;
                         for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                              viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
+                            roboy_simulation::ViaPointInfo vp;
+                            vp.link = link;
                             float x, y, z;
                             if (sscanf(viaPoint_child_it->GetText(), "%f %f %f", &x, &y, &z) != 3) {
                                 ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                                 return false;
                             }
+                            vp.point = math::Vector3(x,y,z);
                             if (viaPoint_child_it->Attribute("type")){
                                 string type = viaPoint_child_it->Attribute("type");
                                 if (type == "FIXPOINT") {
-                                    roboy_simulation::IViaPoints fvp = roboy_simulation::IViaPoints(math::Vector3(x, y, z), link);
-                                    viaPoints.push_back(fvp);
+                                    vp.type = roboy_simulation::IViaPoints::FIXPOINT;
                                 } else if (type == "SPHERICAL" || type == "CYLINDRICAL") {
-                                    double radius;
-                                    int state, counter;
-                                    if (viaPoint_child_it->QueryDoubleAttribute("radius", &radius) != TIXML_SUCCESS){
+                                    if (viaPoint_child_it->QueryDoubleAttribute("radius", &vp.radius) != TIXML_SUCCESS){
                                         ROS_ERROR_STREAM_NAMED("parser", "error reading radius");
                                         return false;
                                     }
-                                    if (viaPoint_child_it->QueryIntAttribute("state", &state) != TIXML_SUCCESS){
+                                    if (viaPoint_child_it->QueryIntAttribute("state", &vp.state) != TIXML_SUCCESS){
                                         ROS_ERROR_STREAM_NAMED("parser", "error reading state");
                                         return false;
                                     }
-                                    if (viaPoint_child_it->QueryIntAttribute("revCounter", &counter) != TIXML_SUCCESS){
+                                    if (viaPoint_child_it->QueryIntAttribute("revCounter", &vp.revCounter) != TIXML_SUCCESS){
                                         ROS_ERROR_STREAM_NAMED("parser", "error reading revCounter");
                                         return false;
                                     }
                                     if (type == "SPHERICAL") {
-                                        roboy_simulation::SphericalWrapping svp = roboy_simulation::SphericalWrapping(math::Vector3(x, y, z), radius, state, counter, link);
-                                        viaPoints.push_back(svp);
+                                        vp.type = roboy_simulation::IViaPoints::SPHERICAL;
                                     } else {
-                                        roboy_simulation::CylindricalWrapping cvp = roboy_simulation::CylindricalWrapping(math::Vector3(x, y, z), radius, state, counter, link);
-                                        viaPoints.push_back(cvp);
+                                        vp.type = roboy_simulation::IViaPoints::CYLINDRICAL;
                                     }
                                 } else if (type == "MESH") {
                                     // TODO
@@ -661,6 +663,7 @@ namespace gazebo_ros_control {
                                 ROS_ERROR_STREAM_NAMED("parser", "error reading type");
                                 return false;
                             }
+                            myoMuscle.viaPoints.push_back(vp);
                         }
                         if (myoMuscle.viaPoints.empty()) {
                             ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
@@ -684,14 +687,6 @@ namespace gazebo_ros_control {
 //                }
                 ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
 
-                //linked-list for via-points
-                for(int i = 0; myoMuscle.viaPoints.size(); i++){
-                    if(i>0)
-                    {
-                        myoMuscle.viaPoints[i].prevPoint = &(myoMuscle.viaPoints[i-1]);
-                        myoMuscle.viaPoints[i-1].nextPoint = &(myoMuscle.viaPoints[i]);
-                    }
-                }
                 //check if wrapping surfaces are enclosed by fixpoints
                 for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
                     if(i == 0 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
@@ -704,7 +699,7 @@ namespace gazebo_ros_control {
                     }
                     if(myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
                         if(myoMuscle.viaPoints[i-1].type != roboy_simulation::IViaPoints::FIXPOINT
-                           || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
+                            || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
                             ROS_ERROR_STREAM_NAMED("parser", "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
                             return false;
                         }
