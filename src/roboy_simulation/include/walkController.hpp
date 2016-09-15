@@ -25,7 +25,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 // muscle plugin
-#include "DummyMusclePlugin.hpp"
+#include "IMuscle.hpp"
 // ros messages
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
@@ -296,8 +296,8 @@ private:
     uint numberOfMyoMuscles;
 
     vector<gazebo::physics::JointPtr> sim_joints;
-    boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>> class_loader;
-    vector<boost::shared_ptr<roboy_simulation::DummyMusclePlugin>> sim_muscles;
+    boost::shared_ptr<pluginlib::ClassLoader<roboy_simulation::IMuscle>> class_loader;
+    vector<boost::shared_ptr<roboy_simulation::IMuscle>> sim_muscles;
     vector<roboy_simulation::MyoMuscleInfo> myoMuscles;
 
     tf::TransformBroadcaster tf_broadcaster;

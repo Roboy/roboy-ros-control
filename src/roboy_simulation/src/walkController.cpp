@@ -41,6 +41,9 @@ WalkController::WalkController() {
     leg_state[LEG::RIGHT] = Swing;
 
     roboyID = gazebo::physics::getUniqueId();
+    publishID();
+
+    ros::spinOnce();
 }
 
 WalkController::~WalkController() {
@@ -126,35 +129,35 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     ROS_INFO("Found %d MyoMuscles in sdf file", numberOfMyoMuscles);
 
     // class laoder for loading muscle plugins
-    class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::DummyMusclePlugin>
+    class_loader.reset(new pluginlib::ClassLoader<roboy_simulation::IMuscle>
                                ("roboy_simulation",
-                                "roboy_simulation::DummyMusclePlugin"));
+                                "roboy_simulation::IMuscle"));
 
     sim_muscles.clear();
     for (uint muscle = 0; muscle < myoMuscles.size(); muscle++) {
         try {
             ROS_INFO("Loading Dummy Muscle Plugin for %s",
                            myoMuscles[muscle].name.c_str());
-            sim_muscles.push_back(class_loader->createInstance("roboy_simulation::DummyMusclePlugin"));
+            sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
             sim_muscles.back()->Init(myoMuscles[muscle], roboyID);
 
-            muscles_spanning_joint[sim_muscles[muscle]->joint->GetName()].push_back(muscle);
+//            muscles_spanning_joint[sim_muscles[muscle]->joint->GetName()].push_back(muscle);
 
-            // initialize the queue for delayed activities depending on the spanning joint
-            // hip muscles: 5ms, knee muscles 10ms, ankle muscles 20ms
-            if(sim_muscles[muscle]->joint->GetName().find("groin")!=string::npos){
-                for(uint i=0;i<5e-03/gazebo_max_step_size;i++){
-                    activity[sim_muscles[muscle]->name].push_back(0.0);
-                }
-            }else if(sim_muscles[muscle]->joint->GetName().find("knee")!=string::npos) {
-                for (uint i = 0; i < 10e-03 / gazebo_max_step_size; i++) {
-                    activity[sim_muscles[muscle]->name].push_back(0.0);
-                }
-            }else if(sim_muscles[muscle]->joint->GetName().find("ankle")!=string::npos) {
-                for (uint i = 0; i < 20e-03 / gazebo_max_step_size; i++) {
-                    activity[sim_muscles[muscle]->name].push_back(0.0);
-                }
-            }
+//            // initialize the queue for delayed activities depending on the spanning joint
+//            // hip muscles: 5ms, knee muscles 10ms, ankle muscles 20ms
+//            if(sim_muscles[muscle]->joint->GetName().find("groin")!=string::npos){
+//                for(uint i=0;i<5e-03/gazebo_max_step_size;i++){
+//                    activity[sim_muscles[muscle]->name].push_back(0.0);
+//                }
+//            }else if(sim_muscles[muscle]->joint->GetName().find("knee")!=string::npos) {
+//                for (uint i = 0; i < 10e-03 / gazebo_max_step_size; i++) {
+//                    activity[sim_muscles[muscle]->name].push_back(0.0);
+//                }
+//            }else if(sim_muscles[muscle]->joint->GetName().find("ankle")!=string::npos) {
+//                for (uint i = 0; i < 20e-03 / gazebo_max_step_size; i++) {
+//                    activity[sim_muscles[muscle]->name].push_back(0.0);
+//                }
+//            }
 
             a[sim_muscles[muscle]->name] = 0.0;
         }
@@ -169,10 +172,6 @@ void WalkController::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     updateFootDisplacementAndVelocity();
 
     initializeValues();
-
-    publishID();
-
-    ros::spinOnce();
 
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&WalkController::Update, this));
@@ -245,6 +244,11 @@ void WalkController::readSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("read simulation");
     // update muscle plugins
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+        for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+            math::Pose linkPose = sim_muscles[muscle]->viaPoints[i]->link->GetWorldPose();
+            sim_muscles[muscle]->viaPoints[i]->linkPosition = linkPose.pos;
+            sim_muscles[muscle]->viaPoints[i]->linkRotation = linkPose.rot;
+        }
         sim_muscles[muscle]->Update(time, period);
     }
 }
@@ -253,19 +257,10 @@ void WalkController::writeSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("write simulation");
     // apply the calculated forces
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
-        uint j = 0;
-        for (uint i = 0; i < sim_muscles[muscle]->force.size(); i++) {
-            if (sim_muscles[muscle]->force[i].GetLength() > 0.0001 && j<1) {  // using zero forces makes the model
-                // collapse
-                sim_muscles[muscle]->links[j]->AddForceAtWorldPosition(-sim_muscles[muscle]->force[i],
-                                                                       sim_muscles[muscle]->viaPointsInGlobalFrame[i]);
-                sim_muscles[muscle]->links[j+1]->AddForceAtWorldPosition(sim_muscles[muscle]->force[i],
-                                                                       sim_muscles[muscle]->viaPointsInGlobalFrame[
-                                                                               i + 1]);
-                if (i == sim_muscles[muscle]->link_index - 1) {
-                    j++;
-                }
-            }
+        for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
+            std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
+//            vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
+//            vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
         }
     }
 }
@@ -300,37 +295,60 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
             myoMuscle.name = myoMuscle_it->Attribute("name");
             // myoMuscle joint acting on
             TiXmlElement *link_child_it = NULL;
-            uint link_index = 0;
-            bool first_link = true;
             for (link_child_it = myoMuscle_it->FirstChildElement("link"); link_child_it;
                  link_child_it = link_child_it->NextSiblingElement("link")) {
                 string linkname = link_child_it->Attribute("name");
-                if (!linkname.empty()) {
+                physics::LinkPtr link = parent_model->GetLink(linkname);
+                if ((!linkname.empty()) && link) {
                     TiXmlElement *viaPoint_child_it = NULL;
                     for (viaPoint_child_it = link_child_it->FirstChildElement("viaPoint"); viaPoint_child_it;
                          viaPoint_child_it = viaPoint_child_it->NextSiblingElement("viaPoint")) {
+                        roboy_simulation::ViaPointInfo vp;
+                        vp.link = link;
                         float x, y, z;
                         if (sscanf(viaPoint_child_it->GetText(), "%f %f %f", &x, &y, &z) != 3) {
                             ROS_ERROR_STREAM_NAMED("parser", "error reading [via point] (x y z)");
                             return false;
-                        } else {
-                            myoMuscle.viaPoints.push_back(math::Vector3(x, y, z));
-                            link_index++;
                         }
-                    }
-                    myoMuscle.links.push_back(parent_model->GetLink(linkname));
-                    if (first_link) {
-                        myoMuscle.link_index = link_index;
-                        first_link = false;
+                        vp.point = math::Vector3(x,y,z);
+                        if (viaPoint_child_it->Attribute("type")){
+                            string type = viaPoint_child_it->Attribute("type");
+                            if (type == "FIXPOINT") {
+                                vp.type = roboy_simulation::IViaPoints::FIXPOINT;
+                            } else if (type == "SPHERICAL" || type == "CYLINDRICAL") {
+                                if (viaPoint_child_it->QueryDoubleAttribute("radius", &vp.radius) != TIXML_SUCCESS){
+                                    ROS_ERROR_STREAM_NAMED("parser", "error reading radius");
+                                    return false;
+                                }
+                                if (viaPoint_child_it->QueryIntAttribute("state", &vp.state) != TIXML_SUCCESS){
+                                    ROS_ERROR_STREAM_NAMED("parser", "error reading state");
+                                    return false;
+                                }
+                                if (viaPoint_child_it->QueryIntAttribute("revCounter", &vp.revCounter) != TIXML_SUCCESS){
+                                    ROS_ERROR_STREAM_NAMED("parser", "error reading revCounter");
+                                    return false;
+                                }
+                                if (type == "SPHERICAL") {
+                                    vp.type = roboy_simulation::IViaPoints::SPHERICAL;
+                                } else {
+                                    vp.type = roboy_simulation::IViaPoints::CYLINDRICAL;
+                                }
+                            } else if (type == "MESH") {
+                                // TODO
+                            } else {
+                                ROS_ERROR_STREAM_NAMED("parser", "unknown type of via point: " + type);
+                                return false;
+                            }
+                        } else {
+                            ROS_ERROR_STREAM_NAMED("parser", "error reading type");
+                            return false;
+                        }
+                        myoMuscle.viaPoints.push_back(vp);
                     }
                     if (myoMuscle.viaPoints.empty()) {
                         ROS_ERROR_STREAM_NAMED("parser", "No viaPoint element found in myoMuscle '"
                                 << myoMuscle.name << "' link element.");
                         return false;
-                    }
-                    if (myoMuscle.links.size() > 2) {
-                        ROS_WARN_STREAM_NAMED("parser", "In myoMuscle '"
-                                << myoMuscle.name << "' link element: Only two links are supported.");
                     }
                 } else {
                     ROS_ERROR_STREAM_NAMED("parser", "No link name attribute specified for myoMuscle'"
@@ -338,14 +356,41 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
                     continue;
                 }
             }
-            ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str());
+//                uint j = 0;
+//                for (uint i = 0; i < myoMuscle.viaPoints.size(); i++) {
+//                    // absolute position + relative position=actual position of each via point
+//                    ROS_INFO("%s: %f %f %f", myoMuscle.links[j]->GetName().c_str(),
+//                             myoMuscle.viaPoints[i].x, myoMuscle.viaPoints[i].y, myoMuscle.viaPoints[i].z);
+//                    if(i>=myoMuscle.link_index[j]-1){
+//                        j++;
+//                    }
+//                }
+            ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
+
+            //check if wrapping surfaces are enclosed by fixpoints
+            for(int i = 0; i < myoMuscle.viaPoints.size(); i++){
+                if(i == 0 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
+                    ROS_ERROR_STREAM_NAMED("parser", "muscle insertion has to be a fix point");
+                    return false;
+                }
+                if(i == myoMuscle.viaPoints.size()-1 && myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
+                    ROS_ERROR_STREAM_NAMED("parser", "muscle fixation has to be a fix point");
+                    return false;
+                }
+                if(myoMuscle.viaPoints[i].type != roboy_simulation::IViaPoints::FIXPOINT){
+                    if(myoMuscle.viaPoints[i-1].type != roboy_simulation::IViaPoints::FIXPOINT
+                       || myoMuscle.viaPoints[i+1].type != roboy_simulation::IViaPoints::FIXPOINT){
+                        ROS_ERROR_STREAM_NAMED("parser", "non-FIXPOINT via-points have to be enclosed by two FIXPOINT via-points");
+                        return false;
+                    }
+                }
+            }
 
             TiXmlElement *spans_joint_child_it = NULL;
             for (spans_joint_child_it = myoMuscle_it->FirstChildElement("spans_joint"); spans_joint_child_it;
                  spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spans_joint")) {
                 string jointname = spans_joint_child_it->Attribute("name");
                 if (!jointname.empty()) {
-                    myoMuscle.spanning_joint = parent_model->GetJoint(jointname);
                     if(strcmp(spans_joint_child_it->GetText(),"extensor")==0)
                         myoMuscle.muscle_type = EXTENSOR;
                     else if(strcmp(spans_joint_child_it->GetText(),"flexor")==0)
@@ -1197,25 +1242,22 @@ void WalkController::publishTendon() {
     line_strip.pose.orientation.w = 1.0;
     line_strip.lifetime = ros::Duration(0);
 
-    roboy_simulation::Tendon msg;
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         line_strip.points.clear();
         line_strip.id = message_counter++;
-        for (uint i = 0; i < sim_muscles[muscle]->viaPointsInGlobalFrame.size(); i++) {
-            geometry_msgs::Vector3 vp;
-            vp.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-            vp.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-            vp.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
-            msg.viaPoints.push_back(vp);
+        for (uint i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
             geometry_msgs::Point p;
-            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[i].x;
-            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[i].y;
-            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[i].z;
+            p.x = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.z;
+            line_strip.points.push_back(p);
+            p.x = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.z;
             line_strip.points.push_back(p);
         }
         marker_visualization_pub.publish(line_strip);
     }
-    visualizeTendon_pub.publish(msg);
 }
 
 void WalkController::publishCOM() {
@@ -1278,13 +1320,13 @@ void WalkController::publishForce() {
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
             geometry_msgs::Point p;
-            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[0].x;
-            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[0].y;
-            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[0].z;
+            p.x = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.z;
             arrow.points.push_back(p);
-            p.x -= sim_muscles[muscle]->force[0].x;
-            p.y -= sim_muscles[muscle]->force[0].y;
-            p.z -= sim_muscles[muscle]->force[0].z;
+            p.x -= sim_muscles[muscle]->viaPoints[0]->prevForce.x;
+            p.y -= sim_muscles[muscle]->viaPoints[0]->prevForce.y;
+            p.z -= sim_muscles[muscle]->viaPoints[0]->prevForce.z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
             // reactio
@@ -1294,13 +1336,13 @@ void WalkController::publishForce() {
             arrow.color.b = 0.0f;
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
-            p.x = sim_muscles[muscle]->viaPointsInGlobalFrame[1].x;
-            p.y = sim_muscles[muscle]->viaPointsInGlobalFrame[1].y;
-            p.z = sim_muscles[muscle]->viaPointsInGlobalFrame[1].z;
+            p.x = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.z;
             arrow.points.push_back(p);
-            p.x += sim_muscles[muscle]->force[0].x;
-            p.y += sim_muscles[muscle]->force[0].y;
-            p.z += sim_muscles[muscle]->force[0].z;
+            p.x += sim_muscles[muscle]->viaPoints[0]->nextForce.x;
+            p.y += sim_muscles[muscle]->viaPoints[0]->nextForce.y;
+            p.z += sim_muscles[muscle]->viaPoints[0]->nextForce.z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
     }
@@ -1333,7 +1375,7 @@ void WalkController::publishMomentArm() {
         arrow.header.stamp = ros::Time::now();
         arrow.points.clear();
         geometry_msgs::Point p;
-        math::Pose jointPose = sim_muscles[muscle]->joint->GetWorldPose();
+        math::Pose jointPose = sim_muscles[muscle]->viaPoints[0]->link->GetWorldPose();
         p.x = jointPose.pos.x;
         p.y = jointPose.pos.y;
         p.z = jointPose.pos.z;

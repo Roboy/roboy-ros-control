@@ -64,7 +64,7 @@ namespace gazebo_ros_control {
             try {
                 ROS_INFO("Loading Muscle Plugin");
                 sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
-                sim_muscles.back()->Init(myoMuscles[i]);
+                sim_muscles.back()->Init(myoMuscles[i],0);
             }
             catch (pluginlib::PluginlibException &ex) {
                 //handle the class failing to load

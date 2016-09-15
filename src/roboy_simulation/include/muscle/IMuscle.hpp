@@ -21,6 +21,8 @@
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
 #include <CommunicationData.h>
+// messages
+#include <std_msgs/Float32.h>
 // boost
 #include <boost/numeric/odeint.hpp>
 #include <boost/bind.hpp>
@@ -37,6 +39,12 @@
 #include <chrono>
 #include <memory>
 
+enum MUSCLE_TYPE{
+    EXTENSOR,
+    FLEXOR,
+    STABILIZER
+};
+
 namespace roboy_simulation {
 
 	using namespace std;
@@ -50,6 +58,7 @@ namespace roboy_simulation {
 		Gear gear;
 		Spindle spindle;
 		SEE see;
+        MUSCLE_TYPE muscle_type;
 	};
 
 	class IMuscle{
@@ -62,13 +71,17 @@ namespace roboy_simulation {
 		///
 		/// This function initializes the plugin.
 		/// \param[in] myoMuscle contains info about via points, motor, gear, spindle and see of the muscles
-		void Init(MyoMuscleInfo &myoMuscle);
+		void Init(MyoMuscleInfo &myoMuscle, int id);
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;
 		double cmd = 0;
+        math::Vector3 momentArm;
+        MUSCLE_TYPE muscle_type;
 	private:
-
+        ros::NodeHandlePtr nh;
+        ros::Publisher actuatorForce_pub;
+        int roboyID;
 		IActuator::state_type x;
 		ISee see;
 		IActuator actuator;
