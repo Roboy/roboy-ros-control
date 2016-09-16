@@ -136,6 +136,8 @@ public Q_SLOTS:
 
     void sendMotorControl();
 
+    void refresh();
+
 private:
     void updateLegStates(const roboy_simulation::LegState::ConstPtr &msg);
 

@@ -62,9 +62,6 @@ namespace roboy_simulation {
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
-
-        // TODO: calculate PID result
-//		pid.calc_output(cmd,pos,period);
         actuator.motor.voltage = cmd;
 
         for (int i = 0; i < viaPoints.size(); i++) {

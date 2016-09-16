@@ -259,8 +259,12 @@ void WalkController::writeSim(ros::Time time, ros::Duration period) {
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
             std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
-//            vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
-//            vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
+            if(vp->prevForce.GetLength() > 0.0) {
+                vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
+                ROS_INFO_STREAM_THROTTLE(1.0, vp->prevForce);
+            }
+            if(vp->nextForce.GetLength() > 0.0)
+                vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
         }
     }
 }
@@ -1312,6 +1316,7 @@ void WalkController::publishForce() {
 //    }
 
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
+        for (uint i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++) {
             // actio
             arrow.id = message_counter++;
             arrow.color.r = 0.0f;
@@ -1320,13 +1325,13 @@ void WalkController::publishForce() {
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
             geometry_msgs::Point p;
-            p.x = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.x;
-            p.y = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.y;
-            p.z = sim_muscles[muscle]->viaPoints[0]->prevForcePoint.z;
+            p.x = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[i]->prevForcePoint.z;
             arrow.points.push_back(p);
-            p.x -= sim_muscles[muscle]->viaPoints[0]->prevForce.x;
-            p.y -= sim_muscles[muscle]->viaPoints[0]->prevForce.y;
-            p.z -= sim_muscles[muscle]->viaPoints[0]->prevForce.z;
+            p.x += sim_muscles[muscle]->viaPoints[i]->prevForce.x;
+            p.y += sim_muscles[muscle]->viaPoints[i]->prevForce.y;
+            p.z += sim_muscles[muscle]->viaPoints[i]->prevForce.z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
             // reactio
@@ -1336,15 +1341,16 @@ void WalkController::publishForce() {
             arrow.color.b = 0.0f;
             arrow.header.stamp = ros::Time::now();
             arrow.points.clear();
-            p.x = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.x;
-            p.y = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.y;
-            p.z = sim_muscles[muscle]->viaPoints[0]->nextForcePoint.z;
+            p.x = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.x;
+            p.y = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.y;
+            p.z = sim_muscles[muscle]->viaPoints[i]->nextForcePoint.z;
             arrow.points.push_back(p);
-            p.x += sim_muscles[muscle]->viaPoints[0]->nextForce.x;
-            p.y += sim_muscles[muscle]->viaPoints[0]->nextForce.y;
-            p.z += sim_muscles[muscle]->viaPoints[0]->nextForce.z;
+            p.x += sim_muscles[muscle]->viaPoints[i]->nextForce.x;
+            p.y += sim_muscles[muscle]->viaPoints[i]->nextForce.y;
+            p.z += sim_muscles[muscle]->viaPoints[i]->nextForce.z;
             arrow.points.push_back(p);
             marker_visualization_pub.publish(arrow);
+        }
     }
 }
 

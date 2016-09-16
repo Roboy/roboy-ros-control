@@ -30,10 +30,13 @@ void CylindricalWrapping::UpdateForcePoints()
     nextCoord = nextPoint->globalCoordinates;
 
     //calculate normal onto plane
-    math::Vector3 unit_normal = linkRotation.operator*(math::Vector3 (0,0,1));
+    math::Vector3 unit_normal = linkRotation.RotateVector(math::Vector3 (0,0,1));
+    unit_normal = unit_normal/unit_normal.GetLength();
     //project insertion and fixation point onto xy plane of the cylinder
-    prevCoordPlane = prevCoord - ((prevCoord-globalCoordinates).Dot(unit_normal))*unit_normal;
-    nextCoordPlane = nextCoord - ((nextCoord-globalCoordinates).Dot(unit_normal))*unit_normal;
+    double prevDist = (prevCoord-globalCoordinates).Dot(unit_normal);
+    double nextDist = (nextCoord-globalCoordinates).Dot(unit_normal);
+    prevCoordPlane = prevCoord - (prevDist)*unit_normal;
+    nextCoordPlane = nextCoord - (nextDist)*unit_normal;
 
     stateMachine.UpdateState(prevCoordPlane, nextCoordPlane, globalCoordinates, radius);
 
@@ -43,6 +46,7 @@ void CylindricalWrapping::UpdateForcePoints()
         prevForcePoint = nextCoord;
         nextForcePoint = prevCoord;
         previousSegmentLength = 0;
+        return;
     }
 
     //compute tangent points
@@ -90,16 +94,14 @@ void CylindricalWrapping::UpdateForcePoints()
     double l_insertion = (prevCoordPlane - prevForcePointPlane).GetLength();
     double l_fixation = (nextCoordPlane - nextForcePointPlane).GetLength();
     double l_arc = arcAngle*radius;
-    double insertionDistance = (prevCoord - prevCoordPlane).GetLength();
-    double fixationDistance = (nextCoord - nextCoordPlane).GetLength();
 
     //calculate tangent point distance to the plane
-    double iTDistance = insertionDistance + (l_insertion)*(fixationDistance - insertionDistance)/(l_insertion + l_arc + l_fixation);
+    double iTDistance = prevDist + (l_insertion)*(nextDist - prevDist)/(l_insertion + l_arc + l_fixation);
     //project tangent point into R3
     prevForcePoint = prevForcePointPlane + iTDistance*unit_normal;
 
     //calculate tangent point distance to the plane
-    double fTDistance = fixationDistance + (l_fixation)*(insertionDistance - fixationDistance)/(l_fixation + l_arc + l_insertion);
+    double fTDistance = nextDist + (l_fixation)*(prevDist - nextDist)/(l_fixation + l_arc + l_insertion);
     //project tangent point into R3
     nextForcePoint = nextForcePointPlane + fTDistance*unit_normal;
 

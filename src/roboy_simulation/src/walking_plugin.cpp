@@ -21,6 +21,10 @@ WalkingPlugin::WalkingPlugin(QWidget *parent)
     connect(roboyID, SIGNAL(currentIndexChanged(int)), this, SLOT(changeID(int)));
     roboyIdlayout->addWidget(roboyID);
 
+    QPushButton *refreshbutton = new QPushButton(tr("refresh"));
+    connect(refreshbutton, SIGNAL(clicked()), this, SLOT(refresh()));
+    roboyIdlayout->addWidget(refreshbutton);
+
     frameLayout->addLayout(roboyIdlayout);
 
     QHBoxLayout *stancelegstatelayout = new QHBoxLayout();
@@ -633,6 +637,17 @@ void WalkingPlugin::sendMotorControl(){
             line->setText("invalid value");
     }
     motor_control_pub.publish(msg);
+}
+
+void WalkingPlugin::refresh(){
+    showCOM();
+    showCoordinateSystems();
+    showForce();
+    showForceTorqueSensors();
+    showMesh();
+    showMomentArm();
+    showStateMachineParameters();
+    showTendon();
 }
 
 void WalkingPlugin::updateLegStates(const roboy_simulation::LegState::ConstPtr &msg){
