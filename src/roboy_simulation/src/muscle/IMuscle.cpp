@@ -102,6 +102,10 @@ namespace roboy_simulation {
         actuator.elasticForce = 0;
 
         for (int i = 0; i < viaPoints.size(); i++) {
+#ifdef DUMMYMUSCLE
+            viaPoints[i]->fa = cmd;
+            viaPoints[i]->fb = cmd;
+#else
             if (viaPoints[i]->prevPoint && viaPoints[i]->nextPoint) {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
                 viaPoints[i]->fb = viaPoints[i]->prevPoint->fb;
@@ -114,6 +118,7 @@ namespace roboy_simulation {
                 viaPoints[i]->fa = viaPoints[i]->prevPoint->fb;
                 viaPoints[i]->fb = 0;
             }
+#endif
             viaPoints[i]->CalculateForce();
         };
 
@@ -141,8 +146,8 @@ namespace roboy_simulation {
         //calculate motor force
         actuatorForce = actuator.ElectricMotorModel(actuator.motor.current, actuator.motor.torqueConst,
                                                     actuator.spindle.radius);
-        ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
-                          actuator.spindle.angVel, actuatorForce);
+//        ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
+//                          actuator.spindle.angVel, actuatorForce);
 
         std_msgs::Float32 msg;
         msg.data = actuatorForce;

@@ -259,12 +259,8 @@ void WalkController::writeSim(ros::Time time, ros::Duration period) {
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
             std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
-            if(vp->prevForce.GetLength() > 0.0) {
-                vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
-                ROS_INFO_STREAM_THROTTLE(1.0, vp->prevForce);
-            }
-            if(vp->nextForce.GetLength() > 0.0)
-                vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
+            vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
+            vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
         }
     }
 }
@@ -1173,7 +1169,7 @@ bool WalkController::checkAbort(){
                 msg.roboyID = roboyID;
                 msg.reason = selfCollision;
                 abort_pub.publish(msg);
-                ROS_WARN_THROTTLE(1.0, "self collision detected with %s, aborting", link->GetName().c_str());
+//                ROS_WARN_THROTTLE(1.0, "self collision detected with %s, aborting", link->GetName().c_str());
                 return true;
             }
         }

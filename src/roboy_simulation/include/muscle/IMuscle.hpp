@@ -39,6 +39,8 @@
 #include <chrono>
 #include <memory>
 
+#define DUMMYMUSCLE
+
 enum MUSCLE_TYPE{
     EXTENSOR,
     FLEXOR,
