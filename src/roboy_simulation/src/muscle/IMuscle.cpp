@@ -56,6 +56,9 @@ namespace roboy_simulation {
         see.see.expansion = 0.0;
         see.see.force = 0.0;
 
+        muscle_type = myoMuscle.muscle_type;
+        spanningJoint = myoMuscle.spanningJoint;
+
         char topic[100];
         snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
         actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
@@ -120,6 +123,13 @@ namespace roboy_simulation {
             }
 #endif
             viaPoints[i]->CalculateForce();
+            if(i>0) {
+                if (viaPoints[i-1]->link != viaPoints[i]->link) {
+                    math::Vector3 v = viaPoints[i]->globalCoordinates - viaPoints[i-1]->globalCoordinates;
+                    math::Vector3 w = spanningJoint->GetWorldPose().pos - viaPoints[i-1]->globalCoordinates;
+                    momentArm = v.Normalize()*w.Dot(v.Normalize()) - w;
+                }
+            }
         };
 
         // calculate the approximation of gear's efficiency

@@ -41,13 +41,19 @@ void IViaPoints::CalculateForce()
     if (prevPoint)
     {
         math::Vector3 A = prevPoint->nextForcePoint - this->prevForcePoint;
-        prevForce = A/A.GetLength() * fa;
+        if(A.GetLength()>0.0)
+            prevForce = A/A.GetLength() * fa;
+        else
+            prevForce = math::Vector3::Zero;
         //link->AddForceAtRelativePosition(Fa, this->prevForcePoint);
     }
     else if (nextPoint)
     {
         math::Vector3 B = nextPoint->prevForcePoint - this->nextForcePoint;
-        nextForce = B/B.GetLength() * fb;
+        if(B.GetLength()>0.0)
+            nextForce = B/B.GetLength() * fb;
+        else
+            nextForce = math::Vector3::Zero;
         //link->AddForceAtRelativePosition(Fb, this->nextForcePoint);
     }
 };

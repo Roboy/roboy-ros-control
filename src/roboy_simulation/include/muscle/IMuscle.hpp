@@ -61,6 +61,7 @@ namespace roboy_simulation {
 		Spindle spindle;
 		SEE see;
         MUSCLE_TYPE muscle_type;
+        physics::JointPtr spanningJoint;
 	};
 
 	class IMuscle{
@@ -80,6 +81,7 @@ namespace roboy_simulation {
 		double cmd = 0;
         math::Vector3 momentArm;
         MUSCLE_TYPE muscle_type;
+        physics::JointPtr spanningJoint;
 	private:
         ros::NodeHandlePtr nh;
         ros::Publisher actuatorForce_pub;

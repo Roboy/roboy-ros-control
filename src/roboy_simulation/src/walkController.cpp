@@ -1,4 +1,3 @@
-#include <std_msgs/Float32.h>
 #include "walkController.hpp"
 
 WalkController::WalkController() {
@@ -356,15 +355,6 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
                     continue;
                 }
             }
-//                uint j = 0;
-//                for (uint i = 0; i < myoMuscle.viaPoints.size(); i++) {
-//                    // absolute position + relative position=actual position of each via point
-//                    ROS_INFO("%s: %f %f %f", myoMuscle.links[j]->GetName().c_str(),
-//                             myoMuscle.viaPoints[i].x, myoMuscle.viaPoints[i].y, myoMuscle.viaPoints[i].z);
-//                    if(i>=myoMuscle.link_index[j]-1){
-//                        j++;
-//                    }
-//                }
             ROS_INFO("%ld viaPoints for myoMuscle %s", myoMuscle.viaPoints.size(), myoMuscle.name.c_str() );
 
             //check if wrapping surfaces are enclosed by fixpoints
@@ -387,10 +377,11 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
             }
 
             TiXmlElement *spans_joint_child_it = NULL;
-            for (spans_joint_child_it = myoMuscle_it->FirstChildElement("spans_joint"); spans_joint_child_it;
-                 spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spans_joint")) {
+            for (spans_joint_child_it = myoMuscle_it->FirstChildElement("spanningJoint"); spans_joint_child_it;
+                 spans_joint_child_it = spans_joint_child_it->NextSiblingElement("spanningJoint")) {
                 string jointname = spans_joint_child_it->Attribute("name");
                 if (!jointname.empty()) {
+                    myoMuscle.spanningJoint = parent_model->GetJoint(jointname);
                     if(strcmp(spans_joint_child_it->GetText(),"extensor")==0)
                         myoMuscle.muscle_type = EXTENSOR;
                     else if(strcmp(spans_joint_child_it->GetText(),"flexor")==0)
@@ -400,7 +391,7 @@ bool WalkController::parseMyoMuscleSDF(const string &sdf, vector<roboy_simulatio
                     else
                         ROS_WARN_STREAM_NAMED("parser", "muscle type not defined for " << myoMuscle.name << "'.");
                 } else {
-                    ROS_ERROR_STREAM_NAMED("parser", "No spans_joint name attribute specified for myoMuscle'"
+                    ROS_ERROR_STREAM_NAMED("parser", "No spanningJoint name attribute specified for myoMuscle'"
                             << myoMuscle.name << "'.");
                     continue;
                 }
@@ -1377,7 +1368,7 @@ void WalkController::publishMomentArm() {
         arrow.header.stamp = ros::Time::now();
         arrow.points.clear();
         geometry_msgs::Point p;
-        math::Pose jointPose = sim_muscles[muscle]->viaPoints[0]->link->GetWorldPose();
+        math::Pose jointPose = sim_muscles[muscle]->spanningJoint->GetWorldPose();
         p.x = jointPose.pos.x;
         p.y = jointPose.pos.y;
         p.z = jointPose.pos.z;
