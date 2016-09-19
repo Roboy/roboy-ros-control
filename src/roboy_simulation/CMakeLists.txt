@@ -88,7 +88,7 @@ add_executable(walkTrainer src/walkTrainer.cpp)
 add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(WalkController SHARED src/walkController.cpp)
+add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp)
 add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)
 target_link_libraries(WalkController ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
 #==============================================================================
