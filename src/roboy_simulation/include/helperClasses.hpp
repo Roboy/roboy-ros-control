@@ -3,26 +3,15 @@
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
+// ros messages
+#include "roboy_simulation/ControllerParameters.h"
+#include "controllerParameters.hpp"
 
 class CoordinateSystem{
 public:
     CoordinateSystem(gazebo::physics::LinkPtr link):m_link(link){};
-    void Update(){
-        gazebo::math::Pose pose = m_link->GetWorldPose();
-        rot = pose.rot;
-        origin = pose.pos;
-        X = pose.rot.RotateVector(gazebo::math::Vector3::UnitX);
-        Y = pose.rot.RotateVector(gazebo::math::Vector3::UnitY);
-        Z = pose.rot.RotateVector(gazebo::math::Vector3::UnitZ);
-    }
-    void UpdateHeading(){
-        gazebo::math::Pose pose = m_link->GetWorldPose();
-        gazebo::math::Quaternion q(0,0,pose.rot.GetAsEuler().z);
-        origin = pose.pos;
-        X = q.RotateVector(gazebo::math::Vector3::UnitX);
-        Y = q.RotateVector(gazebo::math::Vector3::UnitY);
-        Z = q.RotateVector(gazebo::math::Vector3::UnitZ);
-    }
+    void Update();
+    void UpdateHeading();
     gazebo::math::Vector3 origin, X, Y, Z;
     gazebo::math::Quaternion rot;
 private:
@@ -30,3 +19,10 @@ private:
 };
 
 typedef boost::shared_ptr<CoordinateSystem> CoordSys;
+
+void controllerParametersToMessage(ControllerParameters &params,
+                                   roboy_simulation::ControllerParameters &msg);
+void messageTocontrollerParameters(const roboy_simulation::ControllerParameters::ConstPtr &msg,
+                                   ControllerParameters &params);
+void messageTocontrollerParameters(roboy_simulation::ControllerParameters &msg,
+                                   ControllerParameters &params);

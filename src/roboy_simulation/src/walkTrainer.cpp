@@ -31,8 +31,9 @@ WalkTrainer::WalkTrainer(){
     spinner->start();
 
     reset_world_srv = nh->advertiseService("/roboy/reset_world", &WalkTrainer::resetWorld, this);
-    roboyID_sub = nh->subscribe("/roboy/id", 1, &WalkTrainer::updateID, this);
     sim_control_sub = nh->subscribe("/roboy/sim_control", 1, &WalkTrainer::simulationControl, this);
+
+    control_parameters_pub = nh->advertise<roboy_simulation::ControllerParameters>("/roboy/control_parameters", 100);
 };
 
 WalkTrainer::~WalkTrainer() {
@@ -61,11 +62,19 @@ void WalkTrainer::initializeWorlds(uint numberOfWorlds){
                 break;
         }
         if (world[i]->GetModelCount() == modelCountBefore + 1) {
-            std::cout << "Successfully inserted model.\n";
+            ROS_INFO("Successfully inserted model");
             model.push_back(world[i]->GetModel("legs_with_muscles_simplified"));
+            roboyIDs.push_back(i);
             initializeInterActiveMarkers(interactive_marker_server, model.back(), roboyIDs[i]);
+            ControllerParameters params;
+            initializeControllerParameters(params, model.back());
+            controllerParams.push_back(params);
+            roboy_simulation::ControllerParameters msg;
+            msg.roboyID = i;
+            controllerParametersToMessage(params, msg);
+            control_parameters_pub.publish(msg);
         } else {
-            std::cout << "Failed inserting model\n";
+            ROS_WARN("Failed inserting model");
         }
     }
 }
@@ -94,20 +103,46 @@ bool WalkTrainer::resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger
     return true;
 }
 
-visualization_msgs::Marker makeBox( visualization_msgs::InteractiveMarker &msg )
-{
-    visualization_msgs::Marker marker;
+void WalkTrainer::initializeControllerParameters(ControllerParameters &params, physics::ModelPtr parent_model){
+    math::Vector3 euler = parent_model->GetLink("hip")->GetWorldPose().rot.GetAsEuler();
+    params.phi_trunk_0 = euler.x;
+    params.theta_trunk_0 = euler.y;
 
-    marker.type = visualization_msgs::Marker::CUBE;
-    marker.scale.x = msg.scale * 0.45;
-    marker.scale.y = msg.scale * 0.45;
-    marker.scale.z = msg.scale * 0.45;
-    marker.color.r = 0.5;
-    marker.color.g = 0.5;
-    marker.color.b = 0.5;
-    marker.color.a = 0.7;
+    euler = parent_model->GetLink("thigh_left")->GetWorldPose().rot.GetAsEuler();
+    params.phi_groin_0[LEG::LEFT] = euler.x;
+    params.theta_groin_0[LEG::LEFT] = euler.y;
 
-    return marker;
+    euler = parent_model->GetLink("thigh_right")->GetWorldPose().rot.GetAsEuler();
+    params.phi_groin_0[LEG::RIGHT] = euler.x;
+    params.theta_groin_0[LEG::RIGHT] = euler.y;
+
+    params.k_v = 0.1;
+    params.k_h = 0.1;
+    params.k_p_theta_left[0] = 0.1;
+    params.k_p_theta_left[1] = 0.1;
+    params.k_p_theta_left[2] = 0.1;
+    params.k_p_theta_left[3] = 0.1;
+    params.k_p_theta_right[0] = 0.1;
+    params.k_p_theta_right[1] = 0.1;
+    params.k_p_theta_right[2] = 0.1;
+    params.k_p_theta_right[3] = 0.1;
+    params.k_d_theta_left[0] = 0.1;
+    params.k_d_theta_left[1] = 0.1;
+    params.k_d_theta_left[2] = 0.1;
+    params.k_d_theta_left[3] = 0.1;
+    params.k_d_theta_right[0] = 0.1;
+    params.k_d_theta_right[1] = 0.1;
+    params.k_d_theta_right[2] = 0.1;
+    params.k_d_theta_right[3] = 0.1;
+    params.k_p_phi[0] = 0.1;
+    params.k_p_phi[1] = 0.1;
+    params.k_d_phi[0] = 0.1;
+    params.k_d_phi[1] = 0.1;
+    // target force torque gains
+    params.k_V = 0.1;
+    params.k_P = 0.1;
+    params.k_Q = 0.1;
+    params.k_omega = 0.1;
 }
 
 void WalkTrainer::initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
@@ -117,11 +152,7 @@ void WalkTrainer::initializeInterActiveMarkers(boost::shared_ptr<interactive_mar
     for(auto link:model->GetLinks()) {
         visualization_msgs::InteractiveMarker int_marker;
         string link_name = link->GetName();
-//        if(link_name.compare("halterung")==0)
-//            int_marker.header.frame_id = "world";
-//        else
         int_marker.header.frame_id = "world";
-//        ROS_INFO_STREAM(int_marker.header.frame_id);
         int_marker.header.stamp=ros::Time::now();
         math::Pose pose = link->GetWorldPose();
         int_marker.pose.position.x = pose.pos.x;
@@ -132,12 +163,6 @@ void WalkTrainer::initializeInterActiveMarkers(boost::shared_ptr<interactive_mar
         int_marker.description = link_name;
 
         visualization_msgs::InteractiveMarkerControl control;
-
-//        visualization_msgs::Marker marker;
-//        marker = makeBox(int_marker);
-//        marker.header.frame_id = link_name;
-
-//        control.markers.push_back(marker);
 
         control.orientation.w = 1;
         control.orientation.x = 1;
@@ -204,10 +229,6 @@ void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPt
         interactive_marker_server->setPose( marker.name, marker.pose );
     }
     interactive_marker_server->applyChanges();
-}
-
-void WalkTrainer::updateID(const std_msgs::Int32::ConstPtr &msg){
-    roboyIDs.push_back(msg->data);
 }
 
 void WalkTrainer::simulationControl(const std_msgs::Int32::ConstPtr &msg){

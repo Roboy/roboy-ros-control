@@ -13,7 +13,7 @@
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
-#include "roboy_simulation/SimulationState.h"
+#include "roboy_simulation/ControllerParameters.h"
 // gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>

@@ -11,10 +11,12 @@ namespace roboy_simulation {
         }
         nh = ros::NodeHandlePtr(new ros::NodeHandle);
         x.resize(2);
+//        char topic[100];
+//        snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
+//        actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
 
-    void IMuscle::Init(MyoMuscleInfo &myoMuscle, int id) {
-        roboyID = id;
+    void IMuscle::Init(MyoMuscleInfo &myoMuscle) {
         //state initialization
         x[0] = 0.0;
         x[1] = 0.0;
@@ -58,10 +60,6 @@ namespace roboy_simulation {
 
         muscle_type = myoMuscle.muscle_type;
         spanningJoint = myoMuscle.spanningJoint;
-
-        char topic[100];
-        snprintf(topic, 100, "/roboy%d/%s/actuatorForce", roboyID, name.c_str());
-        actuatorForce_pub = nh->advertise<std_msgs::Float32>(topic, 1000);
     }
 
     void IMuscle::Update(ros::Time &time, ros::Duration &period) {
@@ -159,10 +157,10 @@ namespace roboy_simulation {
 //        ROS_INFO_THROTTLE(1, "electric current: %.5f, speed: %.5f, force %.5f", actuator.motor.current,
 //                          actuator.spindle.angVel, actuatorForce);
 
-        std_msgs::Float32 msg;
-        msg.data = actuatorForce;
-        actuatorForce_pub.publish(msg);
-        ros::spinOnce();
+//        std_msgs::Float32 msg;
+//        msg.data = actuatorForce;
+//        actuatorForce_pub.publish(msg);
+//        ros::spinOnce();
 
         actuator.gear.position += actuator.spindle.angVel * period.toSec();
         tendonLength = initialTendonLength - actuator.spindle.radius * actuator.gear.position;

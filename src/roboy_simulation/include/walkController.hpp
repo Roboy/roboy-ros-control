@@ -34,7 +34,7 @@
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
-#include "roboy_simulation/SimulationState.h"
+#include "roboy_simulation/ControllerParameters.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
@@ -121,9 +121,6 @@ public:
      */
     void calculateCOM(int type, math::Vector3 &COM);
 
-    /** Initializes ControllerParameters */
-    void initializeValues();
-
     /** updates foot displacements and velocity of each foot wrt to hip orientation */
     void updateFootDisplacementAndVelocity();
 
@@ -167,12 +164,24 @@ public:
      * */
     void motorControl(const roboy_simulation::MotorControl::ConstPtr &msg);
 
+    /**
+     * Callback for update of control parameters, typically sent by walkTrainer
+     * @param msg with new control parameters
+     */
+    void updateControllerParameters(const roboy_simulation::ControllerParameters::ConstPtr &msg);
+
+    /** callback for setting the roboyID */
+//    bool roboyID(roboy_simulation::RoboyID::Request  &req, roboy_simulation::RoboyID::Response &res);
+
 private:
-    int roboyID;
+    int roboyID = -1;
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
-            steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;;
+            steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub,
+            control_parameters_sub;
     ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub;
+    ros::ServiceServer roboyID_srv;
+    boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     bool e_stop_active, last_e_stop_active;
 

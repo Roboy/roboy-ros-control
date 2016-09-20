@@ -64,7 +64,7 @@ namespace gazebo_ros_control {
             try {
                 ROS_INFO("Loading Muscle Plugin");
                 sim_muscles.push_back(class_loader->createInstance("roboy_simulation::IMuscle"));
-                sim_muscles.back()->Init(myoMuscles[i],0);
+                sim_muscles.back()->Init(myoMuscles[i]);
             }
             catch (pluginlib::PluginlibException &ex) {
                 //handle the class failing to load
@@ -212,7 +212,13 @@ namespace gazebo_ros_control {
         }
 
         ROS_INFO_NAMED("gazebo_ros_control", "Starting gazebo_ros_control plugin in namespace: %s",
-                       robot_namespace.c_str());
+                       robot_namespace.c_str());;
+//            initializeControllerParameters(params, model.back());
+//            controllerParams.push_back(params);
+//            roboy_simulation::ControllerParameters msg;
+//            msg.roboyID = i;
+//            controllerParametersToMessage(params, msg);
+//            control_parameters_pub.publish(msg);
 
         ROS_INFO_NAMED("gazebo_ros_control", "Parsing myoMuscles");
         if (!parseMyoMuscleSDF(sdf_->ToString(""), myoMuscles))

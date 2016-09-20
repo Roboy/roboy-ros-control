@@ -74,7 +74,7 @@ namespace roboy_simulation {
 		///
 		/// This function initializes the plugin.
 		/// \param[in] myoMuscle contains info about via points, motor, gear, spindle and see of the muscles
-		void Init(MyoMuscleInfo &myoMuscle, int id);
+		void Init(MyoMuscleInfo &myoMuscle);
 		void Update(ros::Time &time, ros::Duration &period );
 		string name;
 		vector<std::shared_ptr<IViaPoints>> viaPoints;

@@ -13,7 +13,7 @@ WalkVisualization::WalkVisualization(){
     visualization_control_sub = nh->subscribe("/roboy/visualization_control", 10,
                                               &WalkVisualization::visualization_control, this);
     leg_state_pub = nh->advertise<roboy_simulation::LegState>("/roboy/leg_state", 2);
-    simulation_state_pub = nh->advertise<roboy_simulation::SimulationState>("/roboy/simulationState", 1);
+    simulation_state_pub = nh->advertise<roboy_simulation::ControllerParameters>("/roboy/simulationState", 1);
 }
 
 void WalkVisualization::visualization_control(const roboy_simulation::VisualizationControl::ConstPtr &msg) {
@@ -273,44 +273,9 @@ void WalkVisualization::publishModel(vector<string> &link_names, physics::ModelP
 }
 
 void WalkVisualization::publishSimulationState(ControllerParameters &params, gazebo::common::Time gz_time_now){
-    roboy_simulation::SimulationState msg;
+    roboy_simulation::ControllerParameters msg;
     msg.roboyID = ID;
-    msg.F_contact = params.F_contact;
-    msg.d_lift = params.d_lift;
-    msg.d_prep = params.d_prep;
-    msg.F_max = params.F_max;
-    msg.psi_heading = params.psi_heading;
-    msg.omega_heading = params.omega_heading;
-    msg.v_forward = params.v_forward;
-    msg.v_COM = params.v_COM;
-    msg.k_v = params.k_v;
-    msg.k_h = params.k_h;
-    msg.k_p_theta_left.assign(params.k_p_theta_left, params.k_p_theta_left+4);
-    msg.k_d_phi.assign(params.k_d_phi,params.k_d_phi+2);
-    msg.k_p_theta_right.assign(params.k_p_theta_right, params.k_p_theta_right+4);
-    msg.k_d_theta_left.assign(params.k_d_theta_left, params.k_d_theta_left+4);
-    msg.k_d_theta_right.assign(params.k_d_theta_right, params.k_d_theta_right+4);
-    msg.k_p_phi.assign(params.k_p_theta_left, params.k_p_theta_left+4);
-    msg.k_d_phi.assign(params.k_p_theta_left, params.k_p_theta_left+4);
-    msg.k_V = params.k_V;
-    msg.k_P = params.k_P;
-    msg.k_Q = params.k_Q;
-    msg.k_omega = params.k_omega;
-    msg.k_M_Fplus = params.k_M_Fplus;
-    msg.c_hip_lift = params.c_hip_lift;
-    msg.c_knee_lift = params.c_knee_lift;
-    msg.c_stance_lift = params.c_stance_lift;
-    msg.c_swing_prep = params.c_swing_prep;
-    msg.theta_groin_0.assign(params.theta_groin_0, params.theta_groin_0+2);
-    msg.phi_groin_0.assign(params.phi_groin_0, params.phi_groin_0+2);
-    msg.theta_trunk_0 = params.theta_trunk_0;
-    msg.phi_trunk_0 = params.phi_trunk_0;
-    msg.theta_knee.assign(params.theta_knee, params.theta_knee+2);
-    msg.theta_ankle.assign(params.theta_ankle, params.theta_ankle+2);
-    msg.d_s.assign(params.d_s, params.d_s+2);
-    msg.d_c.assign(params.d_c, params.d_c+2);
-    msg.v_s.assign(params.v_s, params.v_s+2);
-    msg.v_c.assign(params.v_c, params.v_c+2);
+    controllerParametersToMessage(params, msg);
     msg.sim_time = gz_time_now.Float();
     simulation_state_pub.publish(msg);
 }

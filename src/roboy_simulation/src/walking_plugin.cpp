@@ -494,7 +494,7 @@ void WalkingPlugin::changeID(int index){
     showStateMachineParameters();
 }
 
-void WalkingPlugin::updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg){
+void WalkingPlugin::updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg){
     if(msg->roboyID == currentID.second) {
         QTableWidgetItem *item0 = new QTableWidgetItem(QString::number(msg->F_contact));
         QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(msg->d_lift));

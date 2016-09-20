@@ -14,10 +14,13 @@
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 #include <interactive_markers/interactive_marker_server.h>
-//messages
+// ros messages
 #include <std_msgs/Int32.h>
+#include "roboy_simulation/ControllerParameters.h"
 // common definitions
 #include "CommonDefinitions.h"
+#include "controllerParameters.hpp"
+#include "helperClasses.hpp"
 
 using namespace gazebo;
 using namespace std;
@@ -32,24 +35,34 @@ class WalkTrainer{
 public:
     WalkTrainer();
     ~WalkTrainer();
+    /**
+     * initializes numberOfWorlds worlds and populates them with the legs
+     * @param numberOfWorlds
+     */
     void initializeWorlds(uint numberOfWorlds);
     void simulate();
-    transport::NodePtr node;
-    transport::PublisherPtr serverControlPub, resetPub;
-    vector<physics::WorldPtr> world;
-    vector<physics::ModelPtr> model;
-    vector<int> roboyIDs;
 private:
+    /** Initializes ControllerParameters */
+    void initializeControllerParameters(ControllerParameters &params, physics::ModelPtr parent_model);
     bool resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
     void initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
                                       physics::ModelPtr model, int roboyID);
     void updateID(const std_msgs::Int32::ConstPtr &msg);
     void simulationControl(const std_msgs::Int32::ConstPtr &msg);
+    transport::NodePtr node;
+    transport::PublisherPtr serverControlPub, resetPub;
 
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_world_srv;
-    ros::Subscriber roboyID_sub, sim_control_sub;
+    ros::ServiceClient roboyID_srv;
+    ros::Subscriber sim_control_sub;
+    ros::Publisher control_parameters_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
+
+    vector<int> roboyIDs;
+    vector<physics::WorldPtr> world;
+    vector<physics::ModelPtr> model;
+    vector<ControllerParameters> controllerParams;
 };
 
 void OnWorldModify(ConstWorldModifyPtr &_msg);

@@ -24,7 +24,7 @@
 //messages
 #include "roboy_simulation/VisualizationControl.h"
 #include "roboy_simulation/LegState.h"
-#include "roboy_simulation/SimulationState.h"
+#include "roboy_simulation/ControllerParameters.h"
 #include <std_srvs/Trigger.h>
 #include <std_msgs/Int32.h>
 #include "roboy_simulation/Abortion.h"
@@ -122,7 +122,7 @@ public Q_SLOTS:
 
     void changeID(int index);
 
-    void updateSimulationState(const roboy_simulation::SimulationState::ConstPtr &msg);
+    void updateSimulationState(const roboy_simulation::ControllerParameters::ConstPtr &msg);
 
     void resetWorld();
 
