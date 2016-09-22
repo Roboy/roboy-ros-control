@@ -5,7 +5,11 @@
 #include <gazebo/physics/physics.hh>
 // ros messages
 #include "roboy_simulation/ControllerParameters.h"
+// common definitions
+#include "CommonDefinitions.h"
 #include "controllerParameters.hpp"
+
+using namespace std;
 
 class CoordinateSystem{
 public:

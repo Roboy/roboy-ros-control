@@ -17,13 +17,21 @@
 // ros messages
 #include <std_msgs/Int32.h>
 #include "roboy_simulation/ControllerParameters.h"
+#include "roboy_simulation/UpdateControllerParameters.h"
+#include "roboy_simulation/Energies.h"
 // common definitions
 #include "CommonDefinitions.h"
 #include "controllerParameters.hpp"
 #include "helperClasses.hpp"
+// libcmaes
+#include "cmaes.h"
 
 using namespace gazebo;
 using namespace std;
+using namespace libcmaes;
+
+#define POPULATION_SIZE 5
+
 
 boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
 physics::ModelPtr modelControl;
@@ -31,9 +39,9 @@ bool paused = false;
 bool slow_motion = false;
 
 void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
-class WalkTrainer{
+class WalkTrainer : public CMAStrategy<CovarianceUpdate>{
 public:
-    WalkTrainer();
+    WalkTrainer(FitFunc &func, CMAParameters<> &parameters);
     ~WalkTrainer();
     /**
      * initializes numberOfWorlds worlds and populates them with the legs
@@ -41,12 +49,16 @@ public:
      */
     void initializeWorlds(uint numberOfWorlds);
     void simulate();
-private:
     /** Initializes ControllerParameters */
     void initializeControllerParameters(ControllerParameters &params, physics::ModelPtr parent_model);
     bool resetWorld(std_srvs::Trigger::Request  &req, std_srvs::Trigger::Response &res);
     void initializeInterActiveMarkers(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,
                                       physics::ModelPtr model, int roboyID);
+    dMat ask();
+    void eval(const dMat &candidates, const dMat &phenocandidates=dMat(0,0));
+    void tell();
+    bool stop();
+private:
     void updateID(const std_msgs::Int32::ConstPtr &msg);
     void simulationControl(const std_msgs::Int32::ConstPtr &msg);
     transport::NodePtr node;
@@ -54,9 +66,8 @@ private:
 
     ros::NodeHandlePtr nh;
     ros::ServiceServer reset_world_srv;
-    ros::ServiceClient roboyID_srv;
+    vector<ros::ServiceClient> control_parameters_srvs, energie_srvs;
     ros::Subscriber sim_control_sub;
-    ros::Publisher control_parameters_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     vector<int> roboyIDs;

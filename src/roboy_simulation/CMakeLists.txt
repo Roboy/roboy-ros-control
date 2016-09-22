@@ -35,13 +35,21 @@ add_message_files(
         MotorControl.msg
 )
 
+add_service_files(
+        DIRECTORY
+        srvs
+        FILES
+        UpdateControllerParameters.srv
+        Energies.srv
+)
+
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
 
 catkin_package(CATKIN_DEPENDS message_runtime message_generation)
 
-#find_package(PkgConfig)
-#pkg_check_modules(libcmaes REQUIRED libcmaes)
-#include_directories(${libcmaes_INCLUDE_DIRS})
+find_package(PkgConfig)
+pkg_check_modules(libcmaes REQUIRED libcmaes)
+include_directories(${libcmaes_INCLUDE_DIRS})
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
@@ -49,7 +57,6 @@ include_directories(
         include/muscle
         ${CMAKE_CURRENT_SOURCE_DIR}/../common_utilities/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../flexrayusbinterface/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../devel/include
 )
 #==============================================================================
 # Application
@@ -86,7 +93,7 @@ target_link_libraries(force_torque_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES
 
 add_executable(walkTrainer src/walkTrainer.cpp src/helperClasses.cpp)
 add_dependencies(walkTrainer common_utilities_gencpp roboy_simulation_gencpp)
-target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(walkTrainer ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${libcmaes_LIBRARIES})
 
 add_library(WalkController SHARED src/walkController.cpp src/walkVisualization.cpp src/helperClasses.cpp)
 add_dependencies(WalkController common_utilities_gencpp roboy_simulation_gencpp)

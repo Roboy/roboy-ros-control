@@ -1,23 +1,48 @@
 #pragma once
 
-struct ControllerParameters{
-    double F_contact = 10.0, d_lift = -0.3, d_prep = 0.0;
-    double F_max = 500;
-    // desired user values
-    double psi_heading = 0.0;
-    double omega_heading = 0.0;
-    double v_forward = 1.0;
-    double v_COM;
+#include <vector>
+using namespace std;
 
+#define TOTAL_NUMBER_CONTROLLER_PARAMETERS 53
+
+enum PARAMETERS{
+    F_contact = 0,
+    d_lift,
+    d_prep,
+    F_max,
     // target feature gains
-    double k_v, k_h, k_p_theta_left[4], k_p_theta_right[4], k_d_theta_left[4],
-            k_d_theta_right[4], k_p_phi[2], k_d_phi[2];
+    k_v,
+    k_h,
+    k_p_theta_left = 6,
+    k_p_theta_right = 10,
+    k_d_theta_left = 14,
+    k_d_theta_right = 18,
+    k_p_phi = 22,
+    k_d_phi = 24,
     // target force torque gains
-    double k_V = 1.0, k_P = 1.0, k_Q = 1.0, k_omega = 1.0;
-    // feedback gains
-    double k_M_Fplus = 1.0, c_hip_lift = 1.0, c_knee_lift = 1.0,
-            c_stance_lift = 0.2, c_swing_prep = 0.2;
-    double theta_groin_0[2], phi_groin_0[2], theta_trunk_0,
-            phi_trunk_0, theta_knee[2], theta_ankle[2];
-    double d_s[2], d_c[2], v_s[2], v_c[2];
+    k_V = 26,
+    k_P,
+    k_Q,
+    k_omega,
+    // feedback gains/ constant excitation
+    k_M_Fplus,
+    c_hip_lift,
+    c_knee_lift,
+    c_stance_lift,
+    c_swing_prep,
+    // initial pose
+    theta_groin_0 = 35,
+    phi_groin_0= 37,
+    theta_trunk_0 = 39,
+    phi_trunk_0,
+    // knee and ankle pitch
+    theta_knee = 41,
+    theta_ankle = 43,
+    // foot displacement parameters
+    d_s = 45,
+    d_c = 47,
+    v_s = 49,
+    v_c = 51
 };
+
+typedef vector<double> ControllerParameters;

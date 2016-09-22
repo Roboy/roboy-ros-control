@@ -35,6 +35,8 @@
 #include "roboy_simulation/ForceTorque.h"
 #include "roboy_simulation/LegState.h"
 #include "roboy_simulation/ControllerParameters.h"
+#include "roboy_simulation/UpdateControllerParameters.h"
+#include "roboy_simulation/Energies.h"
 #include "common_utilities/Initialize.h"
 #include "common_utilities/EmergencyStop.h"
 #include "common_utilities/Record.h"
@@ -44,8 +46,6 @@
 #include "common_utilities/RoboyState.h"
 #include "roboy_simulation/Abortion.h"
 #include "roboy_simulation/MotorControl.h"
-// libcmaes
-//#include "cmaes.h"
 
 #include "walkVisualization.hpp"
 #include "helperClasses.hpp"
@@ -168,19 +168,21 @@ public:
      * Callback for update of control parameters, typically sent by walkTrainer
      * @param msg with new control parameters
      */
-    void updateControllerParameters(const roboy_simulation::ControllerParameters::ConstPtr &msg);
+    bool updateControllerParameters(roboy_simulation::UpdateControllerParameters::Request  &req,
+                                    roboy_simulation::UpdateControllerParameters::Response &res);
 
-    /** callback for setting the roboyID */
-//    bool roboyID(roboy_simulation::RoboyID::Request  &req, roboy_simulation::RoboyID::Response &res);
+    bool energiesService(roboy_simulation::Energies::Request  &req,
+                         roboy_simulation::Energies::Response &res);
+
 
 private:
-    int roboyID = -1;
+    static int roboyID_generator;
+    int roboyID = 0;
     ros::NodeHandlePtr nh;
     ros::Subscriber force_torque_ankle_left_sub, force_torque_ankle_right_sub, motor_control_sub,
-            steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub,
-            control_parameters_sub;
+            steer_recording_sub, record_sub, init_sub, toggle_walk_controller_sub, e_stop_sub;
     ros::Publisher visualizeTendon_pub, roboyID_pub, abort_pub;
-    ros::ServiceServer roboyID_srv;
+    ros::ServiceServer roboyID_srv, control_parameters_srv, energies_srv;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     bool e_stop_active, last_e_stop_active;
@@ -205,6 +207,9 @@ private:
     bool control = false;
 
     ControllerParameters params;
+
+    double v_forward = 1.0;
+    double psi_heading = 0.0;
 
     math::Vector3 foot_sole[2], foot_sole_global[2], d_foot_pos[2], d_foot_vel[2];
 

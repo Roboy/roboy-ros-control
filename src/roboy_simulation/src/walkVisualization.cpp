@@ -377,8 +377,8 @@ void WalkVisualization::publishStateMachineParameters(math::Vector3 *center_of_m
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += params.d_s[LEG::LEFT]*hip_CS->X.x;
-    p.y += params.d_s[LEG::LEFT]*hip_CS->X.y;
+    p.x += params[d_s+LEG::LEFT]*hip_CS->X.x;
+    p.y += params[d_s+LEG::LEFT]*hip_CS->X.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -398,8 +398,8 @@ void WalkVisualization::publishStateMachineParameters(math::Vector3 *center_of_m
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += params.d_c[LEG::LEFT]*hip_CS->Y.x;
-    p.y += params.d_c[LEG::LEFT]*hip_CS->Y.y;
+    p.x += params[d_c+LEG::LEFT]*hip_CS->Y.x;
+    p.y += params[d_c+LEG::LEFT]*hip_CS->Y.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -420,8 +420,8 @@ void WalkVisualization::publishStateMachineParameters(math::Vector3 *center_of_m
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += params.d_s[LEG::RIGHT]*hip_CS->X.x;
-    p.y += params.d_s[LEG::RIGHT]*hip_CS->X.y;
+    p.x += params[d_s+LEG::RIGHT]*hip_CS->X.x;
+    p.y += params[d_s+LEG::RIGHT]*hip_CS->X.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
@@ -441,8 +441,8 @@ void WalkVisualization::publishStateMachineParameters(math::Vector3 *center_of_m
     p.y = center_of_mass[POSITION].y;
     p.z = 0;
     arrow.points.push_back(p);
-    p.x += params.d_c[LEG::RIGHT]*hip_CS->Y.x;
-    p.y += params.d_c[LEG::RIGHT]*hip_CS->Y.y;
+    p.x += params[d_c+LEG::RIGHT]*hip_CS->Y.x;
+    p.y += params[d_c+LEG::RIGHT]*hip_CS->Y.y;
     p.z = 0;
     arrow.points.push_back(p);
     marker_visualization_pub.publish(arrow);
