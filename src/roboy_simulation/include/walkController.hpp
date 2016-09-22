@@ -204,7 +204,7 @@ private:
 
     LEG_STATE leg_state[2];
 
-    bool control = false;
+    bool control = true;
 
     ControllerParameters params;
 
@@ -212,6 +212,11 @@ private:
     double psi_heading = 0.0;
 
     math::Vector3 foot_sole[2], foot_sole_global[2], d_foot_pos[2], d_foot_vel[2];
+
+    double initial_contact_time[2];
+    bool initial_contact[2];
+    math::Vector3 initial_contact_pos[2];
+    double v_base = 0;
 
     // coordinate systems
     CoordSys hip_CS;
@@ -229,6 +234,14 @@ private:
     map<string,deque<double>> activity;
     map<string,double> feedback;
     map<string,double> a;
+
+    // energies
+    double E_speed = 0, E_headori = 0, E_headvel = 0, E_slide = 0, E_effort = 0;
+    double E_speed_int = 0, E_headori_int = 0, E_headvel_int = 0, E_slide_int = 0, E_effort_int = 0;
+    // weights
+    double w_speed = 100.0, w_headori = 10.0, w_headvel = 10.0, w_slide = 10.0, w_effort = 0.1;
+    // thresholds
+    double H_speed = 0.1, H_headori = 0.2, H_headvel = 0.3, H_slide = 0.2, H_effort = 0;
 
     math::Vector3 center_of_mass[2], initial_center_of_mass_height;
     double v_COM;

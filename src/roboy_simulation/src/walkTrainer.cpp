@@ -33,9 +33,9 @@ WalkTrainer::WalkTrainer(FitFunc &func, CMAParameters<> &parameters):CMAStrategy
     reset_world_srv = nh->advertiseService("/roboy/reset_world", &WalkTrainer::resetWorld, this);
     sim_control_sub = nh->subscribe("/roboy/sim_control", 1, &WalkTrainer::simulationControl, this);
 
-    initializeWorlds(POPULATION_SIZE);
+    initializeWorlds(15);
 
-    controllerParams.resize(POPULATION_SIZE);
+    controllerParams.resize(15);
 };
 
 WalkTrainer::~WalkTrainer() {
@@ -223,7 +223,8 @@ void WalkTrainer::eval(const dMat &candidates,
         // retrieve energies
         roboy_simulation::Energies msg2;
         energie_srvs[roboyID].call(msg2);
-        _solutions.get_candidate(roboyID).set_fvalue(msg2.response.e0);
+        double total_energie = msg2.response.E_speed + msg2.response.E_headori + msg2.response.E_effort;
+        _solutions.get_candidate(roboyID).set_fvalue(total_energie);
         //std::cerr << "candidate x: " << _solutions.get_candidate(r).get_x_dvec().transpose() << std::endl;
     }
     update_fevals(candidates.cols());
@@ -314,7 +315,7 @@ int main(int _argc, char **_argv) {
     }
 
     int dim = TOTAL_NUMBER_CONTROLLER_PARAMETERS; // problem dimensions.
-    std::vector<double> x0(dim, 1.0);
+    std::vector<double> x0(dim, 0.1);
     double sigma = 0.1;
     CMAParameters<> cmaparams(x0, sigma, POPULATION_SIZE);
     FitFunc dummyFunc = [](const double *x, const int N){ return 0; };

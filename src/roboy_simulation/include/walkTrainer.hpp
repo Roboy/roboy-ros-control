@@ -30,7 +30,7 @@ using namespace gazebo;
 using namespace std;
 using namespace libcmaes;
 
-#define POPULATION_SIZE 5
+#define POPULATION_SIZE 1
 
 
 boost::shared_ptr<interactive_markers::InteractiveMarkerServer> interactive_marker_server;
@@ -58,6 +58,7 @@ public:
     void eval(const dMat &candidates, const dMat &phenocandidates=dMat(0,0));
     void tell();
     bool stop();
+    ControllerParameters inital_params;
 private:
     void updateID(const std_msgs::Int32::ConstPtr &msg);
     void simulationControl(const std_msgs::Int32::ConstPtr &msg);

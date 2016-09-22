@@ -199,6 +199,7 @@ void WalkController::Update() {
         updateTargetFeatures();
         updateMuscleForces();
         updateMuscleActivities();
+        updateEnergies();
     }
 
     // Check if we should update the controllers
@@ -231,7 +232,7 @@ void WalkController::Update() {
         if(visualizeStateMachineParameters)
             publishStateMachineParameters(center_of_mass, foot_sole_global, hip_CS, params);
 
-        publishCoordinateSystems(parent_model->GetLink("halterung"), ros::Time::now(), false);
+        publishCoordinateSystems(parent_model->GetLink("hip"), ros::Time::now(), false);
         publishSimulationState(params, gz_time_now);
         publishID();
         publishLegState(leg_state);
@@ -259,8 +260,10 @@ void WalkController::writeSim(ros::Time time, ros::Duration period) {
     for (uint muscle = 0; muscle < sim_muscles.size(); muscle++) {
         for(int i = 0; i < sim_muscles[muscle]->viaPoints.size(); i++){
             std::shared_ptr<roboy_simulation::IViaPoints> vp = sim_muscles[muscle]->viaPoints[i];
-            vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
-            vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
+            if(vp->prevForcePoint.IsFinite() && vp->nextForcePoint.IsFinite() ) {
+                vp->link->AddForceAtWorldPosition(vp->prevForce, vp->prevForcePoint);
+                vp->link->AddForceAtWorldPosition(vp->nextForce, vp->nextForcePoint);
+            }
         }
     }
 }
@@ -277,6 +280,21 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
 
     switch (leg_state[msg->leg]) {
         case Stance: {
+            if(initial_contact[msg->leg]){ // calculate base velocity based on the foot position
+                initial_contact[msg->leg] = false;
+                initial_contact_time[msg->leg] = gz_time_now.Float();
+                initial_contact_pos[msg->leg] = foot_sole_global[msg->leg];
+                if(msg->leg == LEG::LEFT){
+                    v_base = (parent_model->GetLink(FOOT[msg->leg])->GetWorldPose().pos
+                              - initial_contact_pos[LEG::RIGHT]).GetLength()
+                             /(initial_contact_time[msg->leg]-initial_contact_time[LEG::RIGHT]);
+                }else if(msg->leg == LEG::RIGHT) {
+                    v_base = (parent_model->GetLink(FOOT[msg->leg])->GetWorldPose().pos
+                              - initial_contact_pos[LEG::LEFT]).GetLength()
+                             / (initial_contact_time[msg->leg] - initial_contact_time[LEG::LEFT]);
+                }
+            }
+
             if (params[d_s+msg->leg] < params[d_lift] || (leg_state[LEG::LEFT] == Stance && leg_state[LEG::RIGHT] ==
                                                                                                    Stance)) {
                 state_transition = true;
@@ -285,6 +303,7 @@ void WalkController::finite_state_machine(const roboy_simulation::ForceTorque::C
             break;
         }
         case Lift_off: {
+            initial_contact[msg->leg] = true;
             double force_norm = sqrt(pow(msg->force.x, 2.0) + pow(msg->force.y, 2.0) + pow(msg->force.z, 2.0));
             if (force_norm < params[F_contact]) {
                 state_transition = true;
@@ -586,7 +605,7 @@ void WalkController::updateMuscleForces() {
 void WalkController::updateMuscleActivities(){
     // queue the activities for time delayed feedbacks
     for(uint muscle=0; muscle<sim_muscles.size(); muscle++) {
-        activity[sim_muscles[muscle]->name].push_back(F_tilde[sim_muscles[muscle]->name] / params[F_max]);
+        activity[sim_muscles[muscle]->name].push_back(F_tilde[sim_muscles[muscle]->name]);
     }
     // update the feedbacks. this depends on the current state of each leg
     for(uint leg=0; leg<=2; leg++){
@@ -695,11 +714,29 @@ void WalkController::updateMuscleActivities(){
         activity[sim_muscles[muscle]->name].pop_front();
         sim_muscles[muscle]->cmd = a[sim_muscles[muscle]->name];
     }
-    ROS_INFO("a: %lf, activity: %lf, feedback %lf", a["motor0"], activity["motor0"].front(),
-             feedback["motor0"]);
+    ROS_INFO("a: %lf, activity(%d): %lf, feedback %lf, Fmax %lf", a["motor0"], activity["motor0"].size(),
+             activity["motor0"].front(), feedback["motor0"], params[F_max]);
 }
 
 void WalkController::updateEnergies(){
+    E_speed += fabs(1.0-v_base/v_forward);
+    if(E_speed < H_speed)
+        E_speed = 0;
+    E_speed_int = w_speed * E_speed;
+    math::Quaternion q = Q["hip"] * parent_model->GetLink("hip")->GetWorldPose().rot.GetInverse();
+    math::Vector3 v(q.x, q.y, q.z);
+    double norm = v.GetLength();
+    math::Vector3 exponent = exp(q.w) * (cos(norm) * math::Vector3::One + v.Normalize() * sin(norm));
+    E_headori += (Q["hip"].GetAsMatrix3() * exponent ).GetLength();
+    if(E_headori < H_headori)
+        E_headori = 0;
+    E_headori_int = w_headori * E_headori;
+    for(uint i=0; i<sim_muscles.size(); i++){
+        E_effort += sim_muscles[i]->cmd;
+    }
+    if(E_effort < H_effort)
+        E_effort = 0;
+    E_effort_int = w_effort * E_effort;
 
 }
 
@@ -1097,7 +1134,11 @@ bool WalkController::updateControllerParameters(roboy_simulation::UpdateControll
 
 bool WalkController::energiesService(roboy_simulation::Energies::Request  &req,
                      roboy_simulation::Energies::Response &res){
-    res.e0 = 100;
+    res.E_speed = E_speed_int;
+    res.E_headvel = E_headvel_int;
+    res.E_headori = E_headori_int;
+    res.E_slide = E_slide_int;
+    res.E_effort = E_effort_int;
     return true;
 }
 
