@@ -7,3 +7,12 @@
 [submodule "src/roboy_models"]
 	path = src/roboy_models
 	url = https://github.com/Roboy/roboy_models
+[submodule "src/roboy_controller"]
+	path = src/roboy_controller
+	url = https://github.com/Roboy/roboy_controller
+[submodule "src/roboy_simulation"]
+	path = src/roboy_simulation
+	url = https://github.com/Roboy/roboy_simulation
+[submodule "src/roboy_hardware"]
+	path = src/roboy_hardware
+	url = https://github.com/Roboy/roboy_hardware

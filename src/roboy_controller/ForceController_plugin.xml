@@ -1,7 +1,0 @@
-<library path="lib/libForceController">
-  <class name="roboy_controller/ForceController" type="ForceController" 
-base_class_type="controller_interface::ControllerBase">
-    <description>This is a force controller plugin.</description>
-  </class>
-</library>
-
