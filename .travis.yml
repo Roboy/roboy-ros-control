@@ -1,32 +1,44 @@
-# Use ubuntu trusty (14.04) with sudo privileges.
 dist: trusty
 sudo: required
 language:
-  - generic
+- generic
 cache:
-  - apt
-
+- apt
 env:
   global:
-    - ROS_CI_DESKTOP="`lsb_release -cs`"  # e.g. [precise|trusty|...]
-    - ROS_PARALLEL_JOBS='-j8 -l6'
-
+  - ROS_CI_DESKTOP="`lsb_release -cs`"
+  - ROS_PARALLEL_JOBS='-j8 -l6'
 script:
-  - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
-  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-  - sudo apt-get update -qq
-  - mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/ros_control && cd ros_control && git checkout develop && git submodule init && git submodule update
-  - cd ~/workspace/ros_control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb && cd ~/workspace/ros_control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h && sudo cp WinTypes.h /usr/include/
-  - sudo apt-get install -y ros-jade-desktop
-  - sudo apt-get install -y ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
-  - sudo bash -c 'curl -ssL http://get.gazebosim.org | sh'
-  - sudo apt-get install -y ros-jade-driver-base ros-jade-polled-camera ros-jade-camera-info-manager
-  - mkdir -p ~/ros_ws/src && cd ~/ros_ws/src && git clone https://github.com/ros-simulation/gazebo_ros_pkgs && cd gazebo_ros_pkgs && git checkout jade-devel
-  - cd ~/ros_ws/src &&  git clone https://github.com/andreasBihlmaier/gazebo2rviz.git && git clone https://github.com/andreasBihlmaier/pysdf
-  - cd ~/ros_ws && sudo bash -c 'source /opt/ros/jade/setup.bash && catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release'
-  - source /opt/ros/jade/setup.bash
-  - cd ~/workspace/ros_control
-  - catkin_make --pkg common_utilities
-  - source devel/setup.bash
-  - catkin_make
-  - source devel/setup.bash
+- sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\"
+  > /etc/apt/sources.list.d/ros-latest.list"
+- wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+- sudo apt-get update -qq
+- mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/roboy-ros-control
+  && cd roboy-ros-control && git checkout master && git submodule update --init --recursive
+- cd ~/workspace/roboy-ros-control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb
+  && cd ~/workspace/roboy-ros-control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h
+  && sudo cp WinTypes.h /usr/include/
+- sudo apt-get install -y ros-jade-desktop
+- sudo apt-get install -y ros-jade-controller-interface ros-jade-controller-manager
+  ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
+- sudo bash -c 'curl -ssL http://get.gazebosim.org | sh'
+- sudo apt-get install -y ros-jade-driver-base ros-jade-polled-camera ros-jade-camera-info-manager
+- mkdir -p ~/ros_ws/src && cd ~/ros_ws/src && git clone https://github.com/ros-simulation/gazebo_ros_pkgs
+  && cd gazebo_ros_pkgs && git checkout jade-devel
+- cd ~/ros_ws/src &&  git clone https://github.com/andreasBihlmaier/gazebo2rviz.git
+  && git clone https://github.com/andreasBihlmaier/pysdf
+- cd ~/ros_ws && sudo bash -c 'source /opt/ros/jade/setup.bash && catkin_make_isolated
+  --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release'
+- source /opt/ros/jade/setup.bash
+- cd ~/workspace/roboy-ros-control
+- catkin_make --pkg common_utilities
+- source devel/setup.bash
+- catkin_make
+- source devel/setup.bash
+deploy:
+  provider: launchpad
+  slug: lp:~letrend/roboy/common_utilities
+  oauth_token:
+    secure: ZkjXwoArHGBITBYPlf4ZGSyBCZMLDOv4FCFL2oUBpsQB8uOouVx7SnLWwzwBWEgBpgZS2gK7xLk9XRuVvzzNANqE3zrXPzMU4Pshkf7koOa13r7VmHdYwk1jr8R7kmWgRAMWRuR+GAgaX/AwuilNDOPYNuckFNtevAb5HvQyMbVp5vZVrMg0zDb61jpQPINC7eEaGlT/m53pGmsn6lSuEWeojBoiOJ7J3Xnk3gXSYLKuGl7u9uDc6jpmBqv/hOKSDJc2gqR7zqjpnp6K9667QjK2ho486NdXQwqNI1Dc7xuvhW+6e5uud37nnBG77Cdb3RCEbDY48x+1G3WLV3Hj7hX9jMp+bqB58Sz2+NEa47wiUV7vhT8nhnpfk9EdMlCFRgpbpQG81EEUjW/MMD8Gz0Ns1ghuuJuMNKoUAp6TtBnyMDismJ8pLkuczAxCJjN82t1fK/YMMGulPOjZl41bsSSofz5ZQMXnDM0MRXIISkBIXz2ws8jXJCCSYoeqWeLFxX+Ezz3seR2e+4l6PePmgJKZI5nqqxnWf693ocVgmbvHZqMkUXJV0ADf4GojmYyZsXTolLbNPU9qtyIJ3oYZ6JSamAcrZC/uWJq8Mzf3NEXXMkj0YfpH7D9Zju3qw545nYgFDeezjIz+nQSfY94rlXX5hRUvY3jydzqYGrotEpQ=
+  oauth_token_secret:
+    secure: l6FYIc/gpgzEHklXZP8KhKEsnrPzxBJyfkuOSuvrZKGETf+GJPid+FUfdcERnlWAj6oA7mAmHvwOGnbMRyfxBEBDO9lDVMK1/8HMtbiq3o1CRB8KSRa6VH7V/bfw7KIyXWDsg5BJVh4wB3gjk48JZB4Mz1/pBBuqwVUKvR28+7eNxtIBtN9/5jETspZyWyEOF+F6ohB4kc3sk452NuROt/8h/DdfZoCHCulGAJ4OTfbhPg/EqlvChaHuE+mbxEiyv8BwC0hiE4B0A/o4KDm8G3PHS8xSZGn2ZNf0htiJbagcVygJSXA6UA+zk4IlD846BCtgfzKYnVwOT452WG/AjNsdnJqir7Tbr9/RF+gSyzohe6S+tO5ypSq5yirLaryVlOMlndjJi3DFx6Z+fQT1iz7j3pSqam4/4zYjOAQVAFdtZUaKfcTxMKHS5+/KL5TH/Eo3lx4yuGIvMF3xletvUPgu7eWQ3BKQKMikzy3pvdKsGm+BwhXyjhEyiWxDJ0ofZu2/AVUtZ/vVc7vBCd7DWjwsjX4n/Yhuw2h6b3Xl8YmaOb/6dh/hpyBvy95RwgCNJomZxZNETsqCYWCpOWkQL3o0kxI9VCB7xtOX5VwElBHJaZKNogfWzC85SNpA3tdWd8bxmVJsjbZ5qY+92gfvTxAVvMawulhW3ntdQ0WR1xY=
