@@ -13,28 +13,19 @@ branches:
   only:
   - master
 script:
-- sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\"
-  > /etc/apt/sources.list.d/ros-latest.list"
-- wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-- sudo add-apt-repository -y ppa:letrend/libcmaes 
+# add libcmaes and ros-jade repos
+- sudo add-apt-repository -y ppa:letrend/libcmaes
+- sudo add-apt-repository -y ppa:letrend/ros-jade 
 - sudo apt-get update -qq
+# install jade and libcmaes
+- sudo apt-get install -y ros-jade
+- sudo apt-get install -y libcmaes
+# clone the code
 - mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/roboy-ros-control
   && cd roboy-ros-control && git checkout master && git submodule update --init --recursive
 - cd ~/workspace/roboy-ros-control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb
   && cd ~/workspace/roboy-ros-control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h
   && sudo cp WinTypes.h /usr/include/
-- sudo apt-get install -y ros-jade-desktop
-- sudo apt-get install -y ros-jade-controller-interface ros-jade-controller-manager
-  ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
-- sudo apt-get install -y libcmaes
-- sudo bash -c 'curl -ssL http://get.gazebosim.org | sh'
-- sudo apt-get install -y ros-jade-driver-base ros-jade-polled-camera ros-jade-camera-info-manager
-- mkdir -p ~/ros_ws/src && cd ~/ros_ws/src && git clone https://github.com/ros-simulation/gazebo_ros_pkgs
-  && cd gazebo_ros_pkgs && git checkout jade-devel
-- cd ~/ros_ws/src &&  git clone https://github.com/andreasBihlmaier/gazebo2rviz.git
-  && git clone https://github.com/andreasBihlmaier/pysdf
-- cd ~/ros_ws && sudo bash -c 'source /opt/ros/jade/setup.bash && catkin_make_isolated
-  --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release'
 - source /opt/ros/jade/setup.bash
 - cd ~/workspace/roboy-ros-control
 - catkin_make --pkg common_utilities
