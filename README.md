@@ -1,54 +1,29 @@
 ## Description ##
-Ros control provides ros control hierarchy for roboy (v2.0) hardware. 
-If you have any questions feel free to contact one of the team members from [rosifying team](https://devanthro.atlassian.net/wiki/display/RM/ROSifying+Myorobotics+Development), or [simulations team](https://devanthro.atlassian.net/wiki/display/SIM/Simulations).
+roboy-ros-control provides ros control hierarchy for roboy (v2.0) hardware. 
+If you have any questions feel free to contact one of the team members from [dynamic_balancing](https://devanthro.atlassian.net/wiki/display/DDB/Development+-+Dynamic+Balancing)
+
 # Installation from launchpad ppa
-Please note, that this version assumes [ROS indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) to be installed on your system.
+NOTE: The roboy-ros-control ppa is build for Ubuntu 16.04 (xenial). It is is not available for Ubuntu 14.04 (trusty). ROS jade is not officially supported on Ubuntu xenial, however you can find a full installation of ROS jade [here](https://launchpad.net/~letrend/+archive/ubuntu/ros-jade). Installing roboy-ros-control in the following will automatically install all packages you need, for running the code.
 ### add the ppas to your apt source list
 ```
 #!bash
-sudo add-apt-repository -y ppa:letrend/ros-indigo-controller-interface
-sudo add-apt-repository -y ppa:letrend/ros-indigo-controller-manager
-sudo add-apt-repository -y ppa:letrend/ros-indigo-hardware-interface
-sudo add-apt-repository -y ppa:letrend/ros-indigo-control-toolbox
-sudo add-apt-repository -y ppa:letrend/ros-indigo-transmission-interface
-sudo add-apt-repository -y ppa:letrend/ros-indigo-joint-limits-interface
-sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo-ros
-sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo-ros-control
-sudo add-apt-repository -y ppa:letrend/ros-indigo-pysdf
-sudo add-apt-repository -y ppa:letrend/ros-indigo-gazebo2rviz
 sudo add-apt-repository -y ppa:letrend/roboy-ros-control
 sudo apt-get update
-```
-### install gazebo5
-If you dont have gazebo5 already installed on your system:
-```
-#!bash
-sudo apt-get install gazebo5 libgazebo5-dev
 ```
 ### install
 ```
 #!bash
-sudo apt-get install ros-indigo-gazebo-ros-control
-sudo apt-get install ros-indigo-pysdf
-sudo apt-get install ros-indigo-gazebo2rviz
 sudo apt-get install roboy-ros-control
 ```
-NOTE: if the installation of ros-indigo-gazebo-ros-control falis, complaining about gazebo2 which cannot be installed, this is because the ros-indigo-gazebo-ros-control is also available from the standard repo, which has been compiled against gazebo2. You need to download and open the [ros-indigo-gazebo-ros-control_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros-control/+packages) and [ros-indigo-gazebo-ros_x.x.x-1_amd64.deb](https://launchpad.net/~letrend/+archive/ubuntu/ros-indigo-gazebo-ros/+packages) with the Ubuntu Software Center and install it.
 ### symlink to meshes
 For gazebo to find the meshes, create a symlink:
 ```
 #!bash
 mkdir ~/.gazebo/models
-ln -s /opt/ros/indigo/share/roboy_simulation/legs_with_muscles_simplified ~/.gazebo/models/
+ln -s /opt/ros/jade/share/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
+ln -s /opt/ros/jade/share/roboy_models/arm ~/.gazebo/models/
+ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ```
-### pysdf
-Because pysdf expects a catkin_ws folder, we need to create one:
-```
-#!bash
-mkdir -p ~/catkin_ws/src
-```
-### rviz
-For rviz to show the model, you need to change the 'Fixed Frame' to 'world', then under 'Add' you need to add a 'Marker'. Under 'Panels'->'Add new Panel'->'WalkingPlugin' you cann add a Panel with which to steer the different visualizations.
 # Building from source #
 The following instructions guide you through the process of building this repo from source.
 ## Dependencies
@@ -196,14 +171,8 @@ catkin_make
 #!bash
 cd path/to/roboy-ros-control
 source devel/setup.bash
-roslaunch myo_master roboy.launch
+roslaunch roboy_hardware roboy.launch
 ```
-## with simulated roboy
-```
-#!bash
-roslaunch myo_master roboySim.launch
-```
-
 ## with walkTrainer
 ```
 #!bash
