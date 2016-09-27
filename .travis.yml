@@ -13,25 +13,25 @@ branches:
   only:
   - master
 script:
-# add libcmaes and ros-jade repos
-- sudo add-apt-repository -y ppa:letrend/libcmaes
-- sudo add-apt-repository -y ppa:letrend/ros-jade 
-- sudo apt-get update -qq
-# install jade and libcmaes
-- sudo apt-get install -y ros-jade
-- sudo apt-get install -y libcmaes
-# clone the code
-- mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/roboy-ros-control
-  && cd roboy-ros-control && git checkout master && git submodule update --init --recursive
-- cd ~/workspace/roboy-ros-control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb
-  && cd ~/workspace/roboy-ros-control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h
-  && sudo cp WinTypes.h /usr/include/
-- source /opt/ros/jade/setup.bash
-- cd ~/workspace/roboy-ros-control
-- catkin_make --pkg common_utilities
-- source devel/setup.bash
-- catkin_make
-- source devel/setup.bash
+## add libcmaes and ros-jade repos
+#- sudo add-apt-repository -y ppa:letrend/libcmaes
+#- sudo add-apt-repository -y ppa:letrend/ros-jade 
+#- sudo apt-get update -qq
+## install jade and libcmaes
+#- sudo apt-get install -y ros-jade
+#- sudo apt-get install -y libcmaes
+## clone the code
+#- mkdir -p ~/workspace && cd ~/workspace && git clone https://github.com/Roboy/roboy-ros-control
+#  && cd roboy-ros-control && git checkout master && git submodule update --init --recursive
+#- cd ~/workspace/roboy-ros-control/src/flexrayusbinterface/lib && sudo dpkg -i libftd2xx_1.1.12_amd64.deb
+#  && cd ~/workspace/roboy-ros-control/src/myo_master/patches && sudo rm /usr/include/WinTypes.h
+#  && sudo cp WinTypes.h /usr/include/
+#- source /opt/ros/jade/setup.bash
+#- cd ~/workspace/roboy-ros-control
+#- catkin_make --pkg common_utilities
+#- source devel/setup.bash
+#- catkin_make
+#- source devel/setup.bash
 # the deployment triggers code pull on launchpad, which triggers daily build recipe
 deploy:
 - provider: launchpad
