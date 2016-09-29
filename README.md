@@ -7,6 +7,7 @@ NOTE: The roboy-ros-control ppa is build for Ubuntu 16.04 (xenial). It is is not
 ### add the ppas to your apt source list
 ```
 #!bash
+sudo add-apt-repository -y ppa:letrend/ros-jade
 sudo add-apt-repository -y ppa:letrend/roboy-ros-control
 sudo apt-get update
 ```
