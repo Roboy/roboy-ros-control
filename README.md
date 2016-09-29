@@ -15,6 +15,7 @@ sudo apt-get update
 ```
 #!bash
 sudo apt-get install roboy-ros-control
+source /opt/ros/jade/setup.bash
 ```
 ### In order to use the simulation: symlink to meshes
 For gazebo to find the meshes, create a symlink:
