@@ -33,9 +33,6 @@ ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ### start the controller_manager
 ```
 #!bash
-cd path/to/roboy-ros-control
-source devel/setup.bash         # This command with an absolute path could be
-                                # added to your ~/.bashrc to ease the use
 roslaunch roboy_hardware roboy.launch
 ```
 ### initialise the controllers
@@ -62,8 +59,15 @@ float32 samplerate
 float32[] waypoints
 ```
 The message then should be published on the topic: /roboy/trajectory/**your_joint_name** as defined in i.e. [ForceController.cpp](https://github.com/Roboy/roboy_controller/blob/master/src/ForceController.cpp#L32) (similar for the other controllers)
+
 This will automatically stop the controller of the associated controller.
 Do this for all motors you want to set trajectories for.
+
+If you forgot your motor name you should be able to list all of the available ROS topics with:
+```
+rostopic list
+```
+
 ### start the controllers
 Now you can start **all controllers at once**:
 
