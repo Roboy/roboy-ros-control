@@ -15,6 +15,10 @@ sudo apt-get update
 ```
 #!bash
 sudo apt-get install roboy-ros-control
+source /opt/ros/jade/setup.sh 
+
+# potentially add it to your bash script:
+echo 'source /opt/ros/jade/setup.sh' >> ~/.bashrc
 ```
 ### In order to use the simulation: symlink to meshes
 For gazebo to find the meshes, create a symlink:
@@ -33,6 +37,8 @@ ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ### start the controller_manager
 ```
 #!bash
+source /opt/ros/jade/setup.sh           # In case you haven't done it for 
+                                        # your current shell yet
 roslaunch roboy_hardware roboy.launch
 ```
 ### initialise the controllers
