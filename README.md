@@ -8,8 +8,8 @@ NOTE: The roboy-ros-control ppa is build for Ubuntu 14.04 (trusty) and Ubuntu 16
 On Ubuntu 14.04 (trusty):
 ```
 #!bash
-sudo add-apt-repository ppa:ethz-asl/gazebo
-sudo add-apt-repository ppa:ethz-asl/ros-indigo
+sudo add-apt-repository -y ppa:ethz-asl/gazebo
+sudo add-apt-repository -y ppa:ethz-asl/ros-indigo
 sudo add-apt-repository -y ppa:letrend/octomap
 ```
 On either distro:
