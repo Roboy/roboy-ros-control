@@ -3,21 +3,31 @@ roboy-ros-control provides ros control hierarchy for roboy (v2.0) hardware.
 If you have any questions feel free to contact one of the team members from [dynamic_balancing](https://devanthro.atlassian.net/wiki/display/DDB/Development+-+Dynamic+Balancing)
 
 # Installation from launchpad ppa
-NOTE: The roboy-ros-control ppa is build for Ubuntu 16.04 (xenial). It is is not available for Ubuntu 14.04 (trusty). ROS jade is not officially supported on Ubuntu xenial, however you can find a full installation of ROS jade [here](https://launchpad.net/~letrend/+archive/ubuntu/ros-jade). Installing roboy-ros-control in the following will automatically install all packages you need, for running the code.
+NOTE: The roboy-ros-control ppa is build for Ubuntu 14.04 (trusty) and Ubuntu 16.04 (xenial). ROS jade is not officially supported on Ubuntu xenial, however you can find a full installation of ROS jade [here](https://launchpad.net/~letrend/+archive/ubuntu/ros-jade). Installing roboy-ros-control in the following will automatically install all packages you need, for running the code.
 ### add the ppas to your apt source list
+On Ubuntu 14.04 (trusty):
+```
+#!bash
+sudo add-apt-repository ppa:ethz-asl/gazebo
+sudo add-apt-repository ppa:ethz-asl/ros-indigo
+sudo add-apt-repository -y ppa:letrend/octomap
+```
+On either distro:
 ```
 #!bash
 sudo add-apt-repository -y ppa:letrend/ros-jade
+sudo add-apt-repository -y ppa:letrend/libcmaes
 sudo add-apt-repository -y ppa:letrend/roboy-ros-control
 sudo apt-get update
 ```
+
 ### install
 ```
 #!bash
 sudo apt-get install roboy-ros-control
 source /opt/ros/jade/setup.sh 
 
-# potentially add it to your bash script:
+# you can add this to your bash script:
 echo 'source /opt/ros/jade/setup.sh' >> ~/.bashrc
 ```
 ### In order to use the simulation: symlink to meshes
@@ -29,7 +39,6 @@ ln -s /opt/ros/jade/share/roboy_models/legs_with_muscles_simplified ~/.gazebo/mo
 ln -s /opt/ros/jade/share/roboy_models/arm ~/.gazebo/models/
 ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ```
-
 ----
 
 # Run it
@@ -87,11 +96,11 @@ Starts/stops/etc all controllers as defined here: https://github.com/Roboy/roboy
 
 ----
 
-## with walkTrainer
+## with simulated roboy
 ```
 #!bash
 rviz &
-rosrun roboy_simulation walkTrainer
+rosrun roboy_simulation roboySim
 ```
 In rviz you can add the walking plugin panel for controlling the simulation.
 
