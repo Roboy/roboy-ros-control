@@ -25,6 +25,7 @@ sudo apt-get update
 ```
 #!bash
 sudo apt-get install roboy-ros-control
+echo "export _CATKIN_SETUP_DIR=/opt/ros/jade" » ~/.bashrc
 source /opt/ros/jade/setup.sh 
 
 # you can add this to your bash script:
