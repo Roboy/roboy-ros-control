@@ -47,8 +47,8 @@ ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ### start the controller_manager
 ```
 #!bash
-source /opt/ros/jade/setup.sh           # In case you haven't done it for 
-                                        # your current shell yet
+source /opt/ros/jade/setup.bash           # In case you haven't done it for 
+                                          # your current shell yet
 roslaunch roboy_hardware roboy.launch
 ```
 ### initialise the controllers
