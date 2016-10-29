@@ -5,14 +5,14 @@ If you have any questions feel free to contact one of the team members from [dyn
 # Installation from launchpad ppa
 NOTE: The roboy-ros-control ppa is build for Ubuntu 14.04 (trusty) and Ubuntu 16.04 (xenial). ROS jade is not officially supported on Ubuntu xenial, however you can find a full installation of ROS jade [here](https://launchpad.net/~letrend/+archive/ubuntu/ros-jade). Installing roboy-ros-control in the following will automatically install all packages you need, for running the code.
 ### add the ppas to your apt source list
-On Ubuntu 14.04 (trusty):
+#### Only on Ubuntu 14.04 (trusty):
 ```
 #!bash
 sudo add-apt-repository -y ppa:ethz-asl/gazebo
 sudo add-apt-repository -y ppa:ethz-asl/ros-indigo
 sudo add-apt-repository -y ppa:letrend/octomap
 ```
-On either distro:
+#### On either distro:
 ```
 #!bash
 sudo add-apt-repository -y ppa:letrend/ros-jade
