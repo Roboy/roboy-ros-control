@@ -26,10 +26,10 @@ sudo apt-get update
 #!bash
 sudo apt-get install roboy-ros-control
 echo "export _CATKIN_SETUP_DIR=/opt/ros/jade" >> ~/.bashrc
-source /opt/ros/jade/setup.sh 
+source /opt/ros/jade/setup.bash
 
 # you can add this to your bash script:
-echo 'source /opt/ros/jade/setup.sh' >> ~/.bashrc
+echo 'source /opt/ros/jade/setup.bash' >> ~/.bashrc
 ```
 ### In order to use the simulation: symlink to meshes
 For gazebo to find the meshes, create a symlink:
