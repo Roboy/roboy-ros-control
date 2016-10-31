@@ -247,6 +247,7 @@ Now this is very important. For both build and especially running the code succe
 source /usr/share/gazebo-5.0/setup.sh
 export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/path/to/roboy-ros-control/devel/lib:$GAZEBO_PLUGIN_PATH
+export GAZEBO_RESOURCE_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_RESOURCE_PATH
 source /opt/ros/jade/setup.bash
 source /path/to/roboy-ros-control/devel/setup.bash
 ```
