@@ -206,7 +206,7 @@ If you seen an output like, 'waiting for namespace'...'giving up'. Gazebo hasn't
 #!bash
 cd /path/to/osrf-gazebo_models-*.zip
 unzip osrf-gazebo_models-*.zip -d gazebo_models
-mv gazebo_models/* ~/.gazebo/models
+mv gazebo_models/osrf-gazebo_models-*/* ~/.gazebo/models
 ```
 Now we need to tell gazebo where to find these models. This can be done by setting the GAZEBO_MODEL_PATH env variable. Add the following line to your ~/.bashrc:
 ```
