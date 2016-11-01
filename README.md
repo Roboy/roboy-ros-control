@@ -206,7 +206,7 @@ If you seen an output like, 'waiting for namespace'...'giving up'. Gazebo hasn't
 #!bash
 cd /path/to/osrf-gazebo_models-*.zip
 unzip osrf-gazebo_models-*.zip -d gazebo_models
-mv gazebo_models/* ~/.gazebo/models
+mv gazebo_models/osrf-gazebo_models-*/* ~/.gazebo/models
 ```
 Now we need to tell gazebo where to find these models. This can be done by setting the GAZEBO_MODEL_PATH env variable. Add the following line to your ~/.bashrc:
 ```
@@ -247,6 +247,7 @@ Now this is very important. For both build and especially running the code succe
 source /usr/share/gazebo-5.0/setup.sh
 export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/path/to/roboy-ros-control/devel/lib:$GAZEBO_PLUGIN_PATH
+export GAZEBO_RESOURCE_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_RESOURCE_PATH
 source /opt/ros/jade/setup.bash
 source /path/to/roboy-ros-control/devel/setup.bash
 ```
