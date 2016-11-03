@@ -36,6 +36,12 @@ echo 'source /opt/ros/jade/setup.bash' >> ~/.bashrc
 #!bash
 sudo apt-get install python-netifaces
 ```
+#### Only on Ubuntu 14.04 (trusty):
+```
+#!bash
+sudo apt-get install python-pip
+sudo pip install --upgrade rospkg
+```
 ### In order to use the simulation: symlink to meshes
 For gazebo to find the meshes, create a symlink:
 ```
