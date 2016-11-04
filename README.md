@@ -1,5 +1,5 @@
 ## Description ##
-roboy-ros-control provides ros control hierarchy for roboy (v2.0) hardware. 
+roboy-ros-control provides ros control hierarchy for roboy (v2.0) hardware.
 If you have any questions feel free to contact one of the team members from [dynamic_balancing](https://devanthro.atlassian.net/wiki/display/DDB/Development+-+Dynamic+Balancing)
 
 # Installation from launchpad ppa
@@ -25,7 +25,6 @@ sudo apt-get update
 ```
 #!bash
 sudo apt-get install roboy-ros-control
-echo "export _CATKIN_SETUP_DIR=/opt/ros/jade" >> ~/.bashrc
 source /opt/ros/jade/setup.bash
 
 # you can add this to your bash script:
@@ -58,7 +57,7 @@ ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ### start the controller_manager
 ```
 #!bash
-source /opt/ros/jade/setup.bash           # In case you haven't done it for 
+source /opt/ros/jade/setup.bash           # In case you haven't done it for
                                           # your current shell yet
 roslaunch roboy_hardware roboy.launch
 ```
@@ -138,20 +137,20 @@ rosservice call /controller_manager/list_controllers
 This should show the stopped controllers, together with the resources they have been assigned to
 ```
 #!bash
-controller: 
-  - 
+controller:
+  -
     name: motor0
     state: stopped
     type: roboy_controller/PositionController
     hardware_interface: hardware_interface::PositionJointInterface
     resources: ['motor0']
-  - 
+  -
     name: motor1
     state: stopped
     type: roboy_controller/VelocityController
     hardware_interface: hardware_interface::VelocityJointInterface
     resources: ['motor1']
-  - 
+  -
     name: motor3
     state: stopped
     type: roboy_controller/ForceController
@@ -170,7 +169,7 @@ sudo apt-get install git
 ### ncurses
 ```
 #!bash
-sudo apt-get install libncurses5-dev 
+sudo apt-get install libncurses5-dev
 ```
 ### doxygen[OPTIONAL]
 ```
@@ -187,7 +186,7 @@ sudo apt-get install gcc-4.9 g++-4.9
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 ```
 ### [ROS jade](http://wiki.ros.org/jade/)
-For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source, but rviz will probably also need to be rebuild with the new message. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/). 
+For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source, but rviz will probably also need to be rebuild with the new message. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
@@ -203,10 +202,10 @@ sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager r
 #### install gazebo5 and gazebo-ros-pkgs
 ```
 #!bash
-sudo apt-get install gazebo5 libgazebo5-dev 
+sudo apt-get install gazebo5 libgazebo5-dev
 sudo apt-get install ros-jade-gazebo-ros-pkgs
 ```
-You should try to run gazebo now, to make sure its working. 
+You should try to run gazebo now, to make sure its working.
 ```
 #!bash
 source /usr/share/gazebo-5.0/setup.sh
@@ -280,7 +279,7 @@ ln -s path/to/roboy-ros-control/src/roboy_models/legs_with_muscles_simplified ~/
 ```
 
 #### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
-this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source. 
+this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source.
 ```
 #!bash
 mkdir -p ~/ros_ws/src
@@ -310,7 +309,7 @@ doxygen Doxyfile
 ```
 The documentation is put into the doc folder.
 
-# docker 
+# docker
 This repo is build into a docker image. Please follow the [docker install instructions](https://docs.docker.com/engine/installation/) for your system.
 ## usage
 You can run eg the simulation with the following commands:
