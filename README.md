@@ -30,11 +30,6 @@ source /opt/ros/jade/setup.bash
 # you can add this to your bash script:
 echo 'source /opt/ros/jade/setup.bash' >> ~/.bashrc
 ```
-#### Only on Ubuntu 16.04 (xenial):
-```
-#!bash
-sudo apt-get install python-netifaces
-```
 #### Only on Ubuntu 14.04 (trusty):
 ```
 #!bash
