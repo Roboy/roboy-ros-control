@@ -42,6 +42,7 @@ For gazebo to find the meshes, create a symlink:
 #!bash
 mkdir -p ~/.gazebo/models
 ln -s /opt/ros/jade/share/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
+ln -s /opt/ros/jade/share/roboy_models/legs_with_upper_body ~/.gazebo/models/
 ln -s /opt/ros/jade/share/roboy_models/arm ~/.gazebo/models/
 ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ```
