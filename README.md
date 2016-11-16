@@ -236,7 +236,7 @@ Please follow the installation instructions for [flexrayusbinterface](https://gi
 Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
 ```
 #!bash
-cd path/to/roboy-ros-control/src/myomaster/patches
+cd path/to/roboy-ros-control/src/roboy_hardware/patches
 diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff
 sudo patch /usr/include/WinTypes.h < WinTypes.diff
 ```
