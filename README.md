@@ -30,11 +30,6 @@ source /opt/ros/jade/setup.bash
 # you can add this to your bash script:
 echo 'source /opt/ros/jade/setup.bash' >> ~/.bashrc
 ```
-#### Only on Ubuntu 16.04 (xenial):
-```
-#!bash
-sudo apt-get install python-netifaces
-```
 #### Only on Ubuntu 14.04 (trusty):
 ```
 #!bash
@@ -47,6 +42,7 @@ For gazebo to find the meshes, create a symlink:
 #!bash
 mkdir -p ~/.gazebo/models
 ln -s /opt/ros/jade/share/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
+ln -s /opt/ros/jade/share/roboy_models/legs_with_upper_body ~/.gazebo/models/
 ln -s /opt/ros/jade/share/roboy_models/arm ~/.gazebo/models/
 ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ```
@@ -240,7 +236,7 @@ Please follow the installation instructions for [flexrayusbinterface](https://gi
 Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
 ```
 #!bash
-cd path/to/roboy-ros-control/src/myomaster/patches
+cd path/to/roboy-ros-control/src/roboy_hardware/patches
 diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff
 sudo patch /usr/include/WinTypes.h < WinTypes.diff
 ```
