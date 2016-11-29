@@ -14,7 +14,7 @@ export DH_OPTIONS=-v
 #  https://code.ros.org/trac/ros/ticket/2977
 #  https://code.ros.org/trac/ros/ticket/3842
 export LDFLAGS=
-export PKG_CONFIG_PATH=/opt/ros/indigo/lib/pkgconfig
+export PKG_CONFIG_PATH=/opt/ros/kinetic/lib/pkgconfig
 # Explicitly enable -DNDEBUG, see:
 # 	https://github.com/ros-infrastructure/bloom/issues/327
 export DEB_CXXFLAGS_MAINT_APPEND=-DNDEBUG
@@ -26,18 +26,18 @@ override_dh_auto_configure:
 	# In case we're installing to a non-standard location, look for a setup.sh
 	# in the install tree that was dropped by catkin, and source it.  It will
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
-	if [ -f "/opt/ros/indigo/setup.sh" ]; then . "/opt/ros/indigo/setup.sh"; fi && \
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
 	dh_auto_configure -- \
 		-DCATKIN_BUILD_BINARY_PACKAGE="1" \
-		-DCMAKE_INSTALL_PREFIX="/opt/ros/indigo" \
-		-DCMAKE_PREFIX_PATH="/opt/ros/indigo"
+		-DCMAKE_INSTALL_PREFIX="/opt/ros/kinetic" \
+		-DCMAKE_PREFIX_PATH="/opt/ros/kinetic"
 	tar -xf ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6.tgz -C ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6 --strip-components=1
 
 override_dh_auto_build:
 	# In case we're installing to a non-standard location, look for a setup.sh
 	# in the install tree that was dropped by catkin, and source it.  It will
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
-	if [ -f "/opt/ros/indigo/setup.sh" ]; then . "/opt/ros/indigo/setup.sh"; fi && \
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
 	catkin_make_isolated 	
 
 override_dh_auto_test:
@@ -45,20 +45,20 @@ override_dh_auto_test:
 	# in the install tree that was dropped by catkin, and source it.  It will
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
 	echo -- Running tests. Even if one of them fails the build is not canceled.
-	if [ -f "/opt/ros/indigo/setup.sh" ]; then . "/opt/ros/indigo/setup.sh"; fi && \
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
 	dh_auto_test || true
 
 override_dh_shlibdeps:
 	# In case we're installing to a non-standard location, look for a setup.sh
 	# in the install tree that was dropped by catkin, and source it.  It will
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
-	if [ -f "/opt/ros/indigo/setup.sh" ]; then . "/opt/ros/indigo/setup.sh"; fi && \
-	dh_shlibdeps -l$(CURDIR)/debian/roboy-ros-control//opt/ros/indigo/lib/
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
+	dh_shlibdeps -l$(CURDIR)/debian/roboy-ros-control//opt/ros/kinetic/lib/
 
 override_dh_auto_install:
 	# In case we're installing to a non-standard location, look for a setup.sh
 	# in the install tree that was dropped by catkin, and source it.  It will
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
-	if [ -f "/opt/ros/indigo/setup.sh" ]; then . "/opt/ros/indigo/setup.sh"; fi && \
-	catkin_make_isolated --install --install-space=${CURDIR}/debian/roboy-ros-control/opt/ros/indigo -DCMAKE_BUILD_TYPE=Release
-	find ${CURDIR}/debian/roboy-ros-control/opt/ros/indigo -type f -maxdepth 1 -delete
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
+	catkin_make_isolated --install --install-space=${CURDIR}/debian/roboy-ros-control/opt/ros/kinetic -DCMAKE_BUILD_TYPE=Release
+	find ${CURDIR}/debian/roboy-ros-control/opt/ros/kinetic -type f -maxdepth 1 -delete
