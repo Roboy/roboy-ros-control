@@ -34,7 +34,8 @@ override_dh_auto_configure:
 	tar -xf ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6.tgz -C ${CURDIR}/src/flexrayusbinterface/lib/libftd2xx-x86_64-1.3.6 --strip-components=1
 
 override_dh_auto_build:
-
+	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
+        catkin_make_isolated 
 override_dh_auto_test:
 
 override_dh_shlibdeps:
