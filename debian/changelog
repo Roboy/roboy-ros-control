@@ -1,10 +1,5 @@
-roboy-ros-control (0.0.19-1) trusty; urgency=low
-
-  * adapted for gazebo5 compatibility
-
- -- Simon Trendel <simon.trendel@tum.de>  Sat, 24 Aug 2016 10:37:27 +0200
-roboy-ros-control (0.0.18-1) trusty; urgency=low
+roboy-ros-control (0.0.1-1) xenial; urgency=low
 
   * Initial release 
 
- -- Simon Trendel <simon.trendel@tum.de>  Sat, 06 Aug 2016 18:51:27 +0200
+ -- Simon Trendel <simon.trendel@tum.de>  Tue, 29 Nov 2016 13:39:27 +0200
