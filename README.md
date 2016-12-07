@@ -1,50 +1,29 @@
 ## Description ##
 roboy-ros-control provides ros control hierarchy for roboy (v2.0) hardware.
-If you have any questions feel free to contact one of the team members from [dynamic_balancing](https://devanthro.atlassian.net/wiki/display/DDB/Development+-+Dynamic+Balancing)
 
-# Installation from launchpad ppa
-NOTE: The roboy-ros-control ppa is build for Ubuntu 14.04 (trusty) and Ubuntu 16.04 (xenial). ROS jade is not officially supported on Ubuntu xenial, however you can find a full installation of ROS jade [here](https://launchpad.net/~letrend/+archive/ubuntu/ros-jade). Installing roboy-ros-control in the following will automatically install all packages you need, for running the code.
-### add the ppas to your apt source list
-#### Only on Ubuntu 14.04 (trusty):
+# Installation from roboy.org
+NOTE: The roboy-ros-control debian packages are build for ubuntu xenial 16.04. The installation depends on ROS kinetic and expects a proper setup of ROS (cf. for [http://wiki.ros.org/kinetic/Installation/Ubuntu](kinetic installation)).
+## set up your sources.list to accept packages from roboy.org
 ```
 #!bash
-sudo add-apt-repository -y ppa:ethz-asl/gazebo
-sudo add-apt-repository -y ppa:ethz-asl/ros-indigo
-sudo add-apt-repository -y ppa:letrend/octomap
+sudo sh -c 'echo "deb http://roboy.org/dists/stable/main/binary /" > /etc/apt/sources.list.d/roboy.list
 ```
-#### On either distro:
+## import the public key from roboy.org
 ```
 #!bash
-sudo add-apt-repository -y ppa:letrend/ros-jade
-sudo add-apt-repository -y ppa:letrend/libcmaes
-sudo add-apt-repository -y ppa:letrend/roboy-ros-control
-sudo apt-get update
+wget -qO - http://roboy.org/dists/stable/main/binary/public.key | sudo apt-key add -
+sudo apt update
 ```
-
-### install
+## install
 ```
 #!bash
 sudo apt-get install roboy-ros-control
-source /opt/ros/jade/setup.bash
-
-# you can add this to your bash script:
-echo 'source /opt/ros/jade/setup.bash' >> ~/.bashrc
 ```
-#### Only on Ubuntu 14.04 (trusty):
-```
-#!bash
-sudo apt-get install python-pip
-sudo pip install --upgrade rospkg
-```
-### In order to use the simulation: symlink to meshes
-For gazebo to find the meshes, create a symlink:
+## In order to use the simulation: symlink to meshes
 ```
 #!bash
 mkdir -p ~/.gazebo/models
-ln -s /opt/ros/jade/share/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
-ln -s /opt/ros/jade/share/roboy_models/legs_with_upper_body ~/.gazebo/models/
-ln -s /opt/ros/jade/share/roboy_models/arm ~/.gazebo/models/
-ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
+ln -s /opt/ros/kinetic/share/roboy_models/legs_with_upper_body ~/.gazebo/models/
 ```
 ----
 
@@ -53,7 +32,7 @@ ln -s /opt/ros/jade/share/roboy_models/plate_with_muscle ~/.gazebo/models/
 ### start the controller_manager
 ```
 #!bash
-source /opt/ros/jade/setup.bash           # In case you haven't done it for
+source /opt/ros/kinetic/setup.bash           # In case you haven't done it for
                                           # your current shell yet
 roslaunch roboy_hardware roboy.launch
 ```
@@ -160,29 +139,20 @@ The following instructions guide you through the process of building this repo f
 ### git
 ```
 #!bash
-sudo apt-get install git
+sudo apt install git
 ```
 ### ncurses
 ```
 #!bash
-sudo apt-get install libncurses5-dev
+sudo apt install libncurses5-dev
 ```
 ### doxygen[OPTIONAL]
 ```
 #!bash
-sudo apt-get install doxygen
+sudo apt install doxygen
 ```
-### gcc>4.8(for c++11 support).
-following the instruction in [this](http://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-on-ubuntu) forum:
-```
-#!bash
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo apt-get update
-sudo apt-get install gcc-4.9 g++-4.9
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
-```
-### [ROS jade](http://wiki.ros.org/jade/)
-For detailed description of installation see [here](http://wiki.ros.org/jade/Installation/Ubuntu). The code also runs with indigo, except for an additional Marker enum in visualization_msgs (ie DELETALL). You can however build the [jade version](https://github.com/ros/common_msgs) from source, but rviz will probably also need to be rebuild with the new message. The following instructions will guide you through the installation for this project. This has been tested on a clean installation of [Ubuntu 14.04](http://releases.ubuntu.com/14.04/).
+### [ROS kinetic](http://wiki.ros.org/kinetic/)
+For detailed description of installation see [here](http://wiki.ros.org/kinetic/Installation/Ubuntu). 
 ```
 #!bash
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
@@ -192,19 +162,19 @@ sudo apt-get update
 #### install ros desktop and control related stuff
 ```
 #!bash
-sudo apt-get install ros-jade-desktop
-sudo apt-get install ros-jade-controller-interface ros-jade-controller-manager ros-jade-control-toolbox ros-jade-transmission-interface ros-jade-joint-limits-interface
+sudo apt install ros-kinetic-desktop
+sudo apt install ros-kinetic-controller-interface ros-kinetic-controller-manager ros-kinetic-control-toolbox ros-kinetic-transmission-interface ros-kinetic-joint-limits-interface
 ```
-#### install gazebo5 and gazebo-ros-pkgs
+#### install gazebo7 and gazebo-ros-pkgs
 ```
 #!bash
-sudo apt-get install gazebo5 libgazebo5-dev
-sudo apt-get install ros-jade-gazebo-ros-pkgs
+sudo apt-get install gazebo7 libgazebo7-dev
+sudo apt-get install ros-kinetic-gazebo-ros-pkgs
 ```
 You should try to run gazebo now, to make sure its working.
 ```
 #!bash
-source /usr/share/gazebo-5.0/setup.sh
+source /usr/share/gazebo-7.0/setup.sh
 gazebo --verbose
 ```
 If you seen an output like, 'waiting for namespace'...'giving up'. Gazebo hasn't been able to download the models. You will need to do this manually. Go to the osrf [bitbucket](https://bitbucket.org/osrf/gazebo_models/downloads), click download repository. Then unzip and move to gazebo models path:
@@ -214,47 +184,24 @@ cd /path/to/osrf-gazebo_models-*.zip
 unzip osrf-gazebo_models-*.zip -d gazebo_models
 mv gazebo_models/osrf-gazebo_models-*/* ~/.gazebo/models
 ```
-Now we need to tell gazebo where to find these models. This can be done by setting the GAZEBO_MODEL_PATH env variable. Add the following line to your ~/.bashrc:
-```
-#!bash
-export GAZEBO_MODEL_PATH=~/.gazebo/models:$GAZEBO_MODEL_PATH
-```
 If you run gazebo now it should pop up without complaints and show an empty world.
 
 ## clone repos
-The project also depends on the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
-The repos can be cloned with the folowing commands, where the submodule command attempts to pull the [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) and [common_utilities](https://github.com/Roboy/common_utilities).
 ```
 #!bash
-git clone https://github.com/Roboy/roboy-ros-control
+git clone --recursive https://github.com/Roboy/roboy-ros-control
 cd roboy-ros-control
-git submodule update --init --recursive
 ```
 ## Build
-Please follow the installation instructions for [flexrayusbinterface](https://github.com/Roboy/flexrayusbinterface) before proceeding.
-### patching WinTypes.h
-Additionally you need to patch two typedefs in WinTypes.h, which comes with the ftd2xx driver, because they are conflicting with the gazebo header FreeImage.h.
-```
-#!bash
-cd path/to/roboy-ros-control/src/roboy_hardware/patches
-diff -u /usr/include/WinTypes.h WinTypes.h > WinTypes.diff
-sudo patch /usr/include/WinTypes.h < WinTypes.diff
-```
-NOTE: in case you want to undo the patch run with -R switch:
-```
-#!bash
-cd path/to/roboy-ros-control/src/myomaster/patches
-sudo patch -R /usr/include/WinTypes.h < WinTypes.diff
-```
 ### Environmental variables and sourceing
 Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc (adjusting the paths to your system):
 ```
 #!bash
-source /usr/share/gazebo-5.0/setup.sh
-export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_MODEL_PATH
+source /usr/share/gazebo-7.0/setup.sh
+export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_models:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/path/to/roboy-ros-control/devel/lib:$GAZEBO_PLUGIN_PATH
-export GAZEBO_RESOURCE_PATH=/path/to/roboy-ros-control/src/roboy_simulation:$GAZEBO_RESOURCE_PATH
-source /opt/ros/jade/setup.bash
+export GAZEBO_RESOURCE_PATH=/path/to/roboy-ros-control/src/roboy_models:$GAZEBO_RESOURCE_PATH
+source /opt/ros/kinetic/setup.bash
 source /path/to/roboy-ros-control/devel/setup.bash
 ```
 Then you can build with:
@@ -271,23 +218,7 @@ For gazebo to find the meshes, create a symlink:
 ```
 #!bash
 mkdir ~/.gazebo/models
-ln -s path/to/roboy-ros-control/src/roboy_models/legs_with_muscles_simplified ~/.gazebo/models/
-```
-
-#### If the build fails throwing an error like 'Could not find a package configuration file provided by "gazebo_ros_control"',
-this is because for some mysterious reason gazebo_ros_pkgs installation is degenrate. But that won't stop us. We will build it from source.
-```
-#!bash
-mkdir -p ~/ros_ws/src
-cd ~/ros_ws/src
-git clone https://github.com/ros-simulation/gazebo_ros_pkgs
-cd gazebo_ros_pkgs
-git checkout jade-devel
-cd ~/ros_ws
-sudo -s
-source /opt/ros/jade/setup.bash
-catkin_make_isolated --install --install-space /opt/ros/jade/ -DCMAKE_BUILD_TYPE=Release
-exit
+ln -s path/to/roboy-ros-control/src/roboy_models/legs_with_upper_body ~/.gazebo/models/
 ```
 #### If the build fails, complaining about missing headers,
 this is probably because ros cannot find the headers it just created. You need to source the devel/setup.bash:
