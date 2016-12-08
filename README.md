@@ -6,7 +6,7 @@ NOTE: The roboy-ros-control debian packages are build for ubuntu xenial 16.04. T
 ## set up your sources.list to accept packages from roboy.org
 ```
 #!bash
-sudo sh -c 'echo "deb http://roboy.org/dists/stable/main/binary /" > /etc/apt/sources.list.d/roboy.list
+sudo sh -c 'echo "deb http://roboy.org/dists/stable/main/binary /" > /etc/apt/sources.list.d/roboy.list'
 ```
 ## import the public key from roboy.org
 ```
