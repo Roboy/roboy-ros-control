@@ -47,3 +47,4 @@ override_dh_auto_install:
 	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
 	catkin_make_isolated --install --install-space=${CURDIR}/debian/roboy-ros-control/opt/ros/kinetic -DCMAKE_BUILD_TYPE=Release
 	find ${CURDIR}/debian/roboy-ros-control/opt/ros/kinetic -type f -maxdepth 1 -delete
+	cp ${CURDIR}/src/flexrayusbinterface/udev/30-ftdi.rules ${CURDIR}/debian/roboy-ros-control/etc/udev/
