@@ -163,7 +163,12 @@ sudo apt-get update
 ```
 #!bash
 sudo apt install ros-kinetic-desktop
-sudo apt install ros-kinetic-controller-interface ros-kinetic-controller-manager ros-kinetic-control-toolbox ros-kinetic-transmission-interface ros-kinetic-joint-limits-interface
+sudo apt install ros-kinetic-controller-interface ros-kinetic-controller-manager ros-kinetic-control-toolbox ros-kinetic-transmission-interface ros-kinetic-joint-limits-interface ros-kinetic-ecl-geometry ros-kinetic-gazebo-ros-control
+```
+#### install packages from roboy.org
+```
+#!bash
+sudo apt install libftd2xx libcmaes
 ```
 #### install gazebo7 and gazebo-ros-pkgs
 ```
