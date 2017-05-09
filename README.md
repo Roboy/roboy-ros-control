@@ -232,6 +232,12 @@ this is probably because ros cannot find the headers it just created. You need t
 source devel/setup.bash
 catkin_make
 ```
+
+### Give raw package permissions to roboy, so you can run the powerlink stack without root privileges
+```
+#!bash
+sudo setcap cap_net_raw+ep devel/lib/roboy_managing_node/roboy
+```
 ## Documentation ##
 Generate a doxygen documentation using the following command:
 ```

@@ -1,6 +1,3 @@
-[submodule "src/flexrayusbinterface"]
-	path = src/flexrayusbinterface
-	url = https://github.com/Roboy/flexrayusbinterface
 [submodule "src/common_utilities"]
 	path = src/common_utilities
 	url = https://github.com/Roboy/common_utilities
@@ -13,6 +10,9 @@
 [submodule "src/roboy_simulation"]
 	path = src/roboy_simulation
 	url = https://github.com/Roboy/roboy_simulation
-[submodule "src/roboy_hardware"]
-	path = src/roboy_hardware
-	url = https://github.com/Roboy/roboy_hardware
+[submodule "src/roboy_managing_node"]
+	path = src/roboy_managing_node
+	url = https://github.com/Roboy/roboy_managing_node
+[submodule "src/roboy_powerlink"]
+	path = src/roboy_powerlink
+	url = https://github.com/Roboy/roboy_powerlink
