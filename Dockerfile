@@ -66,6 +66,11 @@ RUN oldpath="/home/roboy/workspace/myoFPGA/myoFPGA" && \
     sed -i "s|$oldpath|$newpath|g" src/roboy_managing_node/include/roboy_managing_node/myoMaster.hpp
 RUN cat src/roboy_managing_node/include/roboy_managing_node/myoMaster.hpp
 
+# add required commands to bashrc
+RUN echo "source /usr/share/gazebo-7/setup.sh" >> /root/.bashrc
+RUN echo "source /opt/ros/kinetic/setup.bash" >> /root/.bashrc
+RUN echo "source $(pwd)/devel/setup.bash" >> /root/.bashrc
+
 RUN catkin_make --pkg common_utilities
 RUN /bin/bash -c "source devel/setup.bash"
 RUN catkin_make
