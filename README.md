@@ -42,7 +42,7 @@ sudo apt-get install ros-kinetic-gazebo-ros-pkgs
 You should try to run gazebo now, to make sure its working.
 ```
 #!bash
-source /usr/share/gazebo-7.0/setup.sh
+source /usr/share/gazebo-7/setup.sh
 gazebo --verbose
 ```
 If you seen an output like, 'waiting for namespace'...'giving up'. Gazebo hasn't been able to download the models. You will need to do this manually. Go to the osrf [bitbucket](https://bitbucket.org/osrf/gazebo_models/downloads), click download repository. Then unzip and move to gazebo models path:
@@ -61,11 +61,36 @@ git clone --recursive https://github.com/Roboy/roboy-ros-control
 cd roboy-ros-control
 ```
 ## Build
+
+### Install PowerLink
+
+#### 1. Install required packages
+
+```bash
+#!bash
+sudo apt-get install libpcap0.8-dev     # package required by powerlink
+sudo apt-get install protobuf-compiler  # NOTFOUND error fix: https://github.com/ethz-asl/rotors_simulator/issues/354
+sudo apt-get install lib32ncurses5-dev  # fix for http://stackoverflow.com/questions/14416487/gcc-usr-bin-ld-error-cannot-find-lncurses
+```
+
+#### Build PowerLink
+After that, follow the installation instructions of http://openpowerlink.sourceforge.net/doc/2.1/2.1.0/d1/dde/page_build_stack.html. 
+
+#### Update myoFPGA path
+
+The last thing you have to do is to update a library path. This is an absolute path and therefore, it has to be changed to your local absolute path. 
+Please ensure that you are in the roboy-ros-control package and execute then the following command: 
+
+```bash
+#!bash
+sed -i "s|/home/roboy/workspace/myoFPGA/myoFPGA|$(pwd)|g" src/roboy_managing_node/include/roboy_managing_node/myoMaster.hpp
+```
+
 ### Environmental variables and sourceing
 Now this is very important. For both build and especially running the code successfully you will need to define some env variables and source some stuff. Add the following lines to your ~/.bashrc (adjusting the paths to your system):
 ```
 #!bash
-source /usr/share/gazebo-7.0/setup.sh
+source /usr/share/gazebo-7/setup.sh
 export GAZEBO_MODEL_PATH=/path/to/roboy-ros-control/src/roboy_models:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/path/to/roboy-ros-control/devel/lib:$GAZEBO_PLUGIN_PATH
 export GAZEBO_RESOURCE_PATH=/path/to/roboy-ros-control/src/roboy_models:$GAZEBO_RESOURCE_PATH
