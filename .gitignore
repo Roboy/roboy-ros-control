@@ -9,3 +9,4 @@ doc/
 legs_with_muscles_simplified
 src/CMakeLists.txt
 cmake-build-debug/
+.ipynb_checkpoints/
