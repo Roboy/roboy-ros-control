@@ -52,11 +52,7 @@ speeds = [omega0, omega1, omega2, omega3, omega4]
 speeds
 
 specified = [ankle_torque0, knee_torque0, hip_torque0, hip_torque1, knee_torque1, ankle_torque1]
-
-right_hand_side = generate_ode_function(forcing_vector, coordinates, speeds, 
-                                        constants, mass_matrix=mass_matrix, 
-                                        specifieds=specified, generator='cython')
-
+#%%
 x0 = zeros(10)
 x0
 
@@ -68,16 +64,72 @@ x0[4] = deg2rad(45)
 x0
 
 numerical_specified = zeros(6)
+#%% Jacobian
+print ('calculating jacobian')
+F0 = ankle_left.pos_from(hip_center).express(inertial_frame).simplify().to_matrix(inertial_frame)
+F0 = Matrix([F0[0], F0[1]])
+F0
 
-args = {'constants': numerical_constants,
-        'specified': numerical_specified}
-frames_per_sec = 60
-final_time = 5.0
+J_ankleLeft = F0.jacobian([theta1, theta2, theta3, theta4])
+J_ankleLeft
 
-t = linspace(0.0, final_time, final_time * frames_per_sec)
-                                        
-right_hand_side(x0, 0.0, numerical_specified, numerical_constants)                     
+J = J_ankleLeft
+J
+
+values = {lower_leg_length: 0.4, upper_leg_length: 0.54, hip_length: 0.2, theta0: 0.0, theta1: 0.1, theta2: 0.1, theta3: 0.1, theta4: 0.1}
+J.subs(values).pinv()
+##%% 
+#right_hand_side = generate_ode_function(forcing_vector, coordinates, speeds, 
+#                                        constants, mass_matrix=mass_matrix, 
+#                                        specifieds=specified, generator='cython')
+#
+#args = {'constants': numerical_constants,
+#        'specified': numerical_specified}
+#frames_per_sec = 60
+#final_time = 5.0
+#
+#t = linspace(0.0, final_time, final_time * frames_per_sec)
+#                                        
+#right_hand_side(x0, 0.0, numerical_specified, numerical_constants)        
+##%%
+#y = odeint(right_hand_side, x0, t, args=(numerical_specified, numerical_constants))
+#y.shape
+#y    
 #%%
-y = odeint(right_hand_side, x0, t, args=(numerical_specified, numerical_constants))
+from sympy import lambdify, solve
+M_func = lambdify(coordinates + speeds + constants + specified, mass_matrix) # Create a callable function to evaluate the mass matrix 
+f_func = lambdify(coordinates + speeds + constants + specified, forcing_vector)     # Create a callable function to evaluate the forcing vector       
+def right_hand_side(x, t, args):
+    """Returns the derivatives of the states.
+
+    Parameters
+    ----------
+    x : ndarray, shape(2 * (n + 1))
+        The current state vector.
+    t : float
+        The current time.
+    args : ndarray
+        The constants.
+
+    Returns
+    -------
+    dx : ndarray, shape(2 * (n + 1))
+        The derivative of the state.
+    
+    """
+    r = 0.0                                  # The input force is always zero     
+    arguments = np.hstack((x, args))      # States, input, and parameters
+    dq = np.array(np.linalg.solve(M_func(*arguments),  # Solving for the derivatives
+                  f_func(*arguments))).T[0]
+    
+    return dq
+
+#%%
+args = (np.hstack((numerical_constants,numerical_specified)),)
+args
+#%%
+y = odeint(right_hand_side, x0, t, args)
 y.shape
 y
+#%%
+help(right_hand_side)
