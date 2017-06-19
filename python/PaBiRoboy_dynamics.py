@@ -27,9 +27,9 @@ lengths = [lower_leg_length, upper_leg_length, hip_length, hip_length, hip_lengt
 bodies = [lower_leg_left, upper_leg_left, hip, hip, hip, upper_leg_right, lower_leg_right]
 
 viz_frames = []
-colors = ['blue','green','red','red','red','green','blue']
+colors = ['yellow','green','red','red','red','green','blue']
 
-for i, (body, particle) in enumerate(zip(bodies, particles)):
+for i, (body, particle, mass_center) in enumerate(zip(bodies, particles, mass_centers)):
 #        body_shape = Cylinder(name='cylinder{}'.format(i),
 #                              radius=0.05,
 #                              length=lengths[i],
@@ -38,15 +38,26 @@ for i, (body, particle) in enumerate(zip(bodies, particles)):
 #        viz_frames.append(VisualizationFrame('link_frame{}'.format(i), body,
 #                                             body_shape))
             
-        particle_shape = Sphere(name='sphere{}'.format(i),
-                                radius=0.06,
-                                color=colors[i])
-                                
-
-        viz_frames.append(VisualizationFrame('particle_frame{}'.format(i),
-                                             body.frame,
-                                             particle,
-                                             particle_shape))
+    particle_shape = Sphere(name='sphere{}'.format(i),
+                            radius=0.06,
+                            color=colors[i])
+                            
+    
+    viz_frames.append(VisualizationFrame('particle_frame{}'.format(i),
+                                         body.frame,
+                                         particle,
+                                         particle_shape))
+                                         
+    mass_center_shape = Sphere(name='sphere{}'.format(i),
+                            radius=0.02,
+                            color='black')
+                                         
+    viz_frames.append(VisualizationFrame('mass_center_frame{}'.format(i),
+                                         body.frame,
+                                         mass_center,
+                                         mass_center_shape))
+                                             
+                                             
 
 constants
 #%%

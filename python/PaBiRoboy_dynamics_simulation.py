@@ -38,7 +38,7 @@ numerical_constants = array([0.42,  # lower_leg_length [m]
                              0.2,  # upper_leg_inertia [kg*m^2]
                              0.1,  # hip_inertia [kg*m^2]
                              
-                             0.0,
+                             0.1,
                              0.6,
                              
                              9.81],  # acceleration due to gravity [m/s^2]
@@ -61,10 +61,10 @@ x0 = zeros(10)
 x0
 
 x0[0] = 0
-x0[1] = deg2rad(30)
-x0[2] = deg2rad(-30)
-x0[3] = deg2rad(-30)
-x0[4] = deg2rad(30)
+x0[1] = deg2rad(0)
+x0[2] = deg2rad(45)
+x0[3] = deg2rad(0)
+x0[4] = deg2rad(45)
 x0
 
 numerical_specified = zeros(6)
@@ -77,7 +77,7 @@ final_time = 5.0
 t = linspace(0.0, final_time, final_time * frames_per_sec)
                                         
 right_hand_side(x0, 0.0, numerical_specified, numerical_constants)                     
-
+#%%
 y = odeint(right_hand_side, x0, t, args=(numerical_specified, numerical_constants))
 y.shape
 y

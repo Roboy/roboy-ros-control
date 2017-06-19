@@ -82,19 +82,19 @@ hip_mass_center = Point('H_COMleft')
 upper_leg_right_mass_center = Point('U_COMright')
 lower_leg_right_mass_center = Point('L_COMright')
 
-lower_leg_left_mass_center.set_pos(ankle_left, lower_leg_left_com_length * lower_leg_left_frame.x)
+lower_leg_left_mass_center.set_pos(ankle_left, lower_leg_left_com_length * lower_leg_left_frame.y)
 lower_leg_left_mass_center.pos_from(origin).express(inertial_frame).simplify()
 
-upper_leg_left_mass_center.set_pos(knee_left, upper_leg_left_com_length * upper_leg_left_frame.x)
+upper_leg_left_mass_center.set_pos(knee_left, upper_leg_left_com_length * upper_leg_left_frame.y)
 upper_leg_left_mass_center.pos_from(origin).express(inertial_frame).simplify()
 
 hip_mass_center.set_pos(hip_center, 0 * hip_frame.x)
 hip_mass_center.pos_from(origin).express(inertial_frame).simplify()
 
-upper_leg_right_mass_center.set_pos(hip_right, upper_leg_right_com_length * upper_leg_right_frame.x)
+upper_leg_right_mass_center.set_pos(knee_right, upper_leg_right_com_length * upper_leg_right_frame.y)
 upper_leg_right_mass_center.pos_from(origin).express(inertial_frame).simplify()
 
-lower_leg_right_mass_center.set_pos(knee_right, lower_leg_right_com_length * lower_leg_right_frame.x)
+lower_leg_right_mass_center.set_pos(ankle_right, lower_leg_right_com_length * lower_leg_right_frame.y)
 lower_leg_right_mass_center.pos_from(origin).express(inertial_frame).simplify()
 
 #%% Kinematical Differential Equations
@@ -112,10 +112,10 @@ print("Defining angular velocities")
 hip_frame.set_ang_vel(inertial_frame,         omega0 * inertial_frame.z)
 hip_frame.ang_vel_in(inertial_frame)
 
-upper_leg_left_frame.set_ang_vel(hip_frame,   omega1     * inertial_frame.z)
+upper_leg_left_frame.set_ang_vel(hip_frame,   -omega1     * inertial_frame.z)
 upper_leg_left_frame.ang_vel_in(inertial_frame)
 
-lower_leg_left_frame.set_ang_vel(upper_leg_left_frame,   omega2     * inertial_frame.z)
+lower_leg_left_frame.set_ang_vel(upper_leg_left_frame,   -omega2     * inertial_frame.z)
 lower_leg_left_frame.ang_vel_in(inertial_frame)
 
 upper_leg_right_frame.set_ang_vel(hip_frame,             omega3     * inertial_frame.z)
@@ -167,23 +167,23 @@ lower_leg_mass, upper_leg_mass, hip_mass = symbols('m_L, m_U, m_H')
 
 lower_leg_inertia, upper_leg_inertia, hip_inertia = symbols('I_Lz, I_Uz, I_Hz')
 
-lower_leg_left_inertia_dyadic = inertia(lower_leg_left_frame, 0, 0, lower_leg_inertia)
+lower_leg_left_inertia_dyadic = inertia(lower_leg_left_frame, lower_leg_inertia, lower_leg_inertia, lower_leg_inertia)
 lower_leg_left_central_inertia = (lower_leg_left_inertia_dyadic, lower_leg_left_mass_center)
 lower_leg_left_inertia_dyadic.to_matrix(lower_leg_left_frame)
 
-upper_leg_left_inertia_dyadic = inertia(upper_leg_left_frame, 0, 0, upper_leg_inertia)
+upper_leg_left_inertia_dyadic = inertia(upper_leg_left_frame, upper_leg_inertia, upper_leg_inertia, upper_leg_inertia)
 upper_leg_left_central_inertia = (upper_leg_left_inertia_dyadic, upper_leg_left_mass_center)
 upper_leg_left_inertia_dyadic.to_matrix(upper_leg_left_frame)
 
-hip_inertia_dyadic = inertia(hip_frame, 0, 0, hip_inertia)
+hip_inertia_dyadic = inertia(hip_frame, hip_inertia, hip_inertia, hip_inertia)
 hip_central_inertia = (hip_inertia_dyadic, hip_mass_center)
 hip_inertia_dyadic.to_matrix(hip_frame)
 
-upper_leg_right_inertia_dyadic = inertia(upper_leg_right_frame, 0, 0, upper_leg_inertia)
+upper_leg_right_inertia_dyadic = inertia(upper_leg_right_frame, upper_leg_inertia, upper_leg_inertia, upper_leg_inertia)
 upper_leg_right_central_inertia = (upper_leg_right_inertia_dyadic, upper_leg_right_mass_center)
 upper_leg_right_inertia_dyadic.to_matrix(upper_leg_right_frame)
 
-lower_leg_right_inertia_dyadic = inertia(lower_leg_right_frame, 0, 0, lower_leg_inertia)
+lower_leg_right_inertia_dyadic = inertia(lower_leg_right_frame, lower_leg_inertia, lower_leg_inertia, lower_leg_inertia)
 lower_leg_right_central_inertia = (lower_leg_right_inertia_dyadic, lower_leg_right_mass_center)
 lower_leg_right_inertia_dyadic.to_matrix(lower_leg_right_frame)
 
@@ -199,14 +199,24 @@ lower_leg_right = RigidBody('Lower Leg Right', lower_leg_right_mass_center, lowe
 
 
 particles = []
-particles.append(Particle('ankle_left', ankle_left, lower_leg_mass))
-particles.append(Particle('knee_left', knee_left, upper_leg_mass))
+particles.append(Particle('ankle_left', ankle_left, 0))
+particles.append(Particle('knee_left', knee_left, 0))
 particles.append(Particle('hip_left', hip_left, 0))
-particles.append(Particle('hip_center', hip_center, hip_mass))
+particles.append(Particle('hip_center', hip_center, 0))
 particles.append(Particle('hip_right', hip_right, 0))
-particles.append(Particle('knee_right', knee_right, upper_leg_mass))
-particles.append(Particle('ankle_right', ankle_right, hip_mass))
+particles.append(Particle('knee_right', knee_right, 0))
+particles.append(Particle('ankle_right', ankle_right, 0))
 particles
+
+mass_centers = []
+mass_centers.append(Particle('lower_leg_left_mass_center', lower_leg_left_mass_center, lower_leg_mass))
+mass_centers.append(Particle('upper_leg_left_mass_center', upper_leg_left_mass_center, upper_leg_mass))
+mass_centers.append(Particle('hip_mass_center', hip_mass_center, hip_mass))
+mass_centers.append(Particle('hip_mass_center', hip_mass_center, hip_mass))
+mass_centers.append(Particle('hip_mass_center', hip_mass_center, hip_mass))
+mass_centers.append(Particle('lower_leg_left_mass_center', lower_leg_right_mass_center, lower_leg_mass))
+mass_centers.append(Particle('upper_leg_left_mass_center', upper_leg_right_mass_center, upper_leg_mass))
+mass_centers
 #%% Forces and Torques
 print("Defining Forces and Torques")
 g = symbols('g')
