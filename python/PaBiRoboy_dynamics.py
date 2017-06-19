@@ -9,10 +9,10 @@ xlabel('Time [s]')
 ylabel('Angle [deg]')
 legend(["${}$".format(vlatex(c)) for c in coordinates])
                      
-plot(t, rad2deg(y[:, 5:]))
-xlabel('Time [s]')
-ylabel('Angular Rate [deg/s]')
-legend(["${}$".format(vlatex(s)) for s in speeds])
+#plot(t, rad2deg(y[:, 5:]))
+#xlabel('Time [s]')
+#ylabel('Angular Rate [deg/s]')
+#legend(["${}$".format(vlatex(s)) for s in speeds])
 
 #%% Visualization
 print("Visualize")
@@ -57,10 +57,26 @@ for i, (body, particle, mass_center) in enumerate(zip(bodies, particles, mass_ce
                                          mass_center,
                                          mass_center_shape))
                                              
-                                             
+target_shape = Sphere(name='sphere{}'.format(i),
+                            radius=0.02,
+                            color='green')
 
-constants
-#%%
+target_left_leg = Point('target_left_leg')
+target_left_leg.set_pos(origin, (x_des[0] * inertial_frame.x)+(x_des[1] * inertial_frame.y))         
+
+target_right_leg = Point('target_left_leg')
+target_right_leg.set_pos(origin, (x_des[2] * inertial_frame.x)+(x_des[3] * inertial_frame.y))                              
+                                   
+viz_frames.append(VisualizationFrame('target_frame_left',
+                                     inertial_frame,
+                                     target_left_leg,
+                                     target_shape))
+                                     
+viz_frames.append(VisualizationFrame('target_frame_right',
+                                     inertial_frame,
+                                     target_right_leg,
+                                     target_shape))
+
 ## Now the visualization frames can be passed in to create a scene.
 scene = Scene(inertial_frame, origin, *viz_frames)
 
@@ -72,3 +88,4 @@ scene.states_trajectories = y
 scene.display()
 #%%
 
+y
