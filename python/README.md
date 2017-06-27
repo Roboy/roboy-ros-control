@@ -13,6 +13,6 @@
 #### jupyter
 in bash: jupyter notebook
 #### direct
-python PaBiRoboy_dynamics_derivation.py
+python PaBiRoboy_dynamics_simulation.py
 
 
