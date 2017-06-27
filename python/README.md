@@ -6,12 +6,13 @@
 ### jupyter
 * sudo pip install --upgrade pip
 * sudo pip install jupyter
+* sudo pip install --upgrade jupyter
 ### Run it
+#### jupyter
+in bash: jupyter notebook
 #### spyder is a pretty good python IDE:
 * sudo pip install --upgrade html5lib==1.0b8
 * sudo apt install spyder
-#### jupyter
-in bash: jupyter notebook
 #### direct
 python PaBiRoboy_dynamics_simulation.py
 
