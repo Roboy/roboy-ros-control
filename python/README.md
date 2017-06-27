@@ -7,6 +7,7 @@
 * sudo pip install --upgrade pip
 * sudo pip install jupyter
 * sudo pip install --upgrade jupyter
+* sudo pip install path.py
 ### Run it
 #### jupyter
 in bash: jupyter notebook
