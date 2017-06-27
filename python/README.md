@@ -7,6 +7,12 @@
 * sudo pip install --upgrade pip
 * sudo pip install jupyter
 ### Run it
+#### spyder is a pretty good python IDE:
+* sudo pip install --upgrade html5lib==1.0b8
+* sudo apt install spyder
+#### jupyter
+in bash: jupyter notebook
+#### direct
 python PaBiRoboy_dynamics_derivation.py
 
 
