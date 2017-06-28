@@ -9,7 +9,9 @@ import numpy as np
 
 from sympy.physics.vector import init_vprinting
 init_vprinting(use_latex='mathjax', pretty_print=False)
-#%% Interial frames
+#%% 
+# define all reference frames of all individually moving links of the robot
+print("Defining reference frames")
 inertial_frame = ReferenceFrame('I')
 lower_leg_left_frame = ReferenceFrame('R_1')
 upper_leg_left_frame = ReferenceFrame('R_2')
@@ -17,7 +19,8 @@ hip_frame = ReferenceFrame('R_3')
 upper_leg_right_frame = ReferenceFrame('R_4')
 lower_leg_right_frame = ReferenceFrame('R_5')
 #%% Angles
-print("Defining reference frames")
+# everything is symbolic, so create all angles of your robot
+# NOTE: the angle phi is the angle between your robot and the inertial frame
 theta0, theta1, theta2, theta3, phi = dynamicsymbols('theta0, theta1, theta2, theta3, phi')
 
 lower_leg_left_frame.orient(inertial_frame, 'Axis', (phi, inertial_frame.z))
@@ -35,7 +38,11 @@ simplify(upper_leg_right_frame.dcm(inertial_frame))
 lower_leg_right_frame.orient(upper_leg_right_frame, 'Axis', (theta3, -upper_leg_right_frame.z))
 simplify(lower_leg_right_frame.dcm(inertial_frame))
 #%% Points and Locations
+# define the kinematical chain of your robot
 print("Defining kinematical chain")
+
+# these can be arbitray points on each of you robots links
+# later these points are visualized, so you can verify the correct build of your robot
 origin = Point('Origin')
 ankle_left = Point('AnkleLeft')
 knee_left = Point('KneeLeft')
@@ -45,6 +52,7 @@ hip_right = Point('HipRight')
 knee_right = Point('KneeRight')
 ankle_right = Point('AnkleRight')
 
+# here go the lengths of your robots links
 lower_leg_length, upper_leg_length, hip_length = symbols('l1, l2, l3')
 
 ankle_left.set_pos(origin, (0 * inertial_frame.y)+(0 * inertial_frame.x))
@@ -68,12 +76,21 @@ knee_right.set_pos(hip_right, upper_leg_length * -upper_leg_right_frame.y)
 ankle_right.set_pos(knee_right, lower_leg_length * -lower_leg_right_frame.y)
 #ankle_right.pos_from(origin).express(inertial_frame).simplify()
 
+#%%
+# The following defines the full robots kinematics, if you only want to do 
+# inverse kinematics you can skip this whole part
+print("calculating full kinematics, this might take a while ...")
+#%% COMs
+print("Defining center of mass")
+
+# we set them to be in the middle of each link
 lower_leg_left_com_length = lower_leg_length/2
 upper_leg_left_com_length = upper_leg_length/2
 hip_com_length = hip_length/2
 upper_leg_right_com_length = upper_leg_length/2
 lower_leg_right_com_length = lower_leg_length/2
 
+# these points are visualized later as black dots
 lower_leg_left_mass_center = Point('L_COMleft')
 upper_leg_left_mass_center = Point('U_COMleft')
 hip_mass_center = Point('H_COMleft')
@@ -242,43 +259,44 @@ hip_right_torque = (hip_frame, hip_right_torque_vector)
 upper_leg_right_torque = (upper_leg_right_frame, upper_leg_right_torque_vector)
 lower_leg_right_torque = (lower_leg_right_frame, lower_leg_right_torque_vector)
 #%% Equations of Motion
+# you only need this if you want a full dynamics simulation, with forces etc.
 print("Calculating equations of motion")
 coordinates = [theta0, theta1, theta2, theta3, phi]
 coordinates
 
 speeds = [omega0, omega1, omega2, omega3, psi]
 speeds
-#
-#kinematical_differential_equations
-#
-#kane = KanesMethod(inertial_frame, coordinates, speeds, kinematical_differential_equations)
-#
-#loads = [lower_leg_left_grav_force,
-#         upper_leg_left_grav_force,
-#         hip_grav_force, 
-#         upper_leg_right_grav_force,
-#         lower_leg_right_grav_force,
-#         lower_leg_left_torque,
-#         upper_leg_left_torque,
-#         hip_left_torque,
-#         hip_right_torque,
-#         upper_leg_right_torque,
-#         lower_leg_right_torque]
-#loads
-#
-#bodies = [lower_leg_left, upper_leg_left, hip, upper_leg_right, lower_leg_right]
-#bodies
-#
-#print("evaluating kanes equation")
-#fr, frstar = kane.kanes_equations(loads, bodies)
-#
-##print("simplifying kanes equation")
-##trigsimp(fr + frstar)
-#
-#print("simplifying mass_matrix")
-#mass_matrix = trigsimp(kane.mass_matrix_full)
-##print(mass_matrix)
-#
-#print("simplifying forcing_vector")
-#forcing_vector = trigsimp(kane.forcing_full)
-##print(forcing_vector)
+
+kinematical_differential_equations
+
+kane = KanesMethod(inertial_frame, coordinates, speeds, kinematical_differential_equations)
+
+loads = [lower_leg_left_grav_force,
+         upper_leg_left_grav_force,
+         hip_grav_force, 
+         upper_leg_right_grav_force,
+         lower_leg_right_grav_force,
+         lower_leg_left_torque,
+         upper_leg_left_torque,
+         hip_left_torque,
+         hip_right_torque,
+         upper_leg_right_torque,
+         lower_leg_right_torque]
+loads
+
+bodies = [lower_leg_left, upper_leg_left, hip, upper_leg_right, lower_leg_right]
+bodies
+
+print("evaluating kanes equation")
+fr, frstar = kane.kanes_equations(loads, bodies)
+
+#print("simplifying kanes equation")
+#trigsimp(fr + frstar)
+
+print("simplifying mass_matrix")
+mass_matrix = trigsimp(kane.mass_matrix_full)
+#print(mass_matrix)
+
+print("simplifying forcing_vector")
+forcing_vector = trigsimp(kane.forcing_full)
+#print(forcing_vector)
