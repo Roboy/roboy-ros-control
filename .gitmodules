@@ -7,12 +7,6 @@
 [submodule "src/roboy_simulation"]
 	path = src/roboy_simulation
 	url = https://github.com/Roboy/roboy_simulation
-[submodule "src/roboy_managing_node"]
-	path = src/roboy_managing_node
-	url = https://github.com/Roboy/roboy_managing_node
-[submodule "src/roboy_powerlink"]
-	path = src/roboy_powerlink
-	url = https://github.com/Roboy/roboy_powerlink
 [submodule "src/common_utilities"]
 	path = src/common_utilities
 	url = https://github.com/Roboy/common_utilities
@@ -22,3 +16,9 @@
 [submodule "src/roboy_realsense"]
 	path = src/roboy_realsense
 	url = https://github.com/Roboy/roboy_realsense
+[submodule "src/roboy_powerlink"]
+	path = src/roboy_powerlink
+	url = https://github.com/Roboy/roboy_powerlink.git
+[submodule "src/roboy_managing_node"]
+	path = src/roboy_managing_node
+	url = https://github.com/Roboy/roboy_managing_node.git
