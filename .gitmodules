@@ -19,6 +19,3 @@
 [submodule "src/roboy_communication"]
 	path = src/roboy_communication
 	url = https://github.com/Roboy/roboy_communication
-[submodule "src/roboy_realsense"]
-	path = src/roboy_realsense
-	url = https://github.com/Roboy/roboy_realsense
