@@ -14,6 +14,18 @@ sudo apt install git
 #!bash
 sudo apt install doxygen
 ```
+### ncurses
+```
+#!bash
+sudo apt install libncurses5-dev
+```
+
+### pcap for powerlink
+```
+#!bash
+sudo apt install libpcap-dev
+```
+
 ### [ROS kinetic](http://wiki.ros.org/kinetic/)
 For detailed description of installation see [here](http://wiki.ros.org/kinetic/Installation/Ubuntu). 
 ```
